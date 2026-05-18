@@ -1,152 +1,185 @@
 import 'package:flutter/material.dart';
-import 'package:threads/auth/signup/signup.dart';
-
-import 'account.dart';
+import 'package:provider/provider.dart';
+import 'package:threads/state/auth.state.dart';
 
 class NamePage extends StatefulWidget {
   final VoidCallback? loginCallback;
   const NamePage({Key? key, this.loginCallback}) : super(key: key);
 
   @override
-  _NamePageState createState() => _NamePageState();
+  State<NamePage> createState() => _NamePageState();
 }
 
-bool empt = false;
-
 class _NamePageState extends State<NamePage> {
-  final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
-  void initState() {
-    setState(() {
-      _nameController.text.isNotEmpty ? empt = true : empt = false;
-    });
-    super.initState();
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入用户名和密码')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    final result = await authState.signIn(
+      username,
+      password,
+      context,
+      scaffoldKey: scaffoldKey,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (result != null && mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          ClipRect(
-              child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Stack(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 40),
+              Image.asset(
+                "assets/threads.png",
+                height: 80,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 48),
+              const Text(
+                '登录',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              TextField(
+                controller: _usernameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: '用户名',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: const Color(0xff1a1a1a),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                style: const TextStyle(color: Colors.white),
+                obscureText: true,
+                decoration: InputDecoration(
+                  hintText: '密码',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: const Color(0xff1a1a1a),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : const Text(
+                          '登录',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey[800])),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      '或',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey[800])),
+                ],
+              ),
+              const SizedBox(height: 32),
+              GestureDetector(
+                child: Container(
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xff0a0a0a),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        "assets/threads.png",
-                        height: MediaQuery.of(context).size.height / 1.5,
-                        fit: BoxFit.fitWidth,
-                        width: MediaQuery.of(context).size.width,
+                      Image.asset("assets/insta.png", height: 28),
+                      const SizedBox(width: 12),
+                      const Text(
+                        "使用 Instagram 账号登录",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      Container(
-                          height: MediaQuery.of(context).size.height / 1.5,
-                          decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                  begin: Alignment.bottomRight,
-                                  end: Alignment.topRight,
-                                  colors: [
-                                Colors.black.withOpacity(1),
-                                Colors.black.withOpacity(1),
-                                Colors.black.withOpacity(1),
-                                Colors.black.withOpacity(1),
-                                Colors.black.withOpacity(0.9),
-                                Colors.black.withOpacity(0.8),
-                                Colors.black.withOpacity(0.7),
-                                Colors.black.withOpacity(0.6),
-                                Colors.black.withOpacity(0.5),
-                                Colors.black.withOpacity(0.4),
-                                Colors.black.withOpacity(0.3),
-                                Colors.black.withOpacity(0.2),
-                                Colors.black.withOpacity(0.1),
-                                Colors.black.withOpacity(0.05),
-                                Colors.black.withOpacity(0.025),
-                                Colors.black.withOpacity(0.0),
-                                Colors.black.withOpacity(0.0),
-                                Colors.black.withOpacity(0.0),
-                                Colors.black.withOpacity(0.0),
-                                Colors.black.withOpacity(0.0),
-                                Colors.black.withOpacity(0.0),
-                                Colors.black.withOpacity(0.0),
-                              ])))
                     ],
-                  ))),
-          Container(
-            height: 50,
-          ),
-          GestureDetector(
-              onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const Signup()));
-              },
-              child: Container(
-                height: 70,
-                width: 330,
-                decoration: BoxDecoration(
-                  color: Color(0xff0a0a0a),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.grey,
-                    width: 0.5,
                   ),
                 ),
-                child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            " Log in on Instagram",
-                            style: TextStyle(
-                                color: Color.fromARGB(255, 123, 123, 123),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600),
-                          ),
-                          Container(
-                            height: 3,
-                          ),
-                          Text(
-                            " instagram account",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        width: 50,
-                      ),
-                      Padding(
-                          padding: EdgeInsets.only(
-                              left: 14, top: 14, bottom: 14, right: 4),
-                          child: Image.asset("assets/insta.png"))
-                    ]),
-              )),
-          Container(
-            height: 20,
+              ),
+            ],
           ),
-          GestureDetector(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SwitchAccount()));
-              },
-              child: Text(
-                "Switch Account",
-                style: TextStyle(
-                    color: Color.fromARGB(255, 123, 123, 123),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600),
-              )),
-        ],
+        ),
       ),
     );
   }

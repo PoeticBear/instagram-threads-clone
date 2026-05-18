@@ -1,29 +1,23 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/firebase_database.dart' as dabase;
 import 'package:flutter/foundation.dart';
 import 'package:threads/helper/enum.dart';
 import 'package:threads/helper/utility.dart';
 import 'package:threads/model/user.module.dart';
+import 'package:threads/services/follow_service.dart';
+import 'package:threads/services/user_service.dart';
+import 'package:threads/common/locator.dart';
 
 class ProfileState extends ChangeNotifier {
+  final String profileId;
+
   ProfileState(this.profileId) {
-    databaseInit();
-    userId = FirebaseAuth.instance.currentUser!.uid;
-    _getloggedInUserProfile(userId);
-    _getProfileUser(profileId);
+    _init();
   }
 
   late String userId;
 
   late UserModel _userModel;
   UserModel get userModel => _userModel;
-
-  dabase.Query? _profileQuery;
-  late StreamSubscription<DatabaseEvent> profileSubscription;
-
-  final String profileId;
 
   late UserModel _profileUserModel;
   UserModel get profileUserModel => _profileUserModel;
@@ -35,105 +29,156 @@ class ProfileState extends ChangeNotifier {
     notifyListeners();
   }
 
-  databaseInit() {
-    try {
-      if (_profileQuery == null) {
-        _profileQuery = kDatabase.child("profile").child(profileId);
-        profileSubscription = _profileQuery!.onValue.listen(_onProfileChanged);
-      }
-    } catch (error) {}
+  UserService? _userService;
+  FollowService? _followService;
+
+  UserService get userService {
+    _userService ??= UserService(apiClient: getIt());
+    return _userService!;
+  }
+
+  FollowService get followService {
+    _followService ??= FollowService(apiClient: getIt());
+    return _followService!;
+  }
+
+  Future<void> _init() async {
+    await _getProfileUser(profileId);
   }
 
   bool get isMyProfile => profileId == userId;
 
-  void _getloggedInUserProfile(String userId) async {
-    kDatabase.child("profile").child(userId).once().then((DatabaseEvent event) {
-      final snapshot = event.snapshot;
-      if (snapshot.value != null) {
-        var map = snapshot.value as Map<dynamic, dynamic>?;
-        if (map != null) {
-          _userModel = UserModel.fromJson(map);
-        }
-      }
-    });
+  Future<void> _getloggedInUserProfile(String userIdStr) async {
+    try {
+      final userIdInt = int.tryParse(userIdStr);
+      if (userIdInt == null) return;
+
+      final userInfo = await userService.getUserProfile(userIdInt);
+      _userModel = UserModel(
+        userId: userInfo.userId,
+        userName: userInfo.username,
+        displayName: userInfo.displayName,
+        bio: userInfo.bio,
+        profilePic: userInfo.profilePic,
+        isPrivate: userInfo.isPrivate,
+        followersCount: userInfo.followersCount,
+        followingCount: userInfo.followingCount,
+      );
+      notifyListeners();
+    } catch (error) {
+      // Handle error
+    }
   }
 
-  void _getProfileUser(String? userProfileId) {
-    assert(userProfileId != null);
+  Future<void> _getProfileUser(String? userProfileId) async {
+    if (userProfileId == null) return;
+
     try {
       loading = true;
-      kDatabase
-          .child("profile")
-          .child(userProfileId!)
-          .once()
-          .then((DatabaseEvent event) {
-        final snapshot = event.snapshot;
-        if (snapshot.value != null) {
-          var map = snapshot.value as Map;
-          _profileUserModel = UserModel.fromJson(map);
-        }
+
+      final userIdInt = int.tryParse(userProfileId);
+      if (userIdInt == null) {
         loading = false;
-      });
+        return;
+      }
+
+      final userInfo = await userService.getUserProfile(userIdInt);
+
+      _profileUserModel = UserModel(
+        userId: userInfo.userId,
+        userName: userInfo.username,
+        displayName: userInfo.displayName,
+        bio: userInfo.bio,
+        profilePic: userInfo.profilePic,
+        isPrivate: userInfo.isPrivate,
+        followersCount: userInfo.followersCount,
+        followingCount: userInfo.followingCount,
+      );
+
+      loading = false;
+      notifyListeners();
     } catch (error) {
       loading = false;
     }
   }
 
-  followUser({bool removeFollower = false}) {
+  Future<void> followUser({bool removeFollower = false}) async {
     try {
+      final profileUserId = int.tryParse(profileId);
+      if (profileUserId == null) return;
+
       if (removeFollower) {
-        profileUserModel.followersList!.remove(userModel.userId);
-        userModel.followingList!.remove(profileUserModel.userId);
+        await followService.unfollowUser(profileUserId);
+        _profileUserModel.followersList?.remove(userId);
+        _userModel.followingList?.remove(profileId);
       } else {
-        profileUserModel.followersList ??= [];
-        profileUserModel.followersList!.add(userModel.userId!);
-        userModel.followingList ??= [];
-        addFollowNotification();
-        userModel.followingList!.add(profileUserModel.userId!);
+        await followService.followUser(profileUserId);
+        _profileUserModel.followersList ??= [];
+        _profileUserModel.followersList!.add(userId);
+        _userModel.followingList ??= [];
+        _userModel.followingList!.add(profileId);
       }
-      kDatabase
-          .child('profile')
-          .child(profileUserModel.userId!)
-          .child('followerList')
-          .set({"key:": userModel.followingList, "accept": false});
-      kDatabase
-          .child('profile')
-          .child(userModel.userId!)
-          .child('followingList')
-          .set({userModel.followingList, false});
 
       notifyListeners();
-    } catch (error) {}
-  }
-
-  void addFollowNotification() {
-    kDatabase.child('notification').child(profileId).child(userId).set({
-      'type': NotificationType.Follow.toString(),
-      'createdAt': DateTime.now().toUtc().toString(),
-      'data': UserModel(
-              displayName: userModel.displayName,
-              profilePic: userModel.profilePic,
-              userId: userModel.userId,
-              bio: userModel.bio == "Edit profile to update bio"
-                  ? ""
-                  : userModel.bio,
-              userName: userModel.userName)
-          .toJson()
-    });
-  }
-
-  void _onProfileChanged(DatabaseEvent event) {
-    final updatedUser = UserModel.fromJson(event.snapshot.value as Map);
-    if (updatedUser.userId == profileId) {
-      _profileUserModel = updatedUser;
+    } catch (error) {
+      // Handle error
     }
-    notifyListeners();
+  }
+
+  Future<FollowStats> getFollowStats() async {
+    try {
+      final profileUserId = int.tryParse(profileId);
+      if (profileUserId == null) {
+        return FollowStats();
+      }
+      return await followService.getFollowStats(profileUserId);
+    } catch (error) {
+      return FollowStats();
+    }
+  }
+
+  Future<List<UserModel>> getFollowers({int page = 1}) async {
+    try {
+      final profileUserId = int.tryParse(profileId);
+      if (profileUserId == null) return [];
+
+      final followers = await followService.getFollowers(profileUserId, page: page);
+      return followers.map((info) => UserModel(
+        userId: info.userId,
+        userName: info.username,
+        displayName: info.displayName,
+        bio: info.bio,
+        profilePic: info.profilePic,
+        followersCount: info.followersCount,
+        followingCount: info.followingCount,
+      )).toList();
+    } catch (error) {
+      return [];
+    }
+  }
+
+  Future<List<UserModel>> getFollowing({int page = 1}) async {
+    try {
+      final profileUserId = int.tryParse(profileId);
+      if (profileUserId == null) return [];
+
+      final following = await followService.getFollowing(profileUserId, page: page);
+      return following.map((info) => UserModel(
+        userId: info.userId,
+        userName: info.username,
+        displayName: info.displayName,
+        bio: info.bio,
+        profilePic: info.profilePic,
+        followersCount: info.followersCount,
+        followingCount: info.followingCount,
+      )).toList();
+    } catch (error) {
+      return [];
+    }
   }
 
   @override
   void dispose() {
-    _profileQuery!.onValue.drain();
-    profileSubscription.cancel();
     super.dispose();
   }
 }

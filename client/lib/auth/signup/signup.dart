@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:threads/auth/signup/email.dart';
 
@@ -42,19 +41,9 @@ class _SignupState extends State<Signup> {
     ImagePicker()
         .pickImage(source: source, imageQuality: 100)
         .then((XFile? file) async {
-      await ImageCropper.platform.cropImage(
-        sourcePath: file!.path,
-        cropStyle: CropStyle.circle,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ],
-      ).then((value) => setState(() {
-            onImageSelected(File(value!.path));
-          }));
+      if (file != null) {
+        onImageSelected(File(file.path));
+      }
     });
   }
 

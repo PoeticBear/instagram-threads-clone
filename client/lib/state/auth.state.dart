@@ -1,237 +1,257 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/firebase_database.dart' as db;
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/helper/enum.dart';
 import 'package:threads/helper/shared_prefrence_helper.dart';
 import 'package:threads/helper/utility.dart';
 import 'package:threads/model/user.module.dart';
+import 'package:threads/network/api_exception.dart';
+import 'package:threads/services/auth_service.dart';
+import 'package:threads/services/user_service.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/common/locator.dart';
-import 'package:path/path.dart' as path;
 
 class AuthState extends AppStates {
   AuthStatus authStatus = AuthStatus.NOT_DETERMINED;
   bool isSignInWithGoogle = false;
-  User? user;
   late String userId;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
-  db.Query? _profileQuery;
   late AuthState authRepository;
   UserModel? _userModel;
 
-  UserModel? get userModel => _userModel;
+  AuthService? _authService;
+  UserService? _userService;
 
+  UserModel? get userModel => _userModel;
   UserModel? get profileUserModel => _userModel;
+
+  AuthService get authService {
+    _authService ??= AuthService(
+      apiClient: getIt(),
+      prefs: getIt<SharedPreferenceHelper>().prefs,
+    );
+    return _authService!;
+  }
+
+  UserService get userService {
+    _userService ??= UserService(apiClient: getIt());
+    return _userService!;
+  }
+
+  Future<void> initAuthService() async {
+    await authService.init();
+  }
 
   void logoutCallback() async {
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;
-    user = null;
-    _profileQuery!.onValue.drain();
-    _profileQuery = null;
-    _firebaseAuth.signOut();
+    await authService.logout();
     notifyListeners();
     await getIt<SharedPreferenceHelper>().clearPreferenceValues();
   }
 
-  void databaseInit() {
-    try {
-      if (_profileQuery == null) {
-        _profileQuery = kDatabase.child("profile").child(user!.uid);
-        _profileQuery!.onValue.listen(_onProfileChanged);
-        _profileQuery!.onChildChanged.listen(_onProfileUpdated);
-      }
-    } catch (error) {}
-  }
-
-  Future<String?> signIn(String email, String password, BuildContext context,
-      {required GlobalKey<ScaffoldState> scaffoldKey}) async {
+  Future<String?> signIn(
+    String username,
+    String password,
+    BuildContext context, {
+    required GlobalKey<ScaffoldState> scaffoldKey,
+  }) async {
     try {
       isBusy = true;
-      var result = await _firebaseAuth.signInWithEmailAndPassword(
-          email: email, password: password);
-      user = result.user;
-      userId = user!.uid;
-      return user!.uid;
-    } on FirebaseException catch (error) {
-      if (error.code == 'Email Adress Not found') {
-        Utility.customSnackBar(scaffoldKey, 'User not found', context);
-      } else {
-        Utility.customSnackBar(
-            scaffoldKey, error.message ?? 'Something went wrong', context);
-      }
+      notifyListeners();
+
+      final response = await authService.signIn(
+        username: username,
+        password: password,
+      );
+
+      userId = response.userId?.toString() ?? '';
+      authStatus = AuthStatus.LOGGED_IN;
+
+      // Load user profile
+      await getProfileUser();
+
+      return userId;
+    } on AuthException catch (error) {
+      Utility.customSnackBar(scaffoldKey, error.message, context);
       return null;
     } catch (error) {
       Utility.customSnackBar(scaffoldKey, error.toString(), context);
-
       return null;
     } finally {
       isBusy = false;
+      notifyListeners();
     }
   }
 
-  Future<String?> signUp(UserModel userModel, BuildContext context,
-      {required GlobalKey<ScaffoldState> scaffoldKey,
-      required String password}) async {
+  Future<String?> signUp(
+    UserModel userModel,
+    BuildContext context, {
+    required GlobalKey<ScaffoldState> scaffoldKey,
+    required String password,
+  }) async {
     try {
       isBusy = true;
-      var result = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: userModel.email!,
-        password: password,
-      );
-      user = result.user;
-      authStatus = AuthStatus.LOGGED_IN;
-      kAnalytics.logSignUp(signUpMethod: 'register');
-      result.user!.updateDisplayName(
-        userModel.displayName,
-      );
-      result.user!.updatePhotoURL(userModel.profilePic);
+      notifyListeners();
 
+      final response = await authService.register(
+        username: userModel.userName ?? userModel.email ?? '',
+        password: password,
+        displayName: userModel.displayName ?? '',
+        bio: userModel.bio,
+      );
+
+      userId = response.userId?.toString() ?? '';
+      authStatus = AuthStatus.LOGGED_IN;
+
+      // Update local user model
       _userModel = userModel;
-      _userModel!.key = user!.uid;
-      _userModel!.userId = user!.uid;
-      createUser(_userModel!, newUser: true);
-      return user!.uid;
+      _userModel!.userId = int.tryParse(userId);
+
+      // Save to local storage
+      getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
+
+      return userId;
+    } on ApiException catch (error) {
+      Utility.customSnackBar(scaffoldKey, error.message, context);
+      return null;
     } catch (error) {
-      isBusy = false;
       Utility.customSnackBar(scaffoldKey, error.toString(), context);
       return null;
+    } finally {
+      isBusy = false;
+      notifyListeners();
     }
   }
 
-  void createUser(UserModel user, {bool newUser = false}) {
-    if (newUser) {
-      user.userName =
-          Utility.getUserName(id: user.userId!, name: user.displayName!);
-      kAnalytics.logEvent(name: 'create_newUser');
-    }
-
-    kDatabase.child('profile').child(user.userId!).set(user.toJson());
-    _userModel = user;
-    isBusy = false;
-  }
-
-  Future<User?> getCurrentUser() async {
+  Future<UserModel?> getCurrentUser() async {
     try {
       isBusy = true;
-      user = _firebaseAuth.currentUser;
-      if (user != null) {
-        await getProfileUser();
-        authStatus = AuthStatus.LOGGED_IN;
-        userId = user!.uid;
-      } else {
+      notifyListeners();
+
+      if (!authService.isLoggedIn) {
         authStatus = AuthStatus.NOT_LOGGED_IN;
+        isBusy = false;
+        notifyListeners();
+        return null;
       }
+
+      // Get current user info from API
+      final userInfo = await authService.getCurrentUser();
+      userId = userInfo.userId.toString();
+
+      _userModel = UserModel(
+        userId: userInfo.userId,
+        userName: userInfo.username,
+        displayName: userInfo.displayName,
+        bio: userInfo.bio,
+        profilePic: userInfo.profilePic,
+        isPrivate: userInfo.isPrivate,
+        followersCount: userInfo.followersCount,
+        followingCount: userInfo.followingCount,
+      );
+
+      getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
+      authStatus = AuthStatus.LOGGED_IN;
+
       isBusy = false;
-      return user;
+      notifyListeners();
+      return null;
     } catch (error) {
       isBusy = false;
       authStatus = AuthStatus.NOT_LOGGED_IN;
+      notifyListeners();
       return null;
     }
   }
 
-  Future<void> updateUserProfile(UserModel? userModel,
-      {File? image, File? bannerImage}) async {
+  Future<void> updateUserProfile(
+    UserModel? userModel, {
+    File? image,
+  }) async {
     try {
-      if (image == null && bannerImage == null) {
-        createUser(userModel!);
-      } else {
-        if (image != null) {
-          userModel!.profilePic = await _uploadFileToStorage(image,
-              'user/profile/${userModel.userName}/${path.basename(image.path)}');
-          var name = userModel.displayName ?? user!.displayName;
-          _firebaseAuth.currentUser!.updateDisplayName(name);
-          _firebaseAuth.currentUser!.updatePhotoURL(userModel.profilePic);
-        }
+      isBusy = true;
+      notifyListeners();
 
-        if (userModel != null) {
-          createUser(userModel);
-        } else {
-          createUser(_userModel!);
-        }
+      if (image != null) {
+        // Upload image first - this would use UploadService
+        // For now, we skip image upload as it requires UploadService
       }
-    } catch (error) {}
-  }
 
-  Future<String> _uploadFileToStorage(File file, path) async {
-    var task = _firebaseStorage.ref().child(path);
+      if (userModel != null) {
+        final updatedInfo = await userService.updateProfile(
+          displayName: userModel.displayName,
+          bio: userModel.bio,
+          link: userModel.link,
+          profilePic: userModel.profilePic,
+        );
 
-    return await task.getDownloadURL();
-  }
+        _userModel = userModel.copyWith(
+          displayName: updatedInfo.displayName,
+          bio: updatedInfo.bio,
+          profilePic: updatedInfo.profilePic,
+        );
+      }
 
-  Future<UserModel?> getUserDetail(String userId) async {
-    UserModel user;
-    var event = await kDatabase.child('profile').child(userId).once();
-
-    final map = event.snapshot.value as Map?;
-    if (map != null) {
-      user = UserModel.fromJson(map);
-      user.key = event.snapshot.key!;
-      return user;
-    } else {
-      return null;
-    }
-  }
-
-  FutureOr<void> getProfileUser({String? userProfileId}) {
-    try {
-      userProfileId = userProfileId ?? user!.uid;
-      kDatabase
-          .child("profile")
-          .child(userProfileId)
-          .once()
-          .then((DatabaseEvent event) async {
-        final snapshot = event.snapshot;
-        if (snapshot.value != null) {
-          var map = snapshot.value as Map<dynamic, dynamic>?;
-          if (map != null) {
-            if (userProfileId == user!.uid) {
-              _userModel = UserModel.fromJson(map);
-
-              getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
-            }
-          }
-        }
-        isBusy = false;
-      });
+      getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
+      isBusy = false;
+      notifyListeners();
     } catch (error) {
       isBusy = false;
-    }
-  }
-
-  void _onProfileChanged(DatabaseEvent event) {
-    final val = event.snapshot.value;
-    if (val is Map) {
-      final updatedUser = UserModel.fromJson(val);
-      _userModel = updatedUser;
-      getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
       notifyListeners();
     }
   }
 
-  void _onProfileUpdated(DatabaseEvent event) {
-    final val = event.snapshot.value;
-    if (val is List &&
-        ['following', 'followers'].contains(event.snapshot.key)) {
-      final list = val.cast<String>().map((e) => e).toList();
-      if (event.previousChildKey == 'following') {
-        _userModel = _userModel!.copyWith(
-          followingList: val.cast<String>().map((e) => e).toList(),
-        );
-      } else if (event.previousChildKey == 'followers') {
-        _userModel = _userModel!.copyWith(
-          followersList: list,
-        );
-      }
+  Future<UserModel?> getUserDetail(String userIdStr) async {
+    try {
+      final userId = int.tryParse(userIdStr);
+      if (userId == null) return null;
+
+      final userInfo = await userService.getUserProfile(userId);
+      return UserModel(
+        userId: userInfo.userId,
+        userName: userInfo.username,
+        displayName: userInfo.displayName,
+        bio: userInfo.bio,
+        profilePic: userInfo.profilePic,
+        isPrivate: userInfo.isPrivate,
+        followersCount: userInfo.followersCount,
+        followingCount: userInfo.followingCount,
+        link: userInfo.link,
+      );
+    } catch (error) {
+      return null;
+    }
+  }
+
+  Future<void> getProfileUser({String? userProfileId}) async {
+    try {
+      isBusy = true;
+      notifyListeners();
+
+      final userInfo = await authService.getCurrentUser();
+      userId = userInfo.userId.toString();
+
+      _userModel = UserModel(
+        userId: userInfo.userId,
+        userName: userInfo.username,
+        displayName: userInfo.displayName,
+        bio: userInfo.bio,
+        profilePic: userInfo.profilePic,
+        isPrivate: userInfo.isPrivate,
+        followersCount: userInfo.followersCount,
+        followingCount: userInfo.followingCount,
+      );
+
       getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
+
+      isBusy = false;
+      notifyListeners();
+    } catch (error) {
+      isBusy = false;
       notifyListeners();
     }
   }
+
+  bool get isLoggedIn => authService.isLoggedIn;
 }

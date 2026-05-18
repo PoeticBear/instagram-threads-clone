@@ -1,8 +1,9 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:threads/helper/enum.dart';
 import 'package:threads/helper/utility.dart';
 import 'package:threads/model/user.module.dart';
-import 'app.state.dart';
+import 'package:threads/services/search_service.dart';
+import 'package:threads/state/app.state.dart';
+import 'package:threads/common/locator.dart';
 
 class SearchState extends AppStates {
   bool isBusy = false;
@@ -18,35 +19,71 @@ class SearchState extends AppStates {
     }
   }
 
-  void getDataFromDatabase() {
+  SearchService? _searchService;
+
+  SearchService get searchService {
+    _searchService ??= SearchService(apiClient: getIt());
+    return _searchService!;
+  }
+
+  Future<void> getDataFromDatabase() async {
     try {
       isBusy = true;
-      kDatabase.child('profile').once().then(
-        (DatabaseEvent event) {
-          final snapshot = event.snapshot;
-          _userlist = <UserModel>[];
-          _userFilterlist = <UserModel>[];
-          if (snapshot.value != null) {
-            var map = snapshot.value as Map?;
-            if (map != null) {
-              map.forEach((key, value) {
-                var model = UserModel.fromJson(value);
-                model.key = key;
-                _userlist!.add(model);
-                _userFilterlist!.add(model);
-              });
-              _userFilterlist!;
-              notifyListeners();
-            }
-          } else {
-            _userlist = null;
-          }
-          isBusy = false;
-        },
-      );
+      notifyListeners();
+
+      // Use search API to get all users
+      final result = await searchService.search(query: '', pageSize: 100);
+
+      _userlist = result.users.map((info) => UserModel(
+        userId: info.userId,
+        userName: info.username,
+        displayName: info.displayName,
+        bio: info.bio,
+        profilePic: info.profilePic,
+        followersCount: info.followersCount,
+        followingCount: info.followingCount,
+      )).toList();
+
+      _userFilterlist = List.from(_userlist!);
+
+      isBusy = false;
+      notifyListeners();
+    } catch (error) {
+      _userlist = null;
+      _userFilterlist = null;
+      isBusy = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> searchUsers(String query) async {
+    if (query.isEmpty) {
+      _userFilterlist = List.from(_userlist!);
+      notifyListeners();
+      return;
+    }
+
+    try {
+      isBusy = true;
+      notifyListeners();
+
+      final result = await searchService.search(query: query);
+
+      _userFilterlist = result.users.map((info) => UserModel(
+        userId: info.userId,
+        userName: info.username,
+        displayName: info.displayName,
+        bio: info.bio,
+        profilePic: info.profilePic,
+        followersCount: info.followersCount,
+        followingCount: info.followingCount,
+      )).toList();
+
+      isBusy = false;
+      notifyListeners();
     } catch (error) {
       isBusy = false;
-      print(error);
+      notifyListeners();
     }
   }
 
@@ -57,7 +94,7 @@ class SearchState extends AppStates {
         _userlist!.length != _userFilterlist!.length) {
       _userFilterlist = List.from(_userlist!);
     }
-    if (_userlist == null && _userlist!.isEmpty) {
+    if (_userlist == null || _userlist!.isEmpty) {
       print("User list is empty");
       return;
     } else if (name != null) {
@@ -73,26 +110,26 @@ class SearchState extends AppStates {
   String get selectedFilter {
     switch (sortBy) {
       case SortUser.ALPHABETICALY:
-        _userFilterlist!
-            .sort((x, y) => x.displayName!.compareTo(y.displayName!));
+        _userFilterlist!.sort((x, y) => (x.displayName ?? '').compareTo(y.displayName ?? ''));
         return "ALPHABETICALY";
 
       case SortUser.MAX_FOLLOWER:
-        _userFilterlist!;
+        _userFilterlist!.sort((x, y) => (y.followersCount ?? 0).compareTo(x.followersCount ?? 0));
         return "Popular";
 
       case SortUser.NEWEST:
         _userFilterlist!.sort((x, y) =>
-            DateTime.parse(y.createAt!).compareTo(DateTime.parse(x.createAt!)));
+            DateTime.parse(y.createAt ?? DateTime.now().toIso8601String())
+                .compareTo(DateTime.parse(x.createAt ?? DateTime.now().toIso8601String())));
         return "NEWEST user";
 
       case SortUser.OLDEST:
         _userFilterlist!.sort((x, y) =>
-            DateTime.parse(x.createAt!).compareTo(DateTime.parse(y.createAt!)));
+            DateTime.parse(x.createAt ?? DateTime.now().toIso8601String())
+                .compareTo(DateTime.parse(y.createAt ?? DateTime.now().toIso8601String())));
         return "OLDEST user";
 
       case SortUser.VERIFIED:
-        _userFilterlist!;
         return "VERIFIED user";
 
       default:
@@ -101,9 +138,12 @@ class SearchState extends AppStates {
   }
 
   List<UserModel> userList = [];
+
   List<UserModel> getuserDetail(List<String> userIds) {
+    if (_userlist == null) return [];
+
     final list = _userlist!.where((x) {
-      if (userIds.contains(x.key)) {
+      if (userIds.contains(x.userId?.toString()) || userIds.contains(x.key)) {
         return true;
       } else {
         return false;

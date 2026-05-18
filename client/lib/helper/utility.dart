@@ -1,11 +1,6 @@
 // ignore_for_file: avoid_print, deprecated_member_use
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-final kAnalytics = FirebaseAnalytics.instance;
-final DatabaseReference kDatabase = FirebaseDatabase.instance.ref();
 
 class Utility {
   static String getUserName({

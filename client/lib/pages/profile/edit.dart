@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/auth.state.dart';
-import 'package:image_cropper/image_cropper.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -47,19 +46,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     ImagePicker()
         .pickImage(source: source, imageQuality: 100)
         .then((XFile? file) async {
-      await ImageCropper.platform.cropImage(
-        sourcePath: file!.path,
-        cropStyle: CropStyle.circle,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ],
-      ).then((value) => setState(() {
-            onImageSelected(File(value!.path));
-          }));
+      if (file != null) {
+        onImageSelected(File(file.path));
+      }
     });
   }
 
@@ -396,7 +385,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
     var state = Provider.of<AuthState>(context, listen: false);
     var model = state.userModel!.copyWith(
-      key: state.userModel!.userId,
+      key: state.userModel!.userId.toString(),
       displayName: state.userModel!.displayName,
       link: state.userModel!.link,
       bio: state.userModel!.bio,

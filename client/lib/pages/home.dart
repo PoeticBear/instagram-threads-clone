@@ -42,7 +42,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void initProfile() {
     var state = Provider.of<AuthState>(context, listen: false);
-    state.databaseInit();
+    state.getProfileUser();
   }
 
   void initPosts() {

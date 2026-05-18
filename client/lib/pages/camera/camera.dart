@@ -9,8 +9,8 @@ import 'package:provider/provider.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/state/auth.state.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:threads/services/upload_service.dart';
+import 'package:threads/common/locator.dart';
 import 'package:path/path.dart' as Path;
 import '../../main.dart';
 
@@ -28,8 +28,7 @@ class CameraPage extends StatefulWidget {
 
 class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
   CameraController? _controller;
-  final DatabaseReference _databaseRef = FirebaseDatabase.instance.reference();
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  late UploadService _uploadService;
   int _cameraIndex = -1;
   double zoomLevel = 0.0, minZoomLevel = 0.0, maxZoomLevel = 0.0;
   bool _changingCameraLens = false;
@@ -43,6 +42,7 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _uploadService = UploadService(apiClient: getIt());
     rotationController = AnimationController(
       vsync: this,
       duration: animationDuration,
@@ -77,16 +77,22 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
 
   Future<String> uploadImageToStorage(File file) async {
     String fileName = Path.basename(file.path);
-    Reference storageRef = _storage.ref().child('images/$fileName');
-    UploadTask uploadTask = storageRef.putFile(file);
-    TaskSnapshot storageSnapshot = await uploadTask.whenComplete(() {});
-    String downloadUrl = await storageSnapshot.ref.getDownloadURL();
-    return downloadUrl;
+    // Use UploadService with presigned URL pattern
+    final presignedResponse = await _uploadService.getPresignedUrl(
+      filename: fileName,
+      folder: 'images',
+    );
+    await _uploadService.uploadToPresignedUrl(
+      uploadUrl: presignedResponse.uploadUrl,
+      file: file,
+      contentType: 'image/*',
+    );
+    return presignedResponse.url;
   }
 
   Future<void> addPostToDatabase(PostModel post) async {
-    var newPostRef = _databaseRef.child('posts').push();
-    newPostRef.set(post.toJson());
+    // Post creation will be handled by PostState through the API
+    // This method is kept for compatibility but doesn't write to Firebase
   }
 
   @override

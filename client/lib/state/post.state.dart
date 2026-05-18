@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/firebase_database.dart' as dabase;
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:threads/helper/utility.dart';
 import 'package:threads/model/user.module.dart';
+import 'package:threads/services/post_service.dart';
 import 'package:threads/state/app.state.dart';
+import 'package:threads/common/locator.dart';
 import '../model/post.module.dart';
-import 'package:path/path.dart' as path;
 
 class PostState extends AppStates {
   bool isBusy = false;
@@ -19,7 +17,6 @@ class PostState extends AppStates {
   }
 
   List<PostModel>? _feedlist;
-  dabase.Query? _feedQuery;
   List<PostModel>? _postDetailModelList;
 
   List<PostModel>? get postDetailModel => _postDetailModelList;
@@ -32,41 +29,62 @@ class PostState extends AppStates {
     }
   }
 
-  Future<String?> createPost(PostModel model) async {
-    ///  Create post in [Firebase kDatabase]
-    isBusy = true;
-    notifyListeners();
-    String? postKey;
-    try {
-      DatabaseReference dbReference = kDatabase.child('post').push();
+  PostService? _postService;
 
-      await dbReference.set(model.toJson());
-
-      postKey = dbReference.key;
-    } catch (error) {
-      print(error);
-    }
-    isBusy = false;
-    notifyListeners();
-    return postKey;
+  PostService get postService {
+    _postService ??= PostService(apiClient: getIt());
+    return _postService!;
   }
 
-  Future<String?> uploadFile(File file) async {
+  Future<String?> createPost(PostModel model, {File? imageFile}) async {
     try {
       isBusy = true;
       notifyListeners();
-      var storageReference = FirebaseStorage.instance
-          .ref()
-          .child("threadsImage")
-          .child(path.basename(DateTime.now().toIso8601String() + file.path));
-      await storageReference.putFile(file);
 
-      var url = await storageReference.getDownloadURL();
-      return url;
+      String? imageUrl;
+      if (imageFile != null) {
+        // Upload image first - this would use UploadService
+        // For now, we skip image upload as it requires UploadService
+      }
+
+      final post = await postService.createPost(
+        content: model.bio ?? '',
+        imageUrl: imageUrl ?? model.imagePath,
+        replyToPostId: model.replyToPostId,
+        replyToUserId: model.replyToUserId != null ? int.tryParse(model.replyToUserId!) : null,
+      );
+
+      // Convert API Post to PostModel
+      final newPost = PostModel(
+        key: post.id,
+        postId: post.id,
+        bio: post.content,
+        createdAt: post.createdAt.toIso8601String(),
+        imagePath: post.imageUrl,
+        user: model.user,
+        likesCount: post.likesCount,
+        repliesCount: post.repliesCount,
+        repostsCount: post.repostsCount,
+        isLiked: post.isLiked,
+        isSaved: post.isSaved,
+      );
+
+      _feedlist ??= [];
+      _feedlist!.add(newPost);
+
+      isBusy = false;
+      notifyListeners();
+      return post.id;
     } catch (error) {
-      print(error);
+      isBusy = false;
+      notifyListeners();
       return null;
     }
+  }
+
+  Future<String?> uploadFile(File file) async {
+    // This would use UploadService - placeholder for now
+    return null;
   }
 
   List<PostModel>? getPostListByFollower(UserModel? userModel) {
@@ -78,7 +96,7 @@ class PostState extends AppStates {
       list = feedlist!.where((x) {
         if ((x.user!.userId == userModel.userId ||
             (userModel.followingList != null &&
-                userModel.followingList!.contains(x.user!.userId)))) {
+                userModel.followingList!.contains(x.user!.userIdString)))) {
           return true;
         } else {
           return false;
@@ -116,58 +134,112 @@ class PostState extends AppStates {
     notifyListeners();
   }
 
-  Future<bool> databaseInit() {
+  Future<bool> databaseInit() async {
     try {
-      if (_feedQuery == null) {
-        _feedQuery = kDatabase.child("post");
-        _feedQuery!.onChildAdded.listen(onPostAdded);
-      }
-      return Future.value(true);
+      await getDataFromDatabase();
+      return true;
     } catch (error) {
-      return Future.value(false);
+      return false;
     }
   }
 
-  void getDataFromDatabase() {
+  Future<void> getDataFromDatabase() async {
     try {
       isBusy = true;
       _feedlist = null;
       notifyListeners();
-      kDatabase.child('post').once().then((DatabaseEvent event) {
-        final snapshot = event.snapshot;
-        _feedlist = <PostModel>[];
-        if (snapshot.value != null) {
-          var map = snapshot.value as Map<dynamic, dynamic>?;
-          if (map != null) {
-            map.forEach((key, value) {
-              var model = PostModel.fromJson(value);
-              model.key = key;
-              _feedlist!.add(model);
-            });
-            _feedlist!.sort((x, y) => DateTime.parse(x.createdAt)
-                .compareTo(DateTime.parse(y.createdAt)));
-          }
-        } else {
-          _feedlist = null;
-        }
-        isBusy = false;
-        notifyListeners();
-      });
-    } catch (error) {
+
+      final posts = await postService.getFeed();
+
+      _feedlist = posts.map((apiPost) => PostModel(
+        key: apiPost.id,
+        postId: apiPost.id,
+        bio: apiPost.content,
+        createdAt: apiPost.createdAt.toIso8601String(),
+        imagePath: apiPost.imageUrl,
+        user: apiPost.user != null ? UserModel(
+          userId: apiPost.user!.userId,
+          userName: apiPost.user!.userName,
+          displayName: apiPost.user!.displayName,
+          profilePic: apiPost.user!.profilePic,
+        ) : null,
+        likesCount: apiPost.likesCount,
+        repliesCount: apiPost.repliesCount,
+        repostsCount: apiPost.repostsCount,
+        isLiked: apiPost.isLiked,
+        isSaved: apiPost.isSaved,
+      )).toList();
+
+      // Sort by createdAt descending
+      _feedlist!.sort((x, y) => DateTime.parse(y.createdAt)
+          .compareTo(DateTime.parse(x.createdAt)));
+
       isBusy = false;
+      notifyListeners();
+    } catch (error) {
+      _feedlist = null;
+      isBusy = false;
+      notifyListeners();
     }
   }
 
-  onPostAdded(DatabaseEvent event) {
-    PostModel post = PostModel.fromJson(event.snapshot.value as Map);
-    post.key = event.snapshot.key!;
-
-    post.key = event.snapshot.key!;
-    _feedlist ??= <PostModel>[];
-    if ((_feedlist!.isEmpty || _feedlist!.any((x) => x.key != post.key))) {
-      _feedlist!.add(post);
+  Future<List<PostModel>> getUserPosts(int userId) async {
+    try {
+      final posts = await postService.getUserPosts(userId);
+      return posts.map((apiPost) => PostModel(
+        key: apiPost.id,
+        postId: apiPost.id,
+        bio: apiPost.content,
+        createdAt: apiPost.createdAt.toIso8601String(),
+        imagePath: apiPost.imageUrl,
+        user: apiPost.user != null ? UserModel(
+          userId: apiPost.user!.userId,
+          userName: apiPost.user!.userName,
+          displayName: apiPost.user!.displayName,
+          profilePic: apiPost.user!.profilePic,
+        ) : null,
+        likesCount: apiPost.likesCount,
+        repliesCount: apiPost.repliesCount,
+        repostsCount: apiPost.repostsCount,
+        isLiked: apiPost.isLiked,
+        isSaved: apiPost.isSaved,
+      )).toList();
+    } catch (error) {
+      return [];
     }
-    isBusy = false;
-    notifyListeners();
+  }
+
+  Future<void> likePost(String postId) async {
+    try {
+      await postService.likePost(postId);
+      // Update local state
+      _updatePostLikeStatus(postId, true);
+    } catch (error) {
+      // Handle error
+    }
+  }
+
+  Future<void> unlikePost(String postId) async {
+    try {
+      await postService.unlikePost(postId);
+      // Update local state
+      _updatePostLikeStatus(postId, false);
+    } catch (error) {
+      // Handle error
+    }
+  }
+
+  void _updatePostLikeStatus(String postId, bool isLiked) {
+    if (_feedlist != null) {
+      final index = _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+      if (index != -1) {
+        final post = _feedlist![index];
+        _feedlist![index] = post.copyWith(
+          isLiked: isLiked,
+          likesCount: (post.likesCount ?? 0) + (isLiked ? 1 : -1),
+        );
+        notifyListeners();
+      }
+    }
   }
 }

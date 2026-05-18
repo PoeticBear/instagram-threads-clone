@@ -169,7 +169,7 @@ class _ComposePostReplyPageState extends State<ComposePost> {
         user: commentedUser,
         bio: _textEditingController.text,
         createdAt: DateTime.now().toUtc().toString(),
-        key: myUser.userId!);
+        key: myUser.userId!.toString());
     return reply;
   }
 

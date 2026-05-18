@@ -18,7 +18,7 @@ class UserTilePage extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          ProfilePage.getRoute(profileId: user.userId!),
+          ProfilePage.getRoute(profileId: user.userId!.toString()),
         );
       },
       child: Container(

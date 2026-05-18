@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ComposeBottomIconWidget extends StatefulWidget {
@@ -46,19 +45,9 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
     ImagePicker()
         .pickImage(source: source, imageQuality: 100)
         .then((XFile? file) async {
-      await ImageCropper.platform.cropImage(
-        sourcePath: file!.path,
-        cropStyle: CropStyle.rectangle,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ],
-      ).then((value) => setState(() {
-            widget.onImageIconSelcted(File(value!.path));
-          }));
+      if (file != null) {
+        widget.onImageIconSelcted(File(file.path));
+      }
     });
   }
 
