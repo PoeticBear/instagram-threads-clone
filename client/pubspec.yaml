@@ -15,16 +15,13 @@ dependencies:
   camera: ^0.10.5+2
   cupertino_icons: ^1.0.2
   equatable: ^2.0.5
-  firebase_analytics: ^10.1.6
-  firebase_auth: ^4.3.0
-  firebase_database: ^10.0.16
-  firebase_storage: ^11.0.16
   flutter:
     sdk: flutter
   flutter_native_splash: ^2.2.18
   get_it: ^7.2.0
+  http: ^1.1.0
   iconsax: ^0.0.8
-  image_cropper: ^4.0.1
+  image_cropper: ^10.0.0+1
   image_picker: ^0.8.7
   intl: ^0.18.1
   lottie: ^2.3.2
