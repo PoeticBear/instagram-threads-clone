@@ -162,17 +162,23 @@ class _ProfilePageState extends State<ProfilePage>
                                 },
                                 child: ClipRRect(
                                     borderRadius: BorderRadius.circular(100),
-                                    child: Container(
-                                      height: 60,
-                                      width: 60,
-                                      child: CachedNetworkImage(
-                                        fit: BoxFit.cover,
-                                        height: 100,
-                                        imageUrl: authstate
-                                            .profileUserModel.profilePic
-                                            .toString(),
-                                      ),
-                                    ))),
+                                    child: (authstate.profileUserModel.profilePic ?? '').isEmpty
+                                        ? Container(
+                                            height: 60,
+                                            width: 60,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[800],
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(Icons.person,
+                                                size: 36, color: Colors.grey[600]),
+                                          )
+                                        : CachedNetworkImage(
+                                            fit: BoxFit.cover,
+                                            height: 60,
+                                            imageUrl: authstate
+                                                .profileUserModel.profilePic!,
+                                          ))),
                           ],
                         ),
                         Container(height: 30),

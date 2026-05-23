@@ -1,0 +1,173 @@
+{
+  "description": "API 文档索引 - 按业务模块拆分",
+  "source": "openapi_20260518.json",
+  "modules": {
+    "_misc": {
+      "name": "Misc 杂项",
+      "file": "_misc.json",
+      "endpoints": [
+        "/public-key",
+        "/moderation/callback",
+        "/group/{invite_code}",
+        "/upload/upload/presigned_url"
+      ]
+    },
+    "community": {
+      "name": "Community 社区",
+      "file": "community.json",
+      "endpoints": [
+        "/community/list",
+        "/community/detail/{community_id}",
+        "/community/join",
+        "/community/leave/{community_id}",
+        "/community/members/{community_id}",
+        "/community/posts/{community_id}",
+        "/community/{community_id}/champion/{user_id}"
+      ]
+    },
+    "follow": {
+      "name": "Follow 关注",
+      "file": "follow.json",
+      "endpoints": [
+        "/follow/{user_id}",
+        "/follow/{user_id}/stats",
+        "/follow/following/{user_id}",
+        "/follow/followers/{user_id}",
+        "/follow/mutual/{user_id}",
+        "/follow/recommend"
+      ]
+    },
+    "message": {
+      "name": "Message 消息",
+      "file": "message.json",
+      "endpoints": [
+        "/message/conversations",
+        "/message/conversations/{conversation_id}/messages",
+        "/message/messages",
+        "/message/conversations/{conversation_id}/hide",
+        "/message/conversations/{conversation_id}/verify",
+        "/message/hidden",
+        "/message/recommend-users",
+        "/message/search-users",
+        "/message/settings",
+        "/message/group-chats/with-link",
+        "/message/group-chats",
+        "/message/group-chats/{group_id}",
+        "/message/group-chats/{group_id}/members",
+        "/message/group-chats/{group_id}/members/{user_id}",
+        "/message/group-chats/join-by-link",
+        "/message/group-chats/{group_id}/leave",
+        "/message/group-chats/{group_id}/join-requests",
+        "/message/group-chats/{group_id}/join-requests/{request_id}/approve",
+        "/message/group-chats/{group_id}/messages",
+        "/message/messages/read",
+        "/message/messages/{message_id}/reaction",
+        "/message/conversations/{conversation_id}/pin",
+        "/message/search"
+      ]
+    },
+    "notification": {
+      "name": "Notification 通知",
+      "file": "notification.json",
+      "endpoints": [
+        "/notification/notifications",
+        "/notification/notifications/read",
+        "/notification/notifications/unread-count"
+      ]
+    },
+    "post": {
+      "name": "Post 帖子",
+      "file": "post.json",
+      "endpoints": [
+        "/post/create",
+        "/post/detail/{post_id}",
+        "/post/{post_id}",
+        "/post/{post_id}/edit-history",
+        "/post/like/{post_id}",
+        "/post/repost/{post_id}",
+        "/post/share/{post_id}",
+        "/post/report",
+        "/post/save/{post_id}",
+        "/post/pin/{post_id}",
+        "/post/reply",
+        "/post/reply/list/{post_id}",
+        "/post/reply/like/{reply_id}",
+        "/post/reply/pin/{reply_id}",
+        "/post/reply/hide/{reply_id}",
+        "/post/reply/pending/{post_id}",
+        "/post/reply/pending/{post_id}/approve",
+        "/post/reply/pending/{post_id}/reject",
+        "/post/poll/{post_id}/vote",
+        "/post/poll/{post_id}",
+        "/post/nearby",
+        "/post/feed",
+        "/post/user/{user_id}/posts",
+        "/post/saved",
+        "/post/scheduled",
+        "/post/{post_id}/schedule",
+        "/post/guest-reply-request",
+        "/post/guest-reply-request/{post_id}/approve",
+        "/post/guest-reply-request/{post_id}/reject",
+        "/post/guest-reply-request/{post_id}/pending",
+        "/post/draft",
+        "/post/draft/list",
+        "/post/draft/{draft_id}",
+        "/post/oembed"
+      ]
+    },
+    "search": {
+      "name": "Search 搜索",
+      "file": "search.json",
+      "endpoints": [
+        "/search",
+        "/search/history",
+        "/search/history/{history_id}",
+        "/search/hot-topics",
+        "/search/trending"
+      ]
+    },
+    "topic": {
+      "name": "Topic 话题",
+      "file": "topic.json",
+      "endpoints": [
+        "/topic/trending",
+        "/topic/list",
+        "/topic/detail/{topic_id}",
+        "/topic/follow/{topic_id}",
+        "/topic/mute/{topic_id}",
+        "/topic/muted",
+        "/topic/posts/{topic_id}",
+        "/topic/related/{topic_id}"
+      ]
+    },
+    "user": {
+      "name": "User 用户",
+      "file": "user.json",
+      "endpoints": [
+        "/user/register",
+        "/user/signin",
+        "/user/token/refresh",
+        "/user/logout",
+        "/user/modify_password",
+        "/user/me",
+        "/user/device-token/register",
+        "/user/device-token/deregister",
+        "/user/profile/{user_id}",
+        "/user/profile",
+        "/user/settings",
+        "/user/follow-requests/pending",
+        "/user/follow-requests/{request_id}/approve",
+        "/user/relation-control",
+        "/user/relation-control/{target_user_id}",
+        "/user/save-collections",
+        "/user/save-collections/{collection_id}",
+        "/user/hidden-words",
+        "/user/hidden-words/{word_id}",
+        "/user/links",
+        "/user/links/{link_id}",
+        "/user/relation-control/list",
+        "/user/account-status"
+      ]
+    }
+  }
+}

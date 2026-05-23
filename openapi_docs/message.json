@@ -1,0 +1,3457 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Message 消息 API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/message/conversations": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取会话列表",
+        "description": "获取当前用户的会话列表\n\n- 支持按会话类型筛选（收件箱/陌生消息）\n- 支持按筛选类型筛选（全部/未读/未回复/已验证）\n- 返回会话列表，按最后消息时间倒序排列",
+        "operationId": "get_conversation_list_message_conversations_get",
+        "parameters": [
+          {
+            "name": "conversation_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "会话类型：1=收件箱，2=陌生消息",
+              "title": "Conversation Type"
+            },
+            "description": "会话类型：1=收件箱，2=陌生消息"
+          },
+          {
+            "name": "filter_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "筛选类型：1=全部，2=未读，3=未回复，4=已验证",
+              "title": "Filter Type"
+            },
+            "description": "筛选类型：1=全部，2=未读，3=未回复，4=已验证"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_ConversationResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/conversations/{conversation_id}/messages": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取会话消息列表",
+        "description": "获取指定会话的消息列表\n\n- 返回消息列表，按时间倒序排列\n- 会自动标记已读",
+        "operationId": "get_message_list_message_conversations__conversation_id__messages_get",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "会话ID",
+              "title": "Conversation Id"
+            },
+            "description": "会话ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_MessageResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/messages": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "发送私信",
+        "description": "发送私信\n\n- 支持文字、图片、视频消息\n- 自动创建或更新会话\n- 如果接收者未关注发送者，消息将进入陌生消息",
+        "operationId": "send_message_message_messages_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_SendMessageResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/conversations/{conversation_id}/hide": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "隐藏会话",
+        "description": "隐藏指定会话\n\n- 将会话标记为隐藏\n- 隐藏后不会在列表中显示",
+        "operationId": "hide_conversation_message_conversations__conversation_id__hide_post",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "会话ID",
+              "title": "Conversation Id"
+            },
+            "description": "会话ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/conversations/{conversation_id}/verify": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "确认收件",
+        "description": "确认收件（陌生消息）\n\n- 将陌生消息标记为已验证/已确认收件\n- 确认后消息将从陌生消息转移到收件箱",
+        "operationId": "verify_conversation_message_conversations__conversation_id__verify_post",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "会话ID",
+              "title": "Conversation Id"
+            },
+            "description": "会话ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/hidden": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取隐藏的陌生消息列表",
+        "description": "获取隐藏的陌生消息列表\n\n- 返回被系统或用户隐藏的陌生消息\n- 包含隐藏原因（冒犯性、欺诈性、垃圾信息等）",
+        "operationId": "get_hidden_messages_message_hidden_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_HiddenMessageResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/recommend-users": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取推荐用户列表（发消息页面）",
+        "description": "获取推荐用户列表\n\n- 用于发消息页面的推荐用户展示\n- 推荐规则：共同关注、可能认识、热门用户、粉丝推荐",
+        "operationId": "get_recommend_users_message_recommend_users_get",
+        "parameters": [
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "description": "推荐数量",
+              "default": 8,
+              "title": "Size"
+            },
+            "description": "推荐数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_RecommendUserResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/search-users": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "搜索用户（发消息页面）",
+        "description": "搜索用户\n\n- 用于发消息页面搜索用户\n- 支持按用户名、显示名称搜索",
+        "operationId": "search_users_message_search_users_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50,
+              "description": "搜索关键词",
+              "title": "Q"
+            },
+            "description": "搜索关键词"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "搜索结果数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "搜索结果数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_RecommendUserResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/settings": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "更新消息设置",
+        "description": "更新消息设置\n\n- 陌生消息开关：开启/关闭陌生消息\n- 谁能发消息给你：仅限关注的用户/任何人",
+        "operationId": "update_message_settings_message_settings_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取消息设置",
+        "description": "获取消息设置\n\n- 返回陌生消息开关状态\n- 返回谁能发消息给你设置",
+        "operationId": "get_message_settings_message_settings_get",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_MessageSettingsRequest_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/with-link": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "创建带链接的群聊",
+        "description": "创建带链接的群聊\n\n- 生成邀请链接，任何人可以通过链接加入\n- 可设置是否需要管理员审批",
+        "operationId": "create_group_chat_with_link_message_group_chats_with_link_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGroupChatWithLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_GroupChatResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取群聊列表",
+        "description": "获取当前用户加入的群聊列表\n\n- 返回群聊基本信息\n- 按最后消息时间倒序排列",
+        "operationId": "get_group_chat_list_message_group_chats_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_GroupChatResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/{group_id}": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取群聊详情",
+        "description": "获取指定群聊的详细信息\n\n- 返回群聊信息和邀请链接（如果启用）",
+        "operationId": "get_group_chat_detail_message_group_chats__group_id__get",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_GroupChatResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "更新群聊信息",
+        "description": "更新群聊信息\n\n- 仅群管理员可操作\n- 可修改群名称、设置是否需要审批",
+        "operationId": "update_group_chat_message_group_chats__group_id__patch",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_GroupChatResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/{group_id}/members": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取群成员列表",
+        "description": "获取群成员列表\n\n- 返回群成员信息\n- 按角色（管理员在前）和加入时间排序",
+        "operationId": "get_group_members_message_group_chats__group_id__members_get",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_GroupMemberResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/{group_id}/members/{user_id}": {
+      "delete": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "移除群成员",
+        "description": "移除群成员\n\n- 仅群管理员可操作\n- 不能移除管理员",
+        "operationId": "remove_group_member_message_group_chats__group_id__members__user_id__delete",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "被移除的用户ID",
+              "title": "User Id"
+            },
+            "description": "被移除的用户ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/join-by-link": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "通过链接加入群聊",
+        "description": "通过邀请链接加入群聊\n\n- 如果群聊需要审批，则申请加入\n- 如果群聊不需要审批，则直接加入",
+        "operationId": "join_group_by_link_message_group_chats_join_by_link_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGroupByLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_GroupChatResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/{group_id}/leave": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "退出群聊",
+        "description": "退出指定群聊\n\n- 退出后不再接收群消息\n- 如果是最后一个成员，群聊将被删除",
+        "operationId": "leave_group_chat_message_group_chats__group_id__leave_post",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/{group_id}/join-requests": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取群聊加入申请列表",
+        "description": "获取群聊的加入申请列表\n\n- 仅群管理员可查看\n- 返回待审批的申请列表",
+        "operationId": "get_join_requests_message_group_chats__group_id__join_requests_get",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_GroupJoinRequestResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/{group_id}/join-requests/{request_id}/approve": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "审批群聊加入申请",
+        "description": "审批群聊加入申请\n\n- 仅群管理员可操作\n- action=1: 批准加入\n- action=2: 拒绝加入",
+        "operationId": "approve_join_request_message_group_chats__group_id__join_requests__request_id__approve_post",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "申请ID",
+              "title": "Request Id"
+            },
+            "description": "申请ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveJoinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/group-chats/{group_id}/messages": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "获取群聊消息列表",
+        "description": "获取群聊的消息列表\n\n- 返回群聊历史消息\n- 按时间倒序排列",
+        "operationId": "get_group_message_list_message_group_chats__group_id__messages_get",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_MessageResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "发送群聊消息",
+        "description": "发送群聊消息\n\n- 支持文字、图片、视频消息\n- 发送成功后群成员将收到消息通知",
+        "operationId": "send_group_message_message_group_chats__group_id__messages_post",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "群聊ID",
+              "title": "Group Id"
+            },
+            "description": "群聊ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendGroupMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_MessageResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/messages/read": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "标记消息已读（已读回执）",
+        "description": "标记指定消息为已读\n\n更新消息的递送状态为\"已读\"，并记录已读时间。\n对方会通过 WebSocket 收到 MESSAGE_READ 事件。",
+        "operationId": "mark_messages_read_message_messages_read_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkReadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/messages/{message_id}/reaction": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "添加消息表情反应",
+        "description": "为消息添加表情反应\n\n如果已存在该用户对该消息的反应，则更新反应类型。\n对方会通过 WebSocket 收到 MESSAGE_REACTION 事件。",
+        "operationId": "add_message_reaction_message_messages__message_id__reaction_post",
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "消息ID",
+              "title": "Message Id"
+            },
+            "description": "消息ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddReactionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_MessageReactionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "移除消息表情反应",
+        "description": "移除消息的表情反应",
+        "operationId": "remove_message_reaction_message_messages__message_id__reaction_delete",
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "消息ID",
+              "title": "Message Id"
+            },
+            "description": "消息ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/conversations/{conversation_id}/pin": {
+      "post": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "置顶会话",
+        "description": "置顶指定会话\n\n置顶后会话将排列在会话列表顶部",
+        "operationId": "pin_conversation_message_conversations__conversation_id__pin_post",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "会话ID",
+              "title": "Conversation Id"
+            },
+            "description": "会话ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "取消置顶会话",
+        "description": "取消置顶指定会话",
+        "operationId": "unpin_conversation_message_conversations__conversation_id__pin_delete",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "会话ID",
+              "title": "Conversation Id"
+            },
+            "description": "会话ID"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/search": {
+      "get": {
+        "tags": [
+          "消息"
+        ],
+        "summary": "搜索消息",
+        "description": "搜索用户的消息（私信 + 群聊）\n\n按时间倒序返回匹配关键词的消息列表。",
+        "operationId": "search_messages_message_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "搜索关键词",
+              "title": "Q"
+            },
+            "description": "搜索关键词"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 20,
+              "title": "Size"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_list_MessageSearchItem__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddReactionRequest": {
+        "properties": {
+          "reaction_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Reaction Type",
+            "description": "反应类型"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reaction_type"
+        ],
+        "title": "AddReactionRequest",
+        "description": "添加表情反应请求模型"
+      },
+      "ApproveJoinRequest": {
+        "properties": {
+          "action": {
+            "type": "integer",
+            "title": "Action",
+            "description": "操作：1=批准，2=拒绝"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "ApproveJoinRequest"
+      },
+      "ConversationResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "会话ID",
+            "default": 0
+          },
+          "peer_user_id": {
+            "type": "integer",
+            "title": "Peer User Id",
+            "description": "对方用户ID",
+            "default": 0
+          },
+          "conversation_type": {
+            "type": "integer",
+            "title": "Conversation Type",
+            "description": "会话类型：1=收件箱，2=陌生消息",
+            "default": 1
+          },
+          "last_message_content": {
+            "type": "string",
+            "title": "Last Message Content",
+            "description": "最后一条消息内容",
+            "default": ""
+          },
+          "last_message_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message Time",
+            "description": "最后一条消息时间"
+          },
+          "unread_count": {
+            "type": "integer",
+            "title": "Unread Count",
+            "description": "未读消息数",
+            "default": 0
+          },
+          "is_replied": {
+            "type": "boolean",
+            "title": "Is Replied",
+            "description": "是否已回复",
+            "default": false
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified",
+            "description": "是否已验证/已确认收件",
+            "default": false
+          },
+          "is_hidden": {
+            "type": "boolean",
+            "title": "Is Hidden",
+            "description": "是否隐藏",
+            "default": false
+          },
+          "is_pinned": {
+            "type": "boolean",
+            "title": "Is Pinned",
+            "description": "是否置顶",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ConversationResponse"
+      },
+      "CreateGroupChatWithLinkRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Name",
+            "description": "群聊名称",
+            "default": ""
+          },
+          "member_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Member Ids",
+            "description": "成员用户ID列表",
+            "default": []
+          },
+          "need_approve": {
+            "type": "boolean",
+            "title": "Need Approve",
+            "description": "是否需要审批",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "CreateGroupChatWithLinkRequest"
+      },
+      "GroupChatResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "群聊ID",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "群聊名称",
+            "default": ""
+          },
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "description": "群头像URL",
+            "default": ""
+          },
+          "invite_link": {
+            "type": "string",
+            "title": "Invite Link",
+            "description": "邀请链接",
+            "default": ""
+          },
+          "invite_link_enabled": {
+            "type": "boolean",
+            "title": "Invite Link Enabled",
+            "description": "邀请链接是否启用",
+            "default": true
+          },
+          "need_approve": {
+            "type": "boolean",
+            "title": "Need Approve",
+            "description": "是否需要审批",
+            "default": true
+          },
+          "members_count": {
+            "type": "integer",
+            "title": "Members Count",
+            "description": "成员数量",
+            "default": 0
+          },
+          "last_message_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message Time",
+            "description": "最后消息时间"
+          },
+          "create_time": {
+            "type": "string",
+            "title": "Create Time",
+            "description": "创建时间",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "GroupChatResponse"
+      },
+      "GroupJoinRequestResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "主键ID",
+            "default": 0
+          },
+          "group_id": {
+            "type": "integer",
+            "title": "Group Id",
+            "description": "群聊ID",
+            "default": 0
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "申请用户ID",
+            "default": 0
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "description": "状态：1=待审批，2=已批准，3=已拒绝",
+            "default": 1
+          },
+          "create_time": {
+            "type": "string",
+            "title": "Create Time",
+            "description": "申请时间",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "GroupJoinRequestResponse"
+      },
+      "GroupMemberResponse": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "用户ID",
+            "default": 0
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "用户名",
+            "default": ""
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "显示名称",
+            "default": ""
+          },
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "description": "头像URL",
+            "default": ""
+          },
+          "role": {
+            "type": "integer",
+            "title": "Role",
+            "description": "角色：1=成员，2=管理员",
+            "default": 1
+          },
+          "join_time": {
+            "type": "string",
+            "title": "Join Time",
+            "description": "加入时间",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "GroupMemberResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HiddenMessageResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "主键ID",
+            "default": 0
+          },
+          "sender_id": {
+            "type": "integer",
+            "title": "Sender Id",
+            "description": "发送者用户ID",
+            "default": 0
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "消息内容",
+            "default": ""
+          },
+          "media_type": {
+            "type": "integer",
+            "title": "Media Type",
+            "description": "媒体类型：0=无，1=文字，2=图片，3=视频",
+            "default": 0
+          },
+          "media_url": {
+            "type": "string",
+            "title": "Media Url",
+            "description": "媒体URL",
+            "default": ""
+          },
+          "hide_source": {
+            "type": "integer",
+            "title": "Hide Source",
+            "description": "隐藏来源：1=用户手动隐藏，2=系统自动隐藏",
+            "default": 1
+          },
+          "hide_reason": {
+            "type": "integer",
+            "title": "Hide Reason",
+            "description": "隐藏原因：1=陌生消息，2=可能具有冒犯性，3=欺诈性，4=垃圾信息",
+            "default": 1
+          },
+          "create_time": {
+            "type": "string",
+            "title": "Create Time",
+            "description": "隐藏时间",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "HiddenMessageResponse"
+      },
+      "JoinGroupByLinkRequest": {
+        "properties": {
+          "invite_link": {
+            "type": "string",
+            "title": "Invite Link",
+            "description": "邀请链接"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invite_link"
+        ],
+        "title": "JoinGroupByLinkRequest"
+      },
+      "MarkReadRequest": {
+        "properties": {
+          "message_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Message Ids",
+            "description": "消息ID列表",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "MarkReadRequest",
+        "description": "标记已读请求模型"
+      },
+      "MessageReactionResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "反应ID",
+            "default": 0
+          },
+          "message_id": {
+            "type": "integer",
+            "title": "Message Id",
+            "description": "消息ID",
+            "default": 0
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "用户ID",
+            "default": 0
+          },
+          "reaction_type": {
+            "type": "string",
+            "title": "Reaction Type",
+            "description": "反应类型",
+            "default": ""
+          },
+          "create_time": {
+            "type": "string",
+            "title": "Create Time",
+            "description": "反应时间",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "MessageReactionResponse",
+        "description": "消息表情反应响应模型"
+      },
+      "MessageResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "消息ID",
+            "default": 0
+          },
+          "sender_id": {
+            "type": "integer",
+            "title": "Sender Id",
+            "description": "发送者ID",
+            "default": 0
+          },
+          "receiver_id": {
+            "type": "integer",
+            "title": "Receiver Id",
+            "description": "接收者ID",
+            "default": 0
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "消息内容",
+            "default": ""
+          },
+          "media_type": {
+            "type": "integer",
+            "title": "Media Type",
+            "description": "媒体类型：0=无，1=文字，2=图片，3=视频，4=语音",
+            "default": 0
+          },
+          "media_url": {
+            "type": "string",
+            "title": "Media Url",
+            "description": "媒体URL",
+            "default": ""
+          },
+          "is_read": {
+            "type": "boolean",
+            "title": "Is Read",
+            "description": "是否已读",
+            "default": false
+          },
+          "delivery_status": {
+            "type": "integer",
+            "title": "Delivery Status",
+            "description": "递送状态：1=已发送，2=已送达，3=已读",
+            "default": 1
+          },
+          "read_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read Time",
+            "description": "已读时间"
+          },
+          "quote_message_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote Message Id",
+            "description": "引用的消息ID"
+          },
+          "reactions": {
+            "items": {
+              "$ref": "#/components/schemas/MessageReactionResponse"
+            },
+            "type": "array",
+            "title": "Reactions",
+            "description": "表情反应列表",
+            "default": []
+          },
+          "create_time": {
+            "type": "string",
+            "title": "Create Time",
+            "description": "发送时间",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "MessageResponse"
+      },
+      "MessageSearchItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "消息ID",
+            "default": 0
+          },
+          "sender_id": {
+            "type": "integer",
+            "title": "Sender Id",
+            "description": "发送者用户ID",
+            "default": 0
+          },
+          "sender_name": {
+            "type": "string",
+            "title": "Sender Name",
+            "description": "发送者用户名",
+            "default": ""
+          },
+          "sender_avatar": {
+            "type": "string",
+            "title": "Sender Avatar",
+            "description": "发送者头像URL",
+            "default": ""
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "消息内容",
+            "default": ""
+          },
+          "conversation_id": {
+            "type": "integer",
+            "title": "Conversation Id",
+            "description": "会话ID",
+            "default": 0
+          },
+          "conversation_name": {
+            "type": "string",
+            "title": "Conversation Name",
+            "description": "会话名称",
+            "default": ""
+          },
+          "is_group": {
+            "type": "boolean",
+            "title": "Is Group",
+            "description": "是否群聊消息",
+            "default": false
+          },
+          "create_time": {
+            "type": "string",
+            "title": "Create Time",
+            "description": "创建时间（ISO 8601）",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "MessageSearchItem",
+        "description": "消息搜索结果项"
+      },
+      "MessageSettingsRequest": {
+        "properties": {
+          "message_request_enabled": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Request Enabled",
+            "description": "陌生消息开关：0=关闭，1=开启"
+          },
+          "message_request_allow_type": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Request Allow Type",
+            "description": "谁能发消息给你：1=仅限你关注的用户，2=任何人"
+          }
+        },
+        "type": "object",
+        "title": "MessageSettingsRequest"
+      },
+      "OKResponse": {
+        "properties": {},
+        "type": "object",
+        "title": "OKResponse",
+        "description": "ok响应类"
+      },
+      "RecommendUserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "用户ID",
+            "default": 0
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "用户名",
+            "default": ""
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "显示名称",
+            "default": ""
+          },
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "description": "头像URL",
+            "default": ""
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "推荐原因",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "RecommendUserResponse"
+      },
+      "ResponseModel_GroupChatResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GroupChatResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[GroupChatResponse]"
+      },
+      "ResponseModel_MessageReactionResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MessageReactionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[MessageReactionResponse]"
+      },
+      "ResponseModel_MessageResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MessageResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[MessageResponse]"
+      },
+      "ResponseModel_MessageSettingsRequest_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MessageSettingsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[MessageSettingsRequest]"
+      },
+      "ResponseModel_OKResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OKResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[OKResponse]"
+      },
+      "ResponseModel_SendMessageResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SendMessageResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[SendMessageResponse]"
+      },
+      "ResponseModel_list_ConversationResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[list[ConversationResponse]]"
+      },
+      "ResponseModel_list_GroupChatResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GroupChatResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[list[GroupChatResponse]]"
+      },
+      "ResponseModel_list_GroupJoinRequestResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GroupJoinRequestResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[list[GroupJoinRequestResponse]]"
+      },
+      "ResponseModel_list_GroupMemberResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GroupMemberResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[list[GroupMemberResponse]]"
+      },
+      "ResponseModel_list_HiddenMessageResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HiddenMessageResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[list[HiddenMessageResponse]]"
+      },
+      "ResponseModel_list_MessageResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[list[MessageResponse]]"
+      },
+      "ResponseModel_list_MessageSearchItem__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MessageSearchItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[list[MessageSearchItem]]"
+      },
+      "ResponseModel_list_RecommendUserResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RecommendUserResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[list[RecommendUserResponse]]"
+      },
+      "SendGroupMessageRequest": {
+        "properties": {
+          "group_id": {
+            "type": "integer",
+            "title": "Group Id",
+            "description": "群聊ID"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Content",
+            "description": "消息内容",
+            "default": ""
+          },
+          "media_type": {
+            "type": "integer",
+            "title": "Media Type",
+            "description": "媒体类型：0=无，1=文字，2=图片，3=视频",
+            "default": 0
+          },
+          "media_url": {
+            "type": "string",
+            "title": "Media Url",
+            "description": "媒体URL",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id"
+        ],
+        "title": "SendGroupMessageRequest"
+      },
+      "SendMessageRequest": {
+        "properties": {
+          "receiver_id": {
+            "type": "integer",
+            "title": "Receiver Id",
+            "description": "接收者用户ID"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Content",
+            "description": "消息内容",
+            "default": ""
+          },
+          "media_type": {
+            "type": "integer",
+            "title": "Media Type",
+            "description": "媒体类型：0=无，1=文字，2=图片，3=视频，4=语音",
+            "default": 0
+          },
+          "media_url": {
+            "type": "string",
+            "title": "Media Url",
+            "description": "媒体URL",
+            "default": ""
+          },
+          "quote_message_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote Message Id",
+            "description": "引用的消息ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "receiver_id"
+        ],
+        "title": "SendMessageRequest"
+      },
+      "SendMessageResponse": {
+        "properties": {
+          "conversation_id": {
+            "type": "integer",
+            "title": "Conversation Id",
+            "description": "会话ID",
+            "default": 0
+          },
+          "message_id": {
+            "type": "integer",
+            "title": "Message Id",
+            "description": "消息ID",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SendMessageResponse"
+      },
+      "UpdateGroupChatRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "群聊名称"
+          },
+          "need_approve": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Approve",
+            "description": "是否需要审批"
+          }
+        },
+        "type": "object",
+        "title": "UpdateGroupChatRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

@@ -28,10 +28,20 @@ class UserTilePage extends StatelessWidget {
           children: <Widget>[
             ClipRRect(
               borderRadius: BorderRadius.circular(100),
-              child: CachedNetworkImage(
-                imageUrl: user.profilePic!,
-                height: 40,
-              ),
+              child: (user.profilePic ?? '').isEmpty
+                  ? Container(
+                      height: 40,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.person, size: 24, color: Colors.grey[600]),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: user.profilePic!,
+                      height: 40,
+                    ),
             ),
             const SizedBox(width: 10),
             Expanded(

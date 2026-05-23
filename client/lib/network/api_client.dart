@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
@@ -86,6 +87,17 @@ class ApiClient {
         uri = uri.replace(queryParameters: queryParameters);
       }
 
+      // ── Request log ──
+      final stopwatch = Stopwatch()..start();
+      developer.log('');
+      developer.log('┌── HTTP Request ─────────────────────────────────');
+      developer.log('│ $method ${uri.toString()}');
+      if (body != null) {
+        developer.log('│ Body: ${_encodeBody(body)}');
+      }
+      developer.log('│ Headers: $_headers');
+      developer.log('└─────────────────────────────────────────────────');
+
       http.Response response;
 
       switch (method) {
@@ -117,6 +129,25 @@ class ApiClient {
         default:
           throw ApiException(message: 'Unsupported HTTP method: $method');
       }
+
+      stopwatch.stop();
+
+      // ── Response log ──
+      developer.log('');
+      developer.log('┌── HTTP Response ────────────────────────────────');
+      developer.log('│ $method ${uri.toString()}');
+      developer.log('│ Status: ${response.statusCode}  (${stopwatch.elapsedMilliseconds}ms)');
+      try {
+        final decoded = jsonDecode(response.body);
+        final pretty = const JsonEncoder.withIndent('  ').convert(decoded);
+        for (final line in pretty.split('\n')) {
+          developer.log('│ $line');
+        }
+      } catch (_) {
+        developer.log('│ Body: ${response.body}');
+      }
+      developer.log('└─────────────────────────────────────────────────');
+      developer.log('');
 
       return _handleResponse(response);
     } on SocketException {

@@ -7,6 +7,7 @@ import 'package:threads/helper/utility.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/network/api_exception.dart';
 import 'package:threads/services/auth_service.dart';
+import 'package:threads/services/upload_service.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/common/locator.dart';
@@ -20,6 +21,7 @@ class AuthState extends AppStates {
 
   AuthService? _authService;
   UserService? _userService;
+  UploadService? _uploadService;
 
   UserModel? get userModel => _userModel;
   UserModel? get profileUserModel => _userModel;
@@ -37,8 +39,22 @@ class AuthState extends AppStates {
     return _userService!;
   }
 
+  UploadService get uploadService {
+    _uploadService ??= UploadService(apiClient: getIt());
+    return _uploadService!;
+  }
+
   Future<void> initAuthService() async {
     await authService.init();
+    debugPrint('initAuthService - isLoggedIn: ${authService.isLoggedIn}');
+    // Load cached user profile if available
+    _userModel = getIt<SharedPreferenceHelper>().getUserProfile();
+    debugPrint('initAuthService - loaded cached _userModel: ${_userModel?.displayName}');
+    if (_userModel != null) {
+      userId = _userModel!.userId?.toString() ?? '';
+      authStatus = AuthStatus.LOGGED_IN;
+      debugPrint('initAuthService - set LOGGED_IN from cache');
+    }
   }
 
   void logoutCallback() async {
@@ -97,6 +113,7 @@ class AuthState extends AppStates {
       final response = await authService.register(
         username: userModel.userName ?? userModel.email ?? '',
         password: password,
+        confirmPassword: password,
         displayName: userModel.displayName ?? '',
         bio: userModel.bio,
       );
@@ -110,6 +127,42 @@ class AuthState extends AppStates {
 
       // Save to local storage
       getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
+
+      return userId;
+    } on ApiException catch (error) {
+      Utility.customSnackBar(scaffoldKey, error.message, context);
+      return null;
+    } catch (error) {
+      Utility.customSnackBar(scaffoldKey, error.toString(), context);
+      return null;
+    } finally {
+      isBusy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Simple registration with username and password only
+  Future<String?> register(
+    String username,
+    String password,
+    BuildContext context, {
+    required GlobalKey<ScaffoldState> scaffoldKey,
+  }) async {
+    try {
+      isBusy = true;
+      notifyListeners();
+
+      final response = await authService.register(
+        username: username,
+        password: password,
+        confirmPassword: password,
+      );
+
+      userId = response.userId?.toString() ?? '';
+      authStatus = AuthStatus.LOGGED_IN;
+
+      // Load user profile after registration
+      await getProfileUser();
 
       return userId;
     } on ApiException catch (error) {
@@ -146,6 +199,7 @@ class AuthState extends AppStates {
         displayName: userInfo.displayName,
         bio: userInfo.bio,
         profilePic: userInfo.profilePic,
+        link: userInfo.link,
         isPrivate: userInfo.isPrivate,
         followersCount: userInfo.followersCount,
         followingCount: userInfo.followingCount,
@@ -158,8 +212,28 @@ class AuthState extends AppStates {
       notifyListeners();
       return null;
     } catch (error) {
+      // Access token 可能过期，尝试用 refresh token 刷新
+      try {
+        await authService.refreshToken();
+        final userInfo = await authService.getCurrentUser();
+        userId = userInfo.userId.toString();
+        _userModel = UserModel(
+          userId: userInfo.userId,
+          userName: userInfo.username,
+          displayName: userInfo.displayName,
+          bio: userInfo.bio,
+          profilePic: userInfo.profilePic,
+          link: userInfo.link,
+          isPrivate: userInfo.isPrivate,
+          followersCount: userInfo.followersCount,
+          followingCount: userInfo.followingCount,
+        );
+        getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
+        authStatus = AuthStatus.LOGGED_IN;
+      } catch (_) {
+        authStatus = AuthStatus.NOT_LOGGED_IN;
+      }
       isBusy = false;
-      authStatus = AuthStatus.NOT_LOGGED_IN;
       notifyListeners();
       return null;
     }
@@ -173,30 +247,31 @@ class AuthState extends AppStates {
       isBusy = true;
       notifyListeners();
 
+      String? avatarUrl;
       if (image != null) {
-        // Upload image first - this would use UploadService
-        // For now, we skip image upload as it requires UploadService
+        avatarUrl = await uploadService.uploadImage(image);
       }
 
       if (userModel != null) {
         final updatedInfo = await userService.updateProfile(
           displayName: userModel.displayName,
           bio: userModel.bio,
-          link: userModel.link,
-          profilePic: userModel.profilePic,
+          websiteUrl: userModel.link,
+          avatarUrl: avatarUrl ?? userModel.profilePic,
         );
 
         _userModel = userModel.copyWith(
           displayName: updatedInfo.displayName,
           bio: updatedInfo.bio,
           profilePic: updatedInfo.profilePic,
+          link: updatedInfo.link,
         );
       }
 
       getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
-      isBusy = false;
-      notifyListeners();
     } catch (error) {
+      rethrow;
+    } finally {
       isBusy = false;
       notifyListeners();
     }
@@ -231,17 +306,25 @@ class AuthState extends AppStates {
 
       final userInfo = await authService.getCurrentUser();
       userId = userInfo.userId.toString();
+      debugPrint('getProfileUser - got userId: $userId');
+
+      // GET /user/me 只返回 id/username/avatar，需要再调完整资料接口
+      final fullProfile = await userService.getUserProfile(userInfo.userId);
+      debugPrint('getProfileUser - fullProfile: username=${fullProfile.username}, displayName=${fullProfile.displayName}, bio=${fullProfile.bio}, link=${fullProfile.link}');
 
       _userModel = UserModel(
-        userId: userInfo.userId,
-        userName: userInfo.username,
-        displayName: userInfo.displayName,
-        bio: userInfo.bio,
-        profilePic: userInfo.profilePic,
-        isPrivate: userInfo.isPrivate,
-        followersCount: userInfo.followersCount,
-        followingCount: userInfo.followingCount,
+        userId: fullProfile.userId,
+        userName: fullProfile.username,
+        displayName: fullProfile.displayName,
+        bio: fullProfile.bio,
+        profilePic: fullProfile.profilePic,
+        link: fullProfile.link,
+        isPrivate: fullProfile.isPrivate,
+        followersCount: fullProfile.followersCount,
+        followingCount: fullProfile.followingCount,
       );
+
+      debugPrint('getProfileUser - _userModel: displayName=${_userModel?.displayName}');
 
       getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
 
@@ -250,6 +333,7 @@ class AuthState extends AppStates {
     } catch (error) {
       isBusy = false;
       notifyListeners();
+      debugPrint('getProfileUser error: $error');
     }
   }
 

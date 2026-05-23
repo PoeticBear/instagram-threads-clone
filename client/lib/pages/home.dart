@@ -47,14 +47,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void initPosts() {
     var state = Provider.of<PostState>(context, listen: false);
-    state.databaseInit();
     state.getDataFromDatabase();
   }
 
   Widget tabPage(int index) {
     if (index == 0) return FeedPage();
     if (index == 1) return SearchPage();
-    if (index == 2) return ComposePost();
+    if (index == 2) return ComposePost(
+      onPostSuccess: () {
+        setState(() {
+          tab = 0;
+        });
+      },
+    );
     if (index == 3) return NotificationPage();
     if (index == 4) return MyProfilePage();
     return FeedPage();

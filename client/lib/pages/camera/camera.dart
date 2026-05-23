@@ -11,7 +11,6 @@ import 'package:threads/model/user.module.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/services/upload_service.dart';
 import 'package:threads/common/locator.dart';
-import 'package:path/path.dart' as Path;
 import '../../main.dart';
 
 class CameraPage extends StatefulWidget {
@@ -76,18 +75,7 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
   }
 
   Future<String> uploadImageToStorage(File file) async {
-    String fileName = Path.basename(file.path);
-    // Use UploadService with presigned URL pattern
-    final presignedResponse = await _uploadService.getPresignedUrl(
-      filename: fileName,
-      folder: 'images',
-    );
-    await _uploadService.uploadToPresignedUrl(
-      uploadUrl: presignedResponse.uploadUrl,
-      file: file,
-      contentType: 'image/*',
-    );
-    return presignedResponse.url;
+    return await _uploadService.uploadImage(file);
   }
 
   Future<void> addPostToDatabase(PostModel post) async {

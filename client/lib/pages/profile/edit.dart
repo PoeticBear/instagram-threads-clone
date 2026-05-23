@@ -23,14 +23,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   void initState() {
-    _displayName = TextEditingController();
-    _bio = TextEditingController();
-    _link = TextEditingController();
-    AuthState state = Provider.of<AuthState>(context, listen: false);
-    _displayName.text = state.userModel?.displayName ?? '';
-    _bio.text = state.userModel?.bio ?? '';
-    _link.text = state.userModel?.link ?? '';
     super.initState();
+    final state = Provider.of<AuthState>(context, listen: false);
+    // Debug: check if userModel is loaded
+    debugPrint('EditProfilePage initState - userModel: ${state.userModel?.displayName}');
+    _displayName = TextEditingController(text: state.userModel?.displayName ?? '');
+    _bio = TextEditingController(text: state.userModel?.bio ?? '');
+    _link = TextEditingController(text: state.userModel?.link ?? '');
+    debugPrint('TextFields initialized with: displayName="${_displayName.text}", bio="${_bio.text}", link="${_link.text}"');
   }
 
   @override
@@ -84,13 +84,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       onTap: () {
                                         Navigator.pop(context);
                                       },
-                                      child: Text("Cancel",
+                                      child: Text("取消",
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
                                               fontWeight: FontWeight.w400)))),
                               Text(
-                                "Edit profile   ",
+                                "编辑资料   ",
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -100,7 +100,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 padding: EdgeInsets.only(right: 15),
                                 child: GestureDetector(
                                     onTap: _submitButton,
-                                    child: Text("Done",
+                                    child: Text("完成",
                                         style: TextStyle(
                                             color: Colors.blue,
                                             fontSize: 20,
@@ -119,7 +119,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                    height: 250,
                     width: 330,
                     decoration: BoxDecoration(
                       color: Color.fromARGB(255, 25, 25, 25),
@@ -130,9 +129,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     ),
                     child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
@@ -147,7 +146,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                         height: 10,
                                       ),
                                       Text(
-                                        "Name",
+                                        "名称",
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.w600,
@@ -201,12 +200,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                               ),
                                               child: CupertinoActionSheet(
                                                 title: Text(
-                                                    'Changer de photo de profil'),
+                                                    '更换头像'),
                                                 message: Text(
-                                                    'Ta photo de profil est visible par tous et permetttra à tes amis de t\'ajoyter plus facilement'),
+                                                    '你的头像对所有人可见，方便好友更容易找到你'),
                                                 actions: <Widget>[
                                                   CupertinoActionSheetAction(
-                                                    child: Text('Photothèque'),
+                                                    child: Text('相册'),
                                                     onPressed: () {
                                                       getImage(context,
                                                           ImageSource.gallery,
@@ -221,7 +220,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                                   ),
                                                   CupertinoActionSheetAction(
                                                     child:
-                                                        Text('Appareil photo'),
+                                                        Text('拍照'),
                                                     onPressed: () {
                                                       getImage(context,
                                                           ImageSource.camera,
@@ -235,7 +234,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                                   ),
                                                   CupertinoActionSheetAction(
                                                     child: Text(
-                                                      'Supprimer la photo de profil',
+                                                      '删除头像',
                                                       style: TextStyle(
                                                           color: Colors.red),
                                                     ),
@@ -246,7 +245,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                                 ],
                                                 cancelButton:
                                                     CupertinoActionSheetAction(
-                                                  child: Text('Annuler'),
+                                                  child: Text('取消'),
                                                   onPressed: () {
                                                     Navigator.pop(context);
                                                   },
@@ -255,15 +254,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                             ));
                                   },
                                   child: CircleAvatar(
-                                      backgroundColor: Colors.transparent,
+                                      backgroundColor: Colors.grey[800],
                                       radius: 25,
                                       backgroundImage: (_image != null
                                           ? FileImage(_image!)
-                                          : CachedNetworkImageProvider(
-                                              scale: 2,
-                                              state.profileUserModel!.profilePic
-                                                  .toString(),
-                                            ) as ImageProvider)),
+                                          : (state.profileUserModel?.profilePic ?? '').isEmpty
+                                              ? null
+                                              : CachedNetworkImageProvider(
+                                                  scale: 2,
+                                                  state.profileUserModel!.profilePic!,
+                                                ) as ImageProvider),
+                                      child: (_image == null && (state.profileUserModel?.profilePic ?? '').isEmpty)
+                                          ? Icon(Icons.person, size: 30, color: Colors.grey[600])
+                                          : null),
                                 )
                               ],
                             ),
@@ -271,7 +274,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Bio",
+                                  "简介",
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
@@ -286,7 +289,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   ),
                                   style: TextStyle(
                                       color: Colors.white, fontSize: 18),
-                                  placeholder: 'Write bio',
+                                  placeholder: '填写简介',
                                   placeholderStyle: TextStyle(
                                       color: Colors.grey, fontSize: 16),
                                   padding: EdgeInsets.all(8),
@@ -311,7 +314,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Link",
+                                  "链接",
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
@@ -326,7 +329,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   ),
                                   style: TextStyle(
                                       color: Colors.white, fontSize: 18),
-                                  placeholder: 'Add Link',
+                                  placeholder: '添加链接',
                                   placeholderStyle: TextStyle(
                                       color: Colors.grey, fontSize: 16),
                                   padding: EdgeInsets.all(8),
@@ -342,7 +345,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             )));
   }
 
-  void _submitButton() {
+  Future<void> _submitButton() async {
     if (_displayName.text.length > 100) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         shape: RoundedRectangleBorder(
@@ -353,7 +356,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             alignment: Alignment.center,
             height: 30,
             child: Text(
-              'Max Len: 100 char',
+              '最多100个字符',
               style: TextStyle(
                   fontFamily: "icons.ttf",
                   color: Colors.black,
@@ -373,7 +376,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             alignment: Alignment.center,
             height: 30,
             child: Text(
-              'Max Len: 100 char',
+              '最多100个字符',
               style: TextStyle(
                   fontFamily: "icons.ttf",
                   color: Colors.black,
@@ -385,19 +388,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
     var state = Provider.of<AuthState>(context, listen: false);
     var model = state.userModel!.copyWith(
-      key: state.userModel!.userId.toString(),
-      displayName: state.userModel!.displayName,
-      link: state.userModel!.link,
-      bio: state.userModel!.bio,
-      profilePic: state.userModel!.profilePic,
+      displayName: _displayName.text,
+      bio: _bio.text,
+      link: _link.text,
     );
-    model.bio = _bio.text;
-    model.displayName = _displayName.text;
-    model.link = _link.text;
-    state.updateUserProfile(
-      model,
-      image: _image,
-    );
-    Navigator.pop(context);
+    try {
+      await state.updateUserProfile(model, image: _image);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('更新失败，请重试'),
+        ));
+      }
+    }
   }
 }

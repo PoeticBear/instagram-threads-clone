@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../network/api_client.dart';
 import '../network/api_config.dart';
@@ -66,7 +67,8 @@ class AuthService {
   Future<RegisterResponse> register({
     required String username,
     required String password,
-    required String displayName,
+    required String confirmPassword,
+    String? displayName,
     String? bio,
     String? deviceOs,
     String? deviceName,
@@ -77,7 +79,8 @@ class AuthService {
         body: {
           'username': username,
           'password': password,
-          'display_name': displayName,
+          'confirm_password': confirmPassword,
+          if (displayName != null) 'display_name': displayName,
           if (bio != null) 'bio': bio,
         },
         queryParameters: {
@@ -114,6 +117,7 @@ class AuthService {
   Future<UserInfo> getCurrentUser() async {
     try {
       final response = await _apiClient.get('user/me');
+      debugPrint('auth_service.getCurrentUser raw response: $response');
       return UserInfo.fromJson(response['data']);
     } on ApiException {
       rethrow;
@@ -247,14 +251,20 @@ class UserInfo {
   });
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
+    // Handle is_private being returned as int (0/1) instead of bool
+    final isPrivateValue = json['is_private'] ?? json['isPrivate'] ?? false;
+    final isPrivate = isPrivateValue is bool
+        ? isPrivateValue
+        : (isPrivateValue is int ? isPrivateValue != 0 : false);
+
     return UserInfo(
       userId: json['user_id'] ?? json['id'] ?? 0,
       username: json['username'] ?? '',
       displayName: json['display_name'] ?? json['displayName'] ?? '',
       bio: json['bio'],
-      profilePic: json['profile_pic'] ?? json['profilePic'],
-      link: json['link'],
-      isPrivate: json['is_private'] ?? json['isPrivate'] ?? false,
+      profilePic: json['avatar_url'] ?? json['profile_pic'] ?? json['profilePic'],
+      link: json['website_url'] ?? json['link'],
+      isPrivate: isPrivate,
       followersCount: json['followers_count'] ?? json['followersCount'] ?? 0,
       followingCount: json['following_count'] ?? json['followingCount'] ?? 0,
     );

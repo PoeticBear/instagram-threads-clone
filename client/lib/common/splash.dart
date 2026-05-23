@@ -25,10 +25,13 @@ class _SplashPageState extends State<SplashPage> {
 
   void timer() async {
     if (isAppUpdated) {
-      Future.delayed(const Duration(seconds: 1)).then((_) {
-        var state = Provider.of<AuthState>(context, listen: false);
-        state.getCurrentUser();
-      });
+      var state = Provider.of<AuthState>(context, listen: false);
+      await state.initAuthService();
+      debugPrint('timer - after initAuthService, userModel: ${state.userModel?.displayName}');
+      // getCurrentUser only returns basic info (no bio/link)
+      // Use getProfileUser to get full profile including bio and link
+      await state.getProfileUser();
+      debugPrint('timer - after getProfileUser, userModel: ${state.userModel?.displayName}');
     }
   }
 

@@ -30,12 +30,22 @@ class SharedPreferenceHelper {
   }
 
   Future<void> clearPreferenceValues() async {
-    (await SharedPreferences.getInstance()).clear();
+    await _prefs!.clear();
   }
 
   Future<bool> saveUserProfile(UserModel user) async {
-    return (await SharedPreferences.getInstance()).setString(
+    return _prefs!.setString(
         UserPreferenceKey.UserProfile.toString(), json.encode(user.toJson()));
+  }
+
+  UserModel? getUserProfile() {
+    final jsonStr = _prefs?.getString(UserPreferenceKey.UserProfile.toString());
+    if (jsonStr == null) return null;
+    try {
+      return UserModel.fromJson(json.decode(jsonStr));
+    } catch (_) {
+      return null;
+    }
   }
 }
 

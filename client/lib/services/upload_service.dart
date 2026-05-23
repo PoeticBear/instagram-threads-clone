@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import '../network/api_client.dart';
 import '../network/api_exception.dart';
@@ -7,58 +8,79 @@ class UploadService {
 
   UploadService({required ApiClient apiClient}) : _apiClient = apiClient;
 
-  Future<String> uploadImage(File file, {
-    String? folder,
-    void Function(int, int)? onProgress,
-  }) async {
+  /// 一站式上传：获取预签名 URL → PUT 文件 → 返回 COS 访问地址
+  Future<String> uploadImage(File file) async {
     try {
-      // Get presigned URL
+      final contentType = _inferContentType(file.path);
+      final fileSize = await file.length();
+      final filename = file.path.split('/').last;
+
+      print('📤 uploadImage 开始: filename=$filename contentType=$contentType fileSize=$fileSize');
+
+      // 1) 获取预签名 URL
       final presignedResponse = await _apiClient.post(
         'upload/upload/presigned_url',
         body: {
-          'filename': file.path.split('/').last,
-          if (folder != null) 'folder': folder,
+          'filename': filename,
+          'content_type': contentType,
+          'file_size': fileSize,
         },
       );
 
-      final presignedUrl = presignedResponse['data']['presigned_url'];
-      final uploadUrl = presignedResponse['data']['upload_url'];
+      print('📤 预签名URL完整响应: $presignedResponse');
 
-      // Upload to presigned URL
+      // 响应可能是 {data: {...}} 或直接 {...}
+      final data = presignedResponse['data'] ?? presignedResponse;
+      print('📤 预签名URL data对象: $data');
+
+      final uploadUrl = (data['upload_url'] ?? '') as String;
+      final cosUrl = (data['cos_url'] ?? '') as String;
+
+      print('📤 解析结果: uploadUrl=$uploadUrl cosUrl=$cosUrl');
+
+      if (uploadUrl.isEmpty) {
+        throw ApiException(message: '预签名URL为空: $data');
+      }
+
+      print('📤 开始PUT上传到预签名URL...');
+
+      // 2) PUT 文件到预签名 URL
       final fileBytes = await file.readAsBytes();
       final request = await HttpClient().putUrl(Uri.parse(uploadUrl));
-
-      // Set headers
-      request.headers.set('Content-Type', 'image/*');
+      request.headers.set('Content-Type', contentType);
       request.add(fileBytes);
 
       final httpResponse = await request.close();
 
+      print('📤 PUT上传完成: statusCode=${httpResponse.statusCode}');
+
       if (httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
-        // Return the final URL where the file is accessible
-        return presignedResponse['data']['url'] ?? presignedUrl;
+        print('✅ uploadImage 成功: cosUrl=$cosUrl');
+        return cosUrl;
       } else {
         throw ApiException(message: '上传失败: ${httpResponse.statusCode}');
       }
     } on ApiException {
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      developer.log('❌ uploadImage 失败: $e\n$stackTrace');
       throw ApiException(message: '上传图片失败: $e');
     }
   }
 
+  /// 分步上传：步骤1 — 获取预签名 URL
   Future<PresignedUrlResponse> getPresignedUrl({
     required String filename,
-    String? folder,
-    String? contentType,
+    required String contentType,
+    required int fileSize,
   }) async {
     try {
       final response = await _apiClient.post(
         'upload/upload/presigned_url',
         body: {
           'filename': filename,
-          if (folder != null) 'folder': folder,
-          if (contentType != null) 'content_type': contentType,
+          'content_type': contentType,
+          'file_size': fileSize,
         },
       );
       return PresignedUrlResponse.fromJson(response['data']);
@@ -67,11 +89,11 @@ class UploadService {
     }
   }
 
+  /// 分步上传：步骤2 — PUT 文件到预签名 URL
   Future<String> uploadToPresignedUrl({
     required String uploadUrl,
     required File file,
     required String contentType,
-    void Function(int, int)? onProgress,
   }) async {
     try {
       final request = await HttpClient().putUrl(Uri.parse(uploadUrl));
@@ -83,7 +105,7 @@ class UploadService {
       final httpResponse = await request.close();
 
       if (httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
-        return uploadUrl.split('?').first; // Remove query params
+        return uploadUrl.split('?').first;
       } else {
         throw ApiException(message: '上传失败: ${httpResponse.statusCode}');
       }
@@ -91,27 +113,40 @@ class UploadService {
       throw ApiException(message: '上传到预签名URL失败: $e');
     }
   }
+
+  /// 根据文件扩展名推断 MIME 类型
+  String _inferContentType(String path) {
+    final ext = path.split('.').last.toLowerCase();
+    const mimeMap = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'heic': 'image/heic',
+      'mp4': 'video/mp4',
+      'mov': 'video/quicktime',
+    };
+    return mimeMap[ext] ?? 'application/octet-stream';
+  }
 }
 
 class PresignedUrlResponse {
-  final String presignedUrl;
   final String uploadUrl;
-  final String url;
-  final String objectKey;
+  final String cosUrl;
+  final int expiresIn;
 
   PresignedUrlResponse({
-    required this.presignedUrl,
     required this.uploadUrl,
-    required this.url,
-    required this.objectKey,
+    required this.cosUrl,
+    required this.expiresIn,
   });
 
   factory PresignedUrlResponse.fromJson(Map<String, dynamic> json) {
     return PresignedUrlResponse(
-      presignedUrl: json['presigned_url'] ?? '',
-      uploadUrl: json['upload_url'] ?? json['presigned_url'] ?? '',
-      url: json['url'] ?? json['presigned_url'] ?? '',
-      objectKey: json['object_key'] ?? json['key'] ?? '',
+      uploadUrl: json['upload_url'] ?? '',
+      cosUrl: json['cos_url'] ?? '',
+      expiresIn: json['expires_in'] ?? 600,
     );
   }
 }

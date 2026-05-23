@@ -76,7 +76,7 @@ class UserModel extends Equatable {
     return {
       'key': key,
       'userId': userId?.toString(),
-      'username': userName,  // API uses username
+      'username': userName,
       'bio': bio,
       'is_private': isPrivate,
       'link': link,
@@ -87,6 +87,8 @@ class UserModel extends Equatable {
       'fcm_token': fcmToken,
       'follower_list': followersList,
       'following_list': followingList,
+      'followers_count': followersCount,
+      'following_count': followingCount,
     };
   }
 

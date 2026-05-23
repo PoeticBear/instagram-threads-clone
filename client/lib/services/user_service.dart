@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../network/api_client.dart';
 import '../network/api_exception.dart';
 import 'auth_service.dart';
@@ -10,6 +11,7 @@ class UserService {
   Future<UserInfo> getUserProfile(int userId) async {
     try {
       final response = await _apiClient.get('user/profile/$userId');
+      debugPrint('user_service.getUserProfile raw response: $response');
       return UserInfo.fromJson(response['data']);
     } on ApiException {
       rethrow;
@@ -21,15 +23,15 @@ class UserService {
   Future<UserInfo> updateProfile({
     String? displayName,
     String? bio,
-    String? link,
-    String? profilePic,
+    String? websiteUrl,
+    String? avatarUrl,
   }) async {
     try {
       final body = <String, dynamic>{};
       if (displayName != null) body['display_name'] = displayName;
       if (bio != null) body['bio'] = bio;
-      if (link != null) body['link'] = link;
-      if (profilePic != null) body['profile_pic'] = profilePic;
+      if (websiteUrl != null) body['website_url'] = websiteUrl;
+      if (avatarUrl != null) body['avatar_url'] = avatarUrl;
 
       final response = await _apiClient.put('user/profile', body: body);
       return UserInfo.fromJson(response['data']);

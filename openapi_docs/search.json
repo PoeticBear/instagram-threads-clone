@@ -1,0 +1,780 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Search 搜索 API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/search": {
+      "get": {
+        "tags": [
+          "搜索"
+        ],
+        "summary": "搜索",
+        "description": "搜索用户、话题、帖子",
+        "operationId": "search_search_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "搜索关键词",
+              "title": "Keyword"
+            },
+            "description": "搜索关键词"
+          },
+          {
+            "name": "search_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "搜索类型：1=综合，2=用户，3=话题，4=帖子",
+              "default": 1,
+              "title": "Search Type"
+            },
+            "description": "搜索类型：1=综合，2=用户，3=话题，4=帖子"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "排序：top=最相关，recent=近期",
+              "default": "top",
+              "title": "Sort"
+            },
+            "description": "排序：top=最相关，recent=近期"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "每页数量",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_SearchResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/history": {
+      "get": {
+        "tags": [
+          "搜索"
+        ],
+        "summary": "获取搜索历史",
+        "description": "获取用户的搜索历史",
+        "operationId": "get_search_history_search_history_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "返回数量",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "返回数量"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel_SearchHistoryResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "搜索"
+        ],
+        "summary": "清空搜索历史",
+        "description": "清空用户所有搜索历史",
+        "operationId": "clear_search_history_search_history_delete",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/history/{history_id}": {
+      "delete": {
+        "tags": [
+          "搜索"
+        ],
+        "summary": "删除搜索历史",
+        "description": "删除单条搜索历史",
+        "operationId": "delete_search_history_search_history__history_id__delete",
+        "parameters": [
+          {
+            "name": "history_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "History Id"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "登录token",
+              "default": "",
+              "title": "Authorization"
+            },
+            "description": "登录token"
+          },
+          {
+            "name": "device-os",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "device_os",
+              "default": "",
+              "title": "Device-Os"
+            },
+            "description": "device_os"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/hot-topics": {
+      "get": {
+        "tags": [
+          "搜索"
+        ],
+        "summary": "获取热门话题",
+        "description": "获取热门话题列表",
+        "operationId": "get_hot_topics_search_hot_topics_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "返回数量",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "返回数量"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/trending": {
+      "get": {
+        "tags": [
+          "搜索"
+        ],
+        "summary": "获取热门帖子",
+        "description": "获取热门帖子（Trending Now）",
+        "operationId": "get_trending_posts_search_trending_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "返回数量",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "返回数量"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ResponseModel": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel"
+      },
+      "ResponseModel_SearchHistoryResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchHistoryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[SearchHistoryResponse]"
+      },
+      "ResponseModel_SearchResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "msg"
+        ],
+        "title": "ResponseModel[SearchResult]"
+      },
+      "SearchHistoryItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "主键ID",
+            "default": 0
+          },
+          "keyword": {
+            "type": "string",
+            "title": "Keyword",
+            "description": "搜索关键词",
+            "default": ""
+          },
+          "search_type": {
+            "type": "integer",
+            "title": "Search Type",
+            "description": "搜索类型：1=综合，2=用户，3=话题，4=帖子",
+            "default": 1
+          },
+          "result_count": {
+            "type": "integer",
+            "title": "Result Count",
+            "description": "搜索结果数",
+            "default": 0
+          },
+          "create_time": {
+            "type": "string",
+            "title": "Create Time",
+            "description": "搜索时间",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "SearchHistoryItem",
+        "description": "搜索历史项"
+      },
+      "SearchHistoryResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHistoryItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "搜索历史列表"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "总数",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SearchHistoryResponse",
+        "description": "搜索历史响应"
+      },
+      "SearchPostItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "帖子ID",
+            "default": 0
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "发布用户ID",
+            "default": 0
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "用户名",
+            "default": ""
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "显示名称",
+            "default": ""
+          },
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "description": "头像URL",
+            "default": ""
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "帖子内容",
+            "default": ""
+          },
+          "media_count": {
+            "type": "integer",
+            "title": "Media Count",
+            "description": "媒体数量",
+            "default": 0
+          },
+          "likes_count": {
+            "type": "integer",
+            "title": "Likes Count",
+            "description": "点赞数",
+            "default": 0
+          },
+          "replies_count": {
+            "type": "integer",
+            "title": "Replies Count",
+            "description": "回复数",
+            "default": 0
+          },
+          "create_time": {
+            "type": "string",
+            "title": "Create Time",
+            "description": "创建时间",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "SearchPostItem",
+        "description": "搜索帖子项"
+      },
+      "SearchResult": {
+        "properties": {
+          "keyword": {
+            "type": "string",
+            "title": "Keyword",
+            "description": "搜索关键词",
+            "default": ""
+          },
+          "posts": {
+            "items": {
+              "$ref": "#/components/schemas/SearchPostItem"
+            },
+            "type": "array",
+            "title": "Posts",
+            "description": "帖子列表"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/SearchUserItem"
+            },
+            "type": "array",
+            "title": "Users",
+            "description": "用户列表"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/SearchTopicItem"
+            },
+            "type": "array",
+            "title": "Topics",
+            "description": "话题列表"
+          },
+          "total_posts": {
+            "type": "integer",
+            "title": "Total Posts",
+            "description": "帖子总数",
+            "default": 0
+          },
+          "total_users": {
+            "type": "integer",
+            "title": "Total Users",
+            "description": "用户总数",
+            "default": 0
+          },
+          "total_topics": {
+            "type": "integer",
+            "title": "Total Topics",
+            "description": "话题总数",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SearchResult",
+        "description": "搜索结果响应"
+      },
+      "SearchTopicItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "话题ID",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "话题名称",
+            "default": ""
+          },
+          "posts_count": {
+            "type": "integer",
+            "title": "Posts Count",
+            "description": "帖子数",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SearchTopicItem",
+        "description": "搜索话题项"
+      },
+      "SearchUserItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "用户ID",
+            "default": 0
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "用户名",
+            "default": ""
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "显示名称",
+            "default": ""
+          },
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "description": "头像URL",
+            "default": ""
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified",
+            "description": "是否认证账号",
+            "default": false
+          },
+          "followers_count": {
+            "type": "integer",
+            "title": "Followers Count",
+            "description": "粉丝数",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SearchUserItem",
+        "description": "搜索用户项"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

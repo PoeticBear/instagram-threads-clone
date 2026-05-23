@@ -1,3 +1,4 @@
+import 'package:threads/services/post_service.dart';
 import 'user.module.dart';
 
 class PostModel {
@@ -11,11 +12,13 @@ class PostModel {
   int? likesCount;
   int? repliesCount;
   int? repostsCount;
+  int? sharesCount;
   bool? isLiked;
   bool? isSaved;
   String? postId;  // API uses post_id
   String? replyToPostId;
   String? replyToUserId;
+  PollData? pollData;
 
   PostModel({
     this.key,
@@ -27,11 +30,13 @@ class PostModel {
     this.likesCount,
     this.repliesCount,
     this.repostsCount,
+    this.sharesCount,
     this.isLiked,
     this.isSaved,
     this.postId,
     this.replyToPostId,
     this.replyToUserId,
+    this.pollData,
   });
 
   // Support both Firebase format (camelCase) and API format (snake_case)
@@ -86,11 +91,13 @@ class PostModel {
     int? likesCount,
     int? repliesCount,
     int? repostsCount,
+    int? sharesCount,
     bool? isLiked,
     bool? isSaved,
     String? postId,
     String? replyToPostId,
     String? replyToUserId,
+    PollData? pollData,
   }) {
     return PostModel(
       key: key ?? this.key,
@@ -102,11 +109,13 @@ class PostModel {
       likesCount: likesCount ?? this.likesCount,
       repliesCount: repliesCount ?? this.repliesCount,
       repostsCount: repostsCount ?? this.repostsCount,
+      sharesCount: sharesCount ?? this.sharesCount,
       isLiked: isLiked ?? this.isLiked,
       isSaved: isSaved ?? this.isSaved,
       postId: postId ?? this.postId,
       replyToPostId: replyToPostId ?? this.replyToPostId,
       replyToUserId: replyToUserId ?? this.replyToUserId,
+      pollData: pollData ?? this.pollData,
     );
   }
 

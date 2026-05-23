@@ -1,608 +1,640 @@
-// ignore_for_file: unnecessary_null_comparison, unused_element
 import 'dart:io';
-import 'package:animate_do/animate_do.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
-import 'package:threads/pages/composePost/widget/composeBottomIconWidget.dart';
 import 'package:threads/state/auth.state.dart';
-import 'package:threads/state/compose.state.dart';
 import 'package:threads/state/post.state.dart';
-import 'package:threads/state/search.state.dart';
-import 'package:threads/widget/custom/title_text.dart';
 
 class ComposePost extends StatefulWidget {
-  const ComposePost({
-    Key? key,
-  }) : super(key: key);
+  final VoidCallback? onPostSuccess;
+  const ComposePost({Key? key, this.onPostSuccess}) : super(key: key);
 
   @override
-  _ComposePostReplyPageState createState() => _ComposePostReplyPageState();
+  State<ComposePost> createState() => _ComposePostState();
 }
 
-class _ComposePostReplyPageState extends State<ComposePost> {
-  late PostModel? model;
-  late ScrollController scrollcontroller;
+class _ComposePostState extends State<ComposePost> {
   late TextEditingController _textEditingController;
-  File? _file;
-  @override
-  void dispose() {
-    scrollcontroller.dispose();
-    _textEditingController.dispose();
-    super.dispose();
-  }
+  List<File> _imageFiles = [];
+  bool _showPollEditor = false;
+  List<TextEditingController> _pollControllers = [];
+  int _replyType = 1;
+  bool _isSubmitting = false;
+
+  static const int _maxImages = 10;
+  static const int _maxPollOptions = 4;
+  static const int _minPollOptions = 2;
+  static const int _maxContentLength = 500;
 
   @override
   void initState() {
-    scrollcontroller = ScrollController();
-    _textEditingController = TextEditingController();
     super.initState();
+    _textEditingController = TextEditingController();
+    _initPollControllers();
   }
 
-  void _onImageIconSelcted(File file) {
-    setState(() {
-      _file = file;
-    });
+  void _initPollControllers() {
+    _pollControllers = [
+      TextEditingController(),
+      TextEditingController(),
+    ];
   }
 
-  void _submitButton() async {
-    if (_textEditingController.text.length > 280) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-        backgroundColor: Colors.white,
-        content: Container(
-            alignment: Alignment.center,
-            height: 30,
-            child: Text(
-              "Max Description: 280",
-              style: TextStyle(
-                  fontFamily: "icons.ttf",
-                  color: Colors.black,
-                  fontSize: 25,
-                  fontWeight: FontWeight.w900),
-            )),
-      ));
-      return;
+  @override
+  void dispose() {
+    _textEditingController.dispose();
+    for (final c in _pollControllers) {
+      c.dispose();
     }
-    if (_textEditingController.text.isEmpty) return;
+    super.dispose();
+  }
 
-    var state = Provider.of<PostState>(context, listen: false);
+  // ─── Helpers ──────────────────────────────────────────────
 
-    PostModel postModel = await createPostModel();
-    String? postId;
+  bool get _hasContent {
+    final hasText = _textEditingController.text.trim().isNotEmpty;
+    final hasImages = _imageFiles.isNotEmpty;
+    final hasPoll = _showPollEditor &&
+        _pollControllers.any((c) => c.text.trim().isNotEmpty);
+    return hasText || hasImages || hasPoll;
+  }
 
-    if (_file != null) {
-      await state.uploadFile(_file!).then((imagePath) async {
-        if (imagePath != null) {
-          postModel.imagePath = imagePath;
-          postId = await state.createPost(postModel);
+  bool get _canPost {
+    if (_isSubmitting) return false;
+    return _hasContent;
+  }
+
+  void _addImage(File file) {
+    setState(() {
+      // 添加图片时关闭投票（互斥）
+      if (_showPollEditor) {
+        _showPollEditor = false;
+        for (final c in _pollControllers) {
+          c.clear();
         }
-      });
-    } else {
-      postId = await state.createPost(postModel);
-    }
-    postModel.key = postId;
-    _textEditingController.clear();
-    setState(() {
-      _file = null;
+      }
+      if (_imageFiles.length < _maxImages) {
+        _imageFiles.add(file);
+      }
     });
   }
 
-  Widget _entry(
-    BuildContext context,
-    String title,
-    Icon icon, {
-    required TextEditingController controller,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(top: 10, right: 10, left: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.only(bottom: 5),
-            child: Text(
-              title,
-              style: TextStyle(
-                  fontFamily: "icons.ttf",
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500),
-            ),
-          ),
-          ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                  width: MediaQuery.of(context).size.width / 1.12,
-                  height: 30,
-                  color: Colors.black,
-                  child: TextField(
-                    keyboardAppearance: Brightness.dark,
-                    style: TextStyle(
-                        fontFamily: "icons.ttf",
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400),
-                    controller: controller,
-                    decoration: InputDecoration(
-                      hintStyle: TextStyle(
-                          fontFamily: "icons.ttf",
-                          color: Color.fromARGB(255, 149, 149, 149),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400),
-                      hintText: "Draw, Painting, 3D...",
-                      prefixIcon: icon,
-                      contentPadding: EdgeInsets.only(left: 10),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 0),
-                        borderRadius: BorderRadius.circular(40.0),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 0),
-                        borderRadius: BorderRadius.circular(40.0),
-                      ),
-                    ),
-                  )))
-        ],
-      ),
+  void _removeImage(int index) {
+    setState(() {
+      _imageFiles.removeAt(index);
+    });
+  }
+
+  void _togglePollEditor() {
+    setState(() {
+      _showPollEditor = !_showPollEditor;
+      if (_showPollEditor) {
+        // 开启投票时清空图片（互斥）
+        _imageFiles.clear();
+        _initPollControllers();
+      }
+    });
+  }
+
+  void _addPollOption() {
+    if (_pollControllers.length < _maxPollOptions) {
+      setState(() {
+        _pollControllers.add(TextEditingController());
+      });
+    }
+  }
+
+  void _removePollOption(int index) {
+    if (_pollControllers.length > _minPollOptions) {
+      setState(() {
+        _pollControllers[index].dispose();
+        _pollControllers.removeAt(index);
+      });
+    }
+  }
+
+  List<String>? _getValidPollOptions() {
+    if (!_showPollEditor) return null;
+    final options = _pollControllers
+        .map((c) => c.text.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+    return options.length >= _minPollOptions ? options : null;
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final xFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 100,
+    );
+    if (xFile != null) {
+      _addImage(File(xFile.path));
+    }
+  }
+
+  // ─── Submit ───────────────────────────────────────────────
+
+  Future<PostModel> _createPostModel() async {
+    var authState = Provider.of<AuthState>(context, listen: false);
+    var myUser = authState.userModel!;
+
+    var commentedUser = UserModel(
+      displayName: myUser.displayName ?? myUser.email?.split('@')[0] ?? '',
+      profilePic: myUser.profilePic,
+      userId: myUser.userId,
+      userName: myUser.userName,
+    );
+
+    return PostModel(
+      user: commentedUser,
+      bio: _textEditingController.text,
+      createdAt: DateTime.now().toUtc().toString(),
+      key: myUser.userId?.toString(),
     );
   }
 
-  bool more = false;
+  Future<void> _submit() async {
+    if (!_canPost) return;
 
-  Future<PostModel> createPostModel() async {
-    var authState = Provider.of<AuthState>(context, listen: false);
-    var myUser = authState.userModel;
-    var profilePic = myUser!.profilePic;
+    setState(() => _isSubmitting = true);
+    HapticFeedback.heavyImpact();
 
-    var commentedUser = UserModel(
-        displayName: myUser.displayName ?? myUser.email!.split('@')[0],
-        profilePic: profilePic,
-        userId: myUser.userId,
-        userName: authState.userModel!.userName);
-    PostModel reply = PostModel(
-        user: commentedUser,
-        bio: _textEditingController.text,
-        createdAt: DateTime.now().toUtc().toString(),
-        key: myUser.userId!.toString());
-    return reply;
+    print('🚀 _submit 开始: text="${_textEditingController.text}" images=${_imageFiles.length} poll=$_showPollEditor replyType=$_replyType');
+
+    var state = Provider.of<PostState>(context, listen: false);
+    PostModel postModel = await _createPostModel();
+
+    final pollOptions = _getValidPollOptions();
+
+    print('🚀 _submit 参数: imageFiles=${_imageFiles.length} pollOptions=$pollOptions replyType=${_replyType != 1 ? _replyType : null}');
+
+    final postId = await state.createPost(
+      postModel,
+      imageFiles: _imageFiles.isNotEmpty ? _imageFiles : null,
+      pollOptions: pollOptions,
+      replyType: _replyType != 1 ? _replyType : null,
+    );
+
+    print('🚀 _submit 结果: postId=$postId');
+
+    if (!mounted) return;
+
+    setState(() => _isSubmitting = false);
+
+    if (postId != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('发布成功'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 1),
+        ),
+      );
+      _textEditingController.clear();
+      for (final c in _pollControllers) {
+        c.clear();
+      }
+      setState(() {
+        _imageFiles.clear();
+        _showPollEditor = false;
+        _replyType = 1;
+      });
+      widget.onPostSuccess?.call();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('发布失败，请重试'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  bool select = false;
-  int nums = 0;
+  // ─── Reply Permission Sheet ──────────────────────────────
+
+  void _showReplyTypeSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Color.fromARGB(255, 29, 29, 29),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  '谁可以回复',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Divider(color: Colors.grey[800], height: 1),
+              _replyTypeOption(1, Iconsax.global, '所有人可以回复'),
+              _replyTypeOption(2, Iconsax.user, '仅粉丝可以回复'),
+              _replyTypeOption(3, Iconsax.people, '仅关注的人可以回复'),
+              _replyTypeOption(4, Icons.alternate_email, '仅提及的人可以回复'),
+              SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _replyTypeOption(int value, IconData icon, String label) {
+    final isSelected = _replyType == value;
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? Colors.white : Colors.grey[600], size: 22),
+      title: Text(label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[400],
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          )),
+      trailing: isSelected
+          ? Icon(Icons.check, color: Colors.white, size: 20)
+          : null,
+      onTap: () {
+        setState(() => _replyType = value);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  IconData get _replyTypeIcon {
+    switch (_replyType) {
+      case 2: return Iconsax.user;
+      case 3: return Iconsax.people;
+      case 4: return Icons.alternate_email;
+      default: return Iconsax.global;
+    }
+  }
+
+  // ─── Build ────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final searchState = Provider.of<SearchState>(context, listen: false);
     var authState = Provider.of<AuthState>(context);
+    final charCount = _textEditingController.text.length;
+    final profilePic = authState.userModel?.profilePic ?? '';
+    final displayName = authState.userModel?.displayName ?? '';
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        toolbarHeight: 68,
+        toolbarHeight: 56,
         leading: Container(),
-        flexibleSpace: Padding(
-            padding: EdgeInsets.only(top: 76),
-            child: Container(
-                decoration: BoxDecoration(
-                    color: Color.fromARGB(255, 29, 29, 29),
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(15),
-                        topRight: Radius.circular(15))),
-                height: 50,
-                width: MediaQuery.of(context).size.width,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FadeIn(
-                        duration: Duration(milliseconds: 1000),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Padding(
-                                padding: EdgeInsets.only(left: 15, top: 5),
-                                child: GestureDetector(
-                                    onTap: () {},
-                                    child: Text("Cancel",
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w400)))),
-                            Container(
-                              width: 65,
-                            ),
-                            Text(
-                              "New threads   ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        )),
-                  ],
-                ))),
+        flexibleSpace: SafeArea(
+          child: Container(
+            color: Color.fromARGB(255, 29, 29, 29),
+            height: 56,
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    _textEditingController.clear();
+                    setState(() {
+                      _imageFiles.clear();
+                      _showPollEditor = false;
+                    });
+                    // 切回首页 — ComposePost 在 HomePage 中作为 tab 内容显示
+                    // 通过 pop 或者直接操作 HomePage state
+                  },
+                  child: Text('取消',
+                      style: TextStyle(color: Colors.white, fontSize: 16)),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text('新帖子',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ),
+                SizedBox(width: 48), // balance Cancel width
+              ],
+            ),
+          ),
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
-      body: Container(
-        color: Color.fromARGB(255, 29, 29, 29),
-        height: MediaQuery.of(context).size.height,
-        width: MediaQuery.of(context).size.width,
-        child: Column(
-          children: [
-            Padding(
-                padding: EdgeInsets.all(14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      children: [
-                        ClipRRect(
-                            borderRadius: BorderRadius.circular(100),
-                            child: CachedNetworkImage(
-                              imageUrl:
-                                  authState.userModel!.profilePic.toString(),
-                              height: 50,
-                            )),
-                        Container(
-                          height: 6,
-                        ),
-                        Container(
-                          height: 50,
-                          width: 2,
-                          color: const Color.fromARGB(255, 87, 87, 87),
-                        ),
-                        Container(
-                          height: 10,
-                        ),
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                              color: Colors.white, shape: BoxShape.circle),
-                        )
-                      ],
-                    ),
-                    Container(
-                      width: 15,
-                    ),
-                    Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── User header + text input ──
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left: avatar + thread line
+                      Column(
                         children: [
-                          Text(
-                            authState.userModel!.displayName.toString(),
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600),
-                          ),
+                          _buildAvatar(profilePic, 40),
+                          SizedBox(height: 6),
                           Container(
-                            width: MediaQuery.of(context).size.width - 100,
-                            height: MediaQuery.of(context).size.height / 3,
-                            child: TextField(
-                              maxLength: 500,
-                              keyboardAppearance:
-                                  MediaQuery.of(context).platformBrightness ==
-                                          Brightness.dark
-                                      ? Brightness.dark
-                                      : Brightness.light,
-                              style: TextStyle(color: Colors.white),
+                            width: 2,
+                            height: 30,
+                            color: Color.fromARGB(255, 87, 87, 87),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 12),
+                      // Right: name + text field + char count
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            TextField(
+                              maxLength: _maxContentLength,
+                              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                              keyboardAppearance: Brightness.dark,
+                              style: TextStyle(color: Colors.white, fontSize: 16),
                               controller: _textEditingController,
-                              onChanged: (texts) {
-                                setState(() {
-                                  nums = _textEditingController.text.length;
-                                });
-                                Provider.of<ComposePostState>(context,
-                                        listen: false)
-                                    .onDescriptionChanged(texts, searchState);
-                              },
+                              onChanged: (_) => setState(() {}),
                               maxLines: null,
                               decoration: InputDecoration(
-                                  suffix: Container(
-                                    height: 70,
-                                    width: 50,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        ComposeBottomIconWidget(
-                                          textEditingController:
-                                              _textEditingController,
-                                          onImageIconSelcted:
-                                              _onImageIconSelcted,
-                                        ),
-                                        SizedBox(
-                                          height: 4,
-                                        ),
-                                        GestureDetector(
-                                            onTap: () {
-                                              HapticFeedback.heavyImpact();
-                                              _submitButton();
-                                            },
-                                            child: Text(
-                                              "Post",
-                                              style: TextStyle(
-                                                  color: Colors.blue,
-                                                  fontWeight: FontWeight.w600),
-                                            ))
-                                      ],
-                                    ),
-                                  ),
-                                  border: InputBorder.none,
-                                  hintText: "Start a threads..",
-                                  hintStyle: TextStyle(
-                                      fontSize: 15,
-                                      color: Color.fromARGB(255, 112, 112, 112),
-                                      overflow: TextOverflow.ellipsis)),
+                                border: InputBorder.none,
+                                counterText: '', // 隐藏自带计数器
+                                hintText: '说点什么...',
+                                hintStyle: TextStyle(
+                                  fontSize: 16,
+                                  color: Color.fromARGB(255, 112, 112, 112),
+                                ),
+                              ),
                             ),
-                          ),
-                        ]),
-                  ],
-                )),
-            Container(
-                width: MediaQuery.of(context).size.width / 1,
-                height: MediaQuery.of(context).size.height / 5,
-                alignment: Alignment.center,
-                decoration:
-                    BoxDecoration(borderRadius: BorderRadius.circular(10)),
-                child: _file == null
-                    ? SizedBox.shrink()
-                    : Container(
-                        height: 200,
-                        child: Image.file(
-                          _file!,
-                        ))),
-          ],
-        ),
+                            if (charCount > 0)
+                              Padding(
+                                padding: EdgeInsets.only(top: 4),
+                                child: Text(
+                                  '$charCount / $_maxContentLength',
+                                  style: TextStyle(
+                                    color: charCount > 450 ? Colors.orange : Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // ── Image previews ──
+                  if (_imageFiles.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(left: 52, top: 8),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (int i = 0; i < _imageFiles.length; i++)
+                            _buildImagePreview(_imageFiles[i], i),
+                          if (_imageFiles.length < _maxImages)
+                            _buildAddImageTile(),
+                        ],
+                      ),
+                    ),
+
+                  // ── Poll editor ──
+                  if (_showPollEditor)
+                    Padding(
+                      padding: EdgeInsets.only(left: 52, top: 12),
+                      child: _buildPollEditor(),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Bottom toolbar ──
+          _buildBottomToolbar(),
+        ],
       ),
     );
-
-    //      Scaffold(
-    // extendBodyBehindAppBar: true,
-    // appBar: AppBar(
-    //     centerTitle: true,
-    //     backgroundColor: Colors.transparent,
-    //     flexibleSpace: ClipRRect(
-    //         child: BackdropFilter(
-    //             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-    //             child: Container(
-    //               color: Colors.black.withOpacity(0),
-    //               width: MediaQuery.of(context).size.width / 1,
-    //               height: 200,
-    //             )))),
-    // backgroundColor: Colors.black,
-    // body: GestureDetector(
-    //     onHorizontalDragUpdate: (details) {
-    //       if (details.delta.dx > 0) {
-    //         setState(() {
-    //           Navigator.pop(context);
-    //         });
-    //       }
-    //     },
-    //     child: ListView(
-    //       children: [
-    //         Column(
-    //           mainAxisAlignment: MainAxisAlignment.center,
-    //           children: <Widget>[
-    //             Container(
-    //                 height: 100,
-    //                 alignment: Alignment.center,
-    //                 child: Column(
-    //                   mainAxisAlignment: MainAxisAlignment.center,
-    //                   children: [
-    //                     ComposeBottomIconWidget(
-    //                       textEditingController: _textEditingController,
-    //                       onImageIconSelcted: _onImageIconSelcted,
-    //                     )
-    //                   ],
-    //                 )),
-    //             Padding(
-    //               padding: EdgeInsets.only(
-    //                 left: MediaQuery.of(context).size.width / 5,
-    //                 right: MediaQuery.of(context).size.width / 5,
-    //               ),
-    //               child: Container(
-    //                   width: MediaQuery.of(context).size.width / 1,
-    //                   height: MediaQuery.of(context).size.height / 4,
-    //                   alignment: Alignment.center,
-    //                   decoration: BoxDecoration(
-    //                       borderRadius: BorderRadius.circular(10)),
-    //                   child: _file == null
-    //                       ? SizedBox.shrink()
-    //                       : Container(
-    //                           height: 200,
-    //                           child: Image.file(
-    //                             _file!,
-    //                           ))),
-    //             ),
-    //             Padding(
-    //                 padding: EdgeInsets.all(20),
-    //                 child: Container(
-    //                     padding: EdgeInsets.all(20),
-    //                     decoration: BoxDecoration(
-    //                         border:
-    //                             Border.all(color: Colors.white, width: 1),
-    //                         borderRadius: const BorderRadius.all(
-    //                             Radius.circular(15))),
-    //                     child: Row(
-    //                       mainAxisAlignment: MainAxisAlignment.center,
-    //                       crossAxisAlignment: CrossAxisAlignment.center,
-    //                       children: <Widget>[
-    //                         Column(
-    //                           children: [
-    //                             Padding(
-    //                                 padding: EdgeInsets.all(20),
-    //                                 child: Hero(
-    //                                     tag: 'PP',
-    //                                     child: CachedNetworkImage(
-    //                                         imageUrl: authState
-    //                                             .user!.photoURL
-    //                                             .toString(),
-    //                                         height: 40))),
-    //                             nums >= 100
-    //                                 ? FadeIn(
-    //                                     child: Text(
-    //                                     "${nums.toString()} / 280",
-    //                                     style: TextStyle(
-    //                                         color: nums >= 280
-    //                                             ? Colors.blue
-    //                                             : Colors.white),
-    //                                   ))
-    //                                 : SizedBox.shrink(),
-    //                           ],
-    //                         ),
-    //                         const SizedBox(
-    //                           width: 10,
-    //                         ),
-    //                         Expanded(
-    //                           child: Column(
-    //                               crossAxisAlignment:
-    //                                   CrossAxisAlignment.start,
-    //                               children: <Widget>[
-    //                                 TextField(
-    //                                   maxLength: 280,
-    //                                   keyboardAppearance:
-    //                                       MediaQuery.of(context)
-    //                                                   .platformBrightness ==
-    //                                               Brightness.dark
-    //                                           ? Brightness.dark
-    //                                           : Brightness.light,
-    //                                   style: TextStyle(color: Colors.white),
-    //                                   controller: _textEditingController,
-    //                                   onChanged: (texts) {
-    //                                     setState(() {
-    //                                       nums = _textEditingController
-    //                                           .text.length;
-    //                                     });
-    //                                     Provider.of<ComposePostState>(
-    //                                             context,
-    //                                             listen: false)
-    //                                         .onDescriptionChanged(
-    //                                             texts, searchState);
-    //                                   },
-    //                                   maxLines: null,
-    //                                   decoration: InputDecoration(
-    //                                       border: InputBorder.none,
-    //                                       hintText:
-    //                                           "Info about you're art..",
-    //                                       hintStyle: TextStyle(
-    //                                           fontSize: 18,
-    //                                           color: Colors.white,
-    //                                           overflow:
-    //                                               TextOverflow.ellipsis)),
-    //                                 ),
-    //                               ]),
-    //                         )
-    //                       ],
-    //                     ))),
-    //             RippleButton(
-    //               splashColor: Colors.transparent,
-    //               child: Container(
-    //                   height: 70,
-    //                   width: 200,
-    //                   decoration: BoxDecoration(
-    //                     color: Colors.white,
-    //                     borderRadius: BorderRadius.circular(50),
-    //                   ),
-    //                   child: Center(
-    //                       child: Text(
-    //                     "Upload",
-    //                     style: TextStyle(
-    //                         fontFamily: "icons.ttf",
-    //                         color: Colors.black,
-    //                         fontSize: 35,
-    //                         fontWeight: FontWeight.w900),
-    //                   ))),
-    //               onPressed: () {
-    //                 HapticFeedback.heavyImpact();
-    //                 _submitButton();
-    //               },
-    //             ),
-    //             Container(
-    //               height: 100,
-    //             )
-    //           ],
-    //         ),
-    //       ],
-    //     )));
   }
-}
 
-class _UserList extends StatelessWidget {
-  const _UserList({Key? key, this.list, required this.textEditingController})
-      : super(key: key);
-  final List<UserModel>? list;
-  final TextEditingController textEditingController;
+  // ─── Widget builders ──────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return !Provider.of<ComposePostState>(context).displayUserList ||
-            list == null ||
-            list!.length < 0 ||
-            list!.isEmpty
-        ? const SizedBox.shrink()
-        : Container(
-            padding: const EdgeInsetsDirectional.only(bottom: 50),
-            color: Colors.black,
-            constraints:
-                const BoxConstraints(minHeight: 30, maxHeight: double.infinity),
-            child: ListView.builder(
-              itemCount: list!.length,
-              physics: ClampingScrollPhysics(),
-              itemBuilder: (context, index) {
-                return _UserTile(
-                  user: list![index],
-                  onUserSelected: (user) {
-                    textEditingController.text =
-                        Provider.of<ComposePostState>(context, listen: false)
-                                .getDescription(user.userName!) +
-                            " ";
-                    textEditingController.selection = TextSelection.collapsed(
-                        offset: textEditingController.text.length);
-                    Provider.of<ComposePostState>(context, listen: false)
-                        .onUserSelected();
-                  },
-                );
-              },
+  Widget _buildAvatar(String url, double size) {
+    if (url.isEmpty) {
+      return Container(
+        height: size,
+        width: size,
+        decoration: BoxDecoration(
+          color: Colors.grey[800],
+          shape: BoxShape.circle,
+        ),
+        child: Icon(Icons.person, size: size * 0.6, color: Colors.grey[600]),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(100),
+      child: CachedNetworkImage(imageUrl: url, height: size, width: size, fit: BoxFit.cover),
+    );
+  }
+
+  Widget _buildImagePreview(File file, int index) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(file, width: 80, height: 80, fit: BoxFit.cover),
+        ),
+        Positioned(
+          right: -4,
+          top: -4,
+          child: GestureDetector(
+            onTap: () => _removeImage(index),
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.close, size: 14, color: Colors.white),
             ),
-          );
+          ),
+        ),
+      ],
+    );
   }
-}
 
-class _UserTile extends StatelessWidget {
-  const _UserTile({Key? key, required this.user, required this.onUserSelected})
-      : super(key: key);
-  final UserModel user;
-  final ValueChanged<UserModel> onUserSelected;
+  Widget _buildAddImageTile() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[700]!, width: 1),
+        ),
+        child: Icon(Icons.add, size: 28, color: Colors.grey[500]),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: () {
-        onUserSelected(user);
-      },
-      leading: CachedNetworkImage(imageUrl: user.profilePic!, height: 35),
-      title: Row(
-        children: <Widget>[
-          ConstrainedBox(
-            constraints: BoxConstraints(minWidth: 0, maxWidth: 105),
-            child: TitleText(user.displayName!,
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                overflow: TextOverflow.ellipsis),
+  Widget _buildPollEditor() {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Color.fromARGB(255, 22, 22, 22),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < _pollControllers.length; i++)
+            Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _pollControllers[i],
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: '选项 ${i + 1}',
+                        hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        filled: true,
+                        fillColor: Colors.grey[900],
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[700]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[700]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[500]!),
+                        ),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  if (_pollControllers.length > _minPollOptions)
+                    IconButton(
+                      icon: Icon(Icons.close, size: 18, color: Colors.grey[500]),
+                      onPressed: () => _removePollOption(i),
+                    ),
+                ],
+              ),
+            ),
+          if (_pollControllers.length < _maxPollOptions)
+            GestureDetector(
+              onTap: _addPollOption,
+              child: Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.add, size: 18, color: Colors.grey[500]),
+                    SizedBox(width: 4),
+                    Text('添加选项',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
+          SizedBox(height: 8),
+          Center(
+            child: GestureDetector(
+              onTap: _togglePollEditor,
+              child: Text('移除投票',
+                  style: TextStyle(color: Colors.red[300], fontSize: 13)),
+            ),
           ),
         ],
       ),
-      subtitle: TitleText(user.userName!,
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          overflow: TextOverflow.ellipsis),
+    );
+  }
+
+  Widget _buildBottomToolbar() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Color.fromARGB(255, 29, 29, 29),
+        border: Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Image button
+            IconButton(
+              onPressed: _showPollEditor ? null : _pickImage,
+              icon: Icon(Iconsax.picture_frame,
+                  size: 22,
+                  color: _showPollEditor ? Colors.grey[700] : Colors.white),
+            ),
+            // Poll button
+            IconButton(
+              onPressed: _imageFiles.isNotEmpty ? null : _togglePollEditor,
+              icon: Icon(Iconsax.chart_square,
+                  size: 22,
+                  color: _imageFiles.isNotEmpty ? Colors.grey[700]
+                      : (_showPollEditor ? Colors.blue : Colors.white)),
+            ),
+            // Reply type button
+            IconButton(
+              onPressed: _showReplyTypeSheet,
+              icon: Icon(_replyTypeIcon, size: 22, color: Colors.grey[500]),
+            ),
+            Spacer(),
+            // Post button
+            GestureDetector(
+              onTap: _canPost ? _submit : null,
+              child: _isSubmitting
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.blue,
+                      ),
+                    )
+                  : Text(
+                      '发布',
+                      style: TextStyle(
+                        color: _canPost ? Colors.blue : Colors.grey[700],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

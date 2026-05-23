@@ -1,36 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:threads/auth/signup/register.dart';
 import 'package:threads/pages/home.dart';
 import 'package:threads/state/auth.state.dart';
 
-class NamePage extends StatefulWidget {
-  final VoidCallback? loginCallback;
-  const NamePage({Key? key, this.loginCallback}) : super(key: key);
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({Key? key}) : super(key: key);
 
   @override
-  State<NamePage> createState() => _NamePageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _NamePageState extends State<NamePage> {
+class _RegisterPageState extends State<RegisterPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() async {
+  void _handleRegister() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
-    if (username.isEmpty || password.isEmpty) {
+    if (username.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入用户名和密码')),
+        const SnackBar(content: Text('请填写所有字段')),
+      );
+      return;
+    }
+
+    if (username.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('用户名至少需要 2 个字符')),
+      );
+      return;
+    }
+
+    if (password.length < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('密码至少需要 5 个字符')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('两次输入的密码不一致')),
       );
       return;
     }
@@ -40,26 +64,22 @@ class _NamePageState extends State<NamePage> {
     final authState = Provider.of<AuthState>(context, listen: false);
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
-    final result = await authState.signIn(
+    final result = await authState.register(
       username,
       password,
       context,
       scaffoldKey: scaffoldKey,
     );
 
-    if (!mounted) return;
+    if (mounted) {
+      setState(() => _isLoading = false);
 
-    setState(() => _isLoading = false);
-
-    if (result != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('登录失败，请检查用户名和密码')),
-      );
+      if (result != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      }
     }
   }
 
@@ -67,13 +87,21 @@ class _NamePageState extends State<NamePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
               Image.asset(
                 "assets/threads.png",
                 height: 80,
@@ -81,7 +109,7 @@ class _NamePageState extends State<NamePage> {
               ),
               const SizedBox(height: 48),
               const Text(
-                '登录',
+                '注册',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,
@@ -110,7 +138,7 @@ class _NamePageState extends State<NamePage> {
               TextField(
                 controller: _passwordController,
                 style: const TextStyle(color: Colors.white),
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   hintText: '密码',
                   hintStyle: TextStyle(color: Colors.grey[600]),
@@ -122,13 +150,54 @@ class _NamePageState extends State<NamePage> {
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 16),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.grey[600],
+                    ),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _confirmPasswordController,
+                style: const TextStyle(color: Colors.white),
+                obscureText: _obscureConfirmPassword,
+                decoration: InputDecoration(
+                  hintText: '确认密码',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: const Color(0xff1a1a1a),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 16),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.grey[600],
+                    ),
+                    onPressed: () {
+                      setState(() =>
+                          _obscureConfirmPassword = !_obscureConfirmPassword);
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
+                  onPressed: _isLoading ? null : _handleRegister,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
@@ -139,90 +208,22 @@ class _NamePageState extends State<NamePage> {
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.black)
                       : const Text(
-                          '登录',
+                          '注册',
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 ),
               ),
-              const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey[800])),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      '或',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey[800])),
-                ],
-              ),
-              const SizedBox(height: 32),
-              GestureDetector(
-                child: Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: const Color(0xff0a0a0a),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.grey,
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset("assets/insta.png", height: 28),
-                      const SizedBox(width: 12),
-                      const Text(
-                        "使用 Instagram 账号登录",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
               const SizedBox(height: 24),
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const RegisterPage()),
-                  );
-                },
-                child: Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: const Color(0xff0a0a0a),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.grey,
-                      width: 0.5,
-                    ),
+                onTap: () => Navigator.pop(context),
+                child: Text(
+                  '已有账号？去登录',
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 14,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.person_add_outlined,
-                          color: Colors.grey[400], size: 24),
-                      const SizedBox(width: 12),
-                      Text(
-                        "创建新账号",
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
