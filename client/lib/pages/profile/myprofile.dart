@@ -34,7 +34,7 @@ class _ProfilePageState extends State<MyProfilePage>
       final authState = Provider.of<AuthState>(context, listen: false);
       final postState = Provider.of<PostState>(context, listen: false);
       if (authState.userId != null) {
-        postState.loadUserPosts(authState.userId!);
+        postState.loadUserPosts(int.parse(authState.userId!));
       }
     }
   }

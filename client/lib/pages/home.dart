@@ -7,7 +7,6 @@ import 'package:threads/pages/notification/notification.dart';
 import 'package:threads/pages/search/search.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
-import 'package:threads/state/search.state.dart';
 import 'package:threads/pages/profile/myprofile.dart';
 import 'camera/camera.dart';
 import 'feed/feed.dart';
@@ -24,7 +23,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       initPosts();
-      initSearch();
       initProfile();
     });
     super.initState();
@@ -33,11 +31,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void dispose() {
     super.dispose();
-  }
-
-  void initSearch() {
-    var searchState = Provider.of<SearchState>(context, listen: false);
-    searchState.getDataFromDatabase();
   }
 
   void initProfile() {

@@ -16,7 +16,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize cameras
-  cameras = await availableCameras();
+  try {
+    cameras = await availableCameras();
+  } catch (e) {
+    debugPrint('Failed to initialize cameras: $e');
+  }
 
   // Setup dependencies (async)
   await setupDependencies();

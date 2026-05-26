@@ -68,7 +68,7 @@ class UserTilePage extends StatelessWidget {
                     height: 9,
                   ),
                   Text(
-                    "${user.followersList!.length.toString()} followers",
+                    "${user.followersCount ?? 0} followers",
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,

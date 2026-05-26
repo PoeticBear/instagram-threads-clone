@@ -50,10 +50,12 @@ class AuthState extends AppStates {
     // Load cached user profile if available
     _userModel = getIt<SharedPreferenceHelper>().getUserProfile();
     debugPrint('initAuthService - loaded cached _userModel: ${_userModel?.displayName}');
-    if (_userModel != null) {
+    if (_userModel != null && authService.isLoggedIn) {
       userId = _userModel!.userId?.toString() ?? '';
       authStatus = AuthStatus.LOGGED_IN;
       debugPrint('initAuthService - set LOGGED_IN from cache');
+    } else {
+      authStatus = AuthStatus.NOT_LOGGED_IN;
     }
   }
 

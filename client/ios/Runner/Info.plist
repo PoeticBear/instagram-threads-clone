@@ -26,14 +26,41 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dart.debugger</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Votre message d&apos;autorisation ici</string>
+	<string>Votre message d'autorisation ici</string>
 	<key>NSContactsUsageDescription</key>
-	<string>threads t&apos;indiquera qui dans tes contacs est déjà sur threads. Tes contacts ne seront pas enregistrés ni partagés avec personne.</string>
+	<string>threads t'indiquera qui dans tes contacs est déjà sur threads. Tes contacts ne seront pas enregistrés ni partagés avec personne.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app needs local network access to connect to the development server for debugging.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Votre message d&apos;autorisation pour l&apos;accès au microphone ici</string>
+	<string>Votre message d'autorisation pour l'accès au microphone ici</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to allow you to select and upload photos for sharing with your friends.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
