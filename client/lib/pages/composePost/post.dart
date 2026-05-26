@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/state/auth.state.dart';
@@ -190,7 +191,7 @@ class _ComposePostState extends State<ComposePost> {
     if (postId != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('发布成功'),
+          content: Text(AppLocalizations.of(context)!.publishSuccess),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 1),
         ),
@@ -208,7 +209,7 @@ class _ComposePostState extends State<ComposePost> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('发布失败，请重试'),
+          content: Text(AppLocalizations.of(context)!.publishFailed),
           backgroundColor: Colors.red,
         ),
       );
@@ -232,7 +233,7 @@ class _ComposePostState extends State<ComposePost> {
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
                 child: Text(
-                  '谁可以回复',
+                  AppLocalizations.of(context)!.whoCanReply,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -241,10 +242,10 @@ class _ComposePostState extends State<ComposePost> {
                 ),
               ),
               Divider(color: Colors.grey[800], height: 1),
-              _replyTypeOption(1, Iconsax.global, '所有人可以回复'),
-              _replyTypeOption(2, Iconsax.user, '仅粉丝可以回复'),
-              _replyTypeOption(3, Iconsax.people, '仅关注的人可以回复'),
-              _replyTypeOption(4, Icons.alternate_email, '仅提及的人可以回复'),
+              _replyTypeOption(1, Iconsax.global, AppLocalizations.of(context)!.everyoneCanReply),
+              _replyTypeOption(2, Iconsax.user, AppLocalizations.of(context)!.followersCanReply),
+              _replyTypeOption(3, Iconsax.people, AppLocalizations.of(context)!.followingCanReply),
+              _replyTypeOption(4, Icons.alternate_email, AppLocalizations.of(context)!.mentionedCanReply),
               SizedBox(height: 8),
             ],
           ),
@@ -312,12 +313,12 @@ class _ComposePostState extends State<ComposePost> {
                     // 切回首页 — ComposePost 在 HomePage 中作为 tab 内容显示
                     // 通过 pop 或者直接操作 HomePage state
                   },
-                  child: Text('取消',
+                  child: Text(AppLocalizations.of(context)!.cancel,
                       style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
                 Expanded(
                   child: Center(
-                    child: Text('新帖子',
+                    child: Text(AppLocalizations.of(context)!.newPost,
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -380,8 +381,8 @@ class _ComposePostState extends State<ComposePost> {
                               maxLines: null,
                               decoration: InputDecoration(
                                 border: InputBorder.none,
-                                counterText: '', // 隐藏自带计数器
-                                hintText: '说点什么...',
+                                counterText: '',
+                                hintText: AppLocalizations.of(context)!.saySomething,
                                 hintStyle: TextStyle(
                                   fontSize: 16,
                                   color: Color.fromARGB(255, 112, 112, 112),
@@ -522,7 +523,7 @@ class _ComposePostState extends State<ComposePost> {
                       controller: _pollControllers[i],
                       style: TextStyle(color: Colors.white, fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: '选项 ${i + 1}',
+                        hintText: AppLocalizations.of(context)!.optionLabel(i + 1),
                         hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
                         filled: true,
                         fillColor: Colors.grey[900],
@@ -560,7 +561,7 @@ class _ComposePostState extends State<ComposePost> {
                   children: [
                     Icon(Icons.add, size: 18, color: Colors.grey[500]),
                     SizedBox(width: 4),
-                    Text('添加选项',
+                    Text(AppLocalizations.of(context)!.addOption,
                         style: TextStyle(color: Colors.grey[500], fontSize: 14)),
                   ],
                 ),
@@ -570,7 +571,7 @@ class _ComposePostState extends State<ComposePost> {
           Center(
             child: GestureDetector(
               onTap: _togglePollEditor,
-              child: Text('移除投票',
+              child: Text(AppLocalizations.of(context)!.removePoll,
                   style: TextStyle(color: Colors.red[300], fontSize: 13)),
             ),
           ),
@@ -624,7 +625,7 @@ class _ComposePostState extends State<ComposePost> {
                       ),
                     )
                   : Text(
-                      '发布',
+                      AppLocalizations.of(context)!.post,
                       style: TextStyle(
                         color: _canPost ? Colors.blue : Colors.grey[700],
                         fontSize: 16,

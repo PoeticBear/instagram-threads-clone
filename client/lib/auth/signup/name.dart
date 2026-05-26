@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/auth/signup/register.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/pages/home.dart';
 import 'package:threads/state/auth.state.dart';
 
@@ -13,8 +14,8 @@ class NamePage extends StatefulWidget {
 }
 
 class _NamePageState extends State<NamePage> {
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _usernameController = TextEditingController(text: 'pengsihang');
+  final _passwordController = TextEditingController(text: '123456');
   bool _isLoading = false;
 
   @override
@@ -30,7 +31,7 @@ class _NamePageState extends State<NamePage> {
 
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入用户名和密码')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseEnterUsernameAndPassword)),
       );
       return;
     }
@@ -58,7 +59,7 @@ class _NamePageState extends State<NamePage> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('登录失败，请检查用户名和密码')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.loginFailedCheckCredentials)),
       );
     }
   }
@@ -80,9 +81,9 @@ class _NamePageState extends State<NamePage> {
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 48),
-              const Text(
-                '登录',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.loginTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -94,7 +95,7 @@ class _NamePageState extends State<NamePage> {
                 controller: _usernameController,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: '用户名',
+                  hintText: AppLocalizations.of(context)!.usernameHint,
                   hintStyle: TextStyle(color: Colors.grey[600]),
                   filled: true,
                   fillColor: const Color(0xff1a1a1a),
@@ -112,7 +113,7 @@ class _NamePageState extends State<NamePage> {
                 style: const TextStyle(color: Colors.white),
                 obscureText: true,
                 decoration: InputDecoration(
-                  hintText: '密码',
+                  hintText: AppLocalizations.of(context)!.passwordHint,
                   hintStyle: TextStyle(color: Colors.grey[600]),
                   filled: true,
                   fillColor: const Color(0xff1a1a1a),
@@ -138,9 +139,9 @@ class _NamePageState extends State<NamePage> {
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.black)
-                      : const Text(
-                          '登录',
-                          style: TextStyle(
+                      : Text(
+                          AppLocalizations.of(context)!.loginButton,
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 ),
@@ -152,7 +153,7 @@ class _NamePageState extends State<NamePage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
-                      '或',
+                      AppLocalizations.of(context)!.or,
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                   ),
@@ -176,9 +177,9 @@ class _NamePageState extends State<NamePage> {
                     children: [
                       Image.asset("assets/insta.png", height: 28),
                       const SizedBox(width: 12),
-                      const Text(
-                        "使用 Instagram 账号登录",
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.loginWithInstagram,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -214,7 +215,7 @@ class _NamePageState extends State<NamePage> {
                           color: Colors.grey[400], size: 24),
                       const SizedBox(width: 12),
                       Text(
-                        "创建新账号",
+                        AppLocalizations.of(context)!.createNewAccount,
                         style: TextStyle(
                           color: Colors.grey[400],
                           fontSize: 15,

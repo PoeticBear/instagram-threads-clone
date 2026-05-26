@@ -1,10 +1,13 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:threads/common/locator.dart';
 import 'package:threads/common/splash.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/network/api_client.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/state/auth.state.dart';
+import 'package:threads/state/locale.state.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/search.state.dart';
@@ -49,12 +52,24 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<AuthState>(create: (_) => AuthState()),
         ChangeNotifierProvider<PostState>(create: (_) => PostState()),
         ChangeNotifierProvider<SearchState>(create: (_) => SearchState()),
+        ChangeNotifierProvider<LocaleProvider>(create: (_) => LocaleProvider()),
       ],
-      child: MaterialApp(
-        theme: ThemeData(brightness: Brightness.dark),
-        title: 'Threads',
-        debugShowCheckedModeBanner: false,
-        home: SplashPage()),
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, _) {
+          return MaterialApp(
+            locale: localeProvider.locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: const [
+              Locale('en'),
+              Locale('zh'),
+            ],
+            theme: ThemeData(brightness: Brightness.dark),
+            title: 'Threads',
+            debugShowCheckedModeBanner: false,
+            home: SplashPage(),
+          );
+        },
+      ),
     );
   }
 }

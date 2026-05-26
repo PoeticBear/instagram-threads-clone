@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/search_service.dart';
 import 'package:threads/state/search.state.dart';
 import 'package:threads/widget/list.dart';
@@ -51,8 +52,8 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
         elevation: 0,
         backgroundColor: Colors.black,
         centerTitle: false,
-        title: const Text(
-          'Search',
+        title: Text(
+          AppLocalizations.of(context)!.searchTitle,
           style: TextStyle(
             color: Colors.white,
             fontSize: 35,
@@ -112,7 +113,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
           filled: true,
           contentPadding: const EdgeInsets.only(left: 15, top: 5),
           alignLabelWithHint: true,
-          hintText: 'Search',
+          hintText: AppLocalizations.of(context)!.search,
           hintStyle: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w500,
@@ -135,11 +136,11 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
       indicatorSize: TabBarIndicatorSize.label,
       labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-      tabs: const [
-        Tab(text: 'Top'),
-        Tab(text: 'Users'),
-        Tab(text: 'Topics'),
-        Tab(text: 'Posts'),
+      tabs: [
+        Tab(text: AppLocalizations.of(context)!.tabTop),
+        Tab(text: AppLocalizations.of(context)!.tabUsers),
+        Tab(text: AppLocalizations.of(context)!.tabTopics),
+        Tab(text: AppLocalizations.of(context)!.tabPosts),
       ],
     );
   }
@@ -176,23 +177,23 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     return ListView(
       children: [
         if (state.searchUsers.isNotEmpty) ...[
-          _buildSectionHeader('Users', state.totalUsers),
+          _buildSectionHeader(AppLocalizations.of(context)!.sectionUsers, state.totalUsers),
           ...state.searchUsers.take(3).map((u) => UserTilePage(user: u, isadded: false)),
           if (state.totalUsers > 3)
-            _buildSeeAllButton('See all users', () {
+            _buildSeeAllButton(AppLocalizations.of(context)!.seeAllUsers, () {
               _tabController.animateTo(1);
             }),
         ],
         if (state.searchTopics.isNotEmpty) ...[
-          _buildSectionHeader('Topics', state.totalTopics),
+          _buildSectionHeader(AppLocalizations.of(context)!.sectionTopics, state.totalTopics),
           ...state.searchTopics.take(3).map((t) => TopicTile(topic: t)),
           if (state.totalTopics > 3)
-            _buildSeeAllButton('See all topics', () {
+            _buildSeeAllButton(AppLocalizations.of(context)!.seeAllTopics, () {
               _tabController.animateTo(2);
             }),
         ],
         if (state.searchPosts.isNotEmpty) ...[
-          _buildSectionHeader('Posts', state.totalPosts),
+          _buildSectionHeader(AppLocalizations.of(context)!.sectionPosts, state.totalPosts),
           ...state.searchPosts.take(5).map((p) => SearchPostTile(post: p)),
         ],
       ],
@@ -280,7 +281,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
           Icon(Iconsax.search_normal, size: 48, color: Colors.grey[700]),
           const SizedBox(height: 12),
           Text(
-            'No results found',
+            AppLocalizations.of(context)!.noResultsFound,
             style: TextStyle(color: Colors.grey[500], fontSize: 18),
           ),
         ],
@@ -301,14 +302,14 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
       children: [
         if (state.searchHistory.isNotEmpty) ...[
           _buildEmptySectionHeader(
-            'Recent',
-            actionText: 'Clear all',
+            AppLocalizations.of(context)!.recent,
+            actionText: AppLocalizations.of(context)!.clearAll,
             onAction: () => state.clearSearchHistory(),
           ),
           ...state.searchHistory.map((item) => _buildHistoryItem(item, state)),
         ],
         if (state.hotTopics.isNotEmpty) ...[
-          _buildEmptySectionHeader('Trending topics'),
+          _buildEmptySectionHeader(AppLocalizations.of(context)!.trendingTopics),
           ...state.hotTopics.map((t) => TopicTile(
             topic: t,
             onTap: () {
@@ -318,7 +319,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
           )),
         ],
         if (state.trendingPosts.isNotEmpty) ...[
-          _buildEmptySectionHeader('Trending posts'),
+          _buildEmptySectionHeader(AppLocalizations.of(context)!.trendingPosts),
           ...state.trendingPosts.map((p) => SearchPostTile(post: p)),
         ],
       ],

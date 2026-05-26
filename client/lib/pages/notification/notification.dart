@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/search.state.dart';
 import 'package:threads/widget/list.dart';
 
@@ -51,7 +52,7 @@ class _NotificationPageState extends State<NotificationPage> {
           backgroundColor: Colors.black,
           centerTitle: false,
           title: Text(
-            "Activity",
+            AppLocalizations.of(context)!.activityTitle,
             style: TextStyle(
                 color: Colors.white, fontSize: 35, fontWeight: FontWeight.w700),
           ),
@@ -70,10 +71,10 @@ class _NotificationPageState extends State<NotificationPage> {
                     Container(
                       width: 20,
                     ),
-                    upButton("All"),
-                    upButton("Replies"),
-                    upButton("Mentions"),
-                    upButton("Verify")
+                    upButton(AppLocalizations.of(context)!.filterAll),
+                    upButton(AppLocalizations.of(context)!.filterReplies),
+                    upButton(AppLocalizations.of(context)!.filterMentions),
+                    upButton(AppLocalizations.of(context)!.filterVerify)
                   ],
                 )),
             Container(

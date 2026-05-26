@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/widget/feedpost.dart';
@@ -83,7 +84,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
         final posts = state.getPostList(authState.userModel);
         if (posts == null || posts.isEmpty) {
           return Center(
-            child: Text('暂无帖子',
+            child: Text(AppLocalizations.of(context)!.noPostsYet,
                 style: TextStyle(color: Colors.grey, fontSize: 16)),
           );
         }
@@ -158,7 +159,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  displayName.isNotEmpty ? displayName : (userModel?.userName ?? '匿名用户'),
+                  displayName.isNotEmpty ? displayName : (userModel?.userName ?? AppLocalizations.of(context)!.anonymousUser),
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -171,7 +172,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                   decoration: InputDecoration(
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
-                    hintText: '有什么新鲜事？',
+                    hintText: AppLocalizations.of(context)!.whatsNew,
                     hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                     border: InputBorder.none,
                   ),

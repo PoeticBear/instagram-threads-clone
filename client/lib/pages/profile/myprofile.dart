@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/common/settings.dart';
@@ -209,7 +210,7 @@ class _ProfilePageState extends State<MyProfilePage>
                                   ),
                                 ),
                                 alignment: Alignment.center,
-                                child: Text("编辑资料"))),
+                                child: Text(AppLocalizations.of(context)!.editProfile))),
                         Container(
                           width: 10,
                         ),
@@ -225,7 +226,7 @@ class _ProfilePageState extends State<MyProfilePage>
                               ),
                             ),
                             alignment: Alignment.center,
-                            child: Text("分享资料"))
+                            child: Text(AppLocalizations.of(context)!.shareProfile))
                       ],
                     ),
                     Container(
@@ -246,7 +247,7 @@ class _ProfilePageState extends State<MyProfilePage>
                               padding: EdgeInsets.only(left: 20),
                               child: Tab(
                                   child: Text(
-                                '主题',
+                                AppLocalizations.of(context)!.tabThreads,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -256,7 +257,7 @@ class _ProfilePageState extends State<MyProfilePage>
                             padding: EdgeInsets.only(right: 0),
                             child: Tab(
                                 child: Text(
-                              '回复',
+                              AppLocalizations.of(context)!.tabReplies,
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -281,7 +282,7 @@ class _ProfilePageState extends State<MyProfilePage>
                             if (list.isEmpty) {
                               return Center(
                                 child: Text(
-                                  "你还没有发布任何主题。",
+                                  AppLocalizations.of(context)!.noThreadsYet,
                                   style: TextStyle(
                                       color: Color.fromARGB(255, 84, 60, 60)),
                                 ),
@@ -300,7 +301,7 @@ class _ProfilePageState extends State<MyProfilePage>
                             width: 200,
                             alignment: Alignment.center,
                             child: Text(
-                              "你还没有发布任何主题。",
+                              AppLocalizations.of(context)!.noThreadsYet,
                               style: TextStyle(
                                   color: Color.fromARGB(255, 84, 60, 60)),
                             ),
