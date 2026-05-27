@@ -19,18 +19,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _displayName;
   late TextEditingController _bio;
   late TextEditingController _link;
+  late TextEditingController _pronouns;
+  late TextEditingController _location;
   File? _image;
+  int _selectedGender = 1; // 1=Not set, 2=Male, 3=Female, 4=Other
+  bool _isPrivate = false;
+  int _accountType = 1; // 1=Personal, 2=Creator, 3=Business
 
   @override
   void initState() {
     super.initState();
     final state = Provider.of<AuthState>(context, listen: false);
-    // Debug: check if userModel is loaded
-    debugPrint('EditProfilePage initState - userModel: ${state.userModel?.displayName}');
     _displayName = TextEditingController(text: state.userModel?.displayName ?? '');
     _bio = TextEditingController(text: state.userModel?.bio ?? '');
     _link = TextEditingController(text: state.userModel?.link ?? '');
-    debugPrint('TextFields initialized with: displayName="${_displayName.text}", bio="${_bio.text}", link="${_link.text}"');
+    _pronouns = TextEditingController(text: state.userModel?.pronouns ?? '');
+    _location = TextEditingController(text: state.userModel?.location ?? '');
+    _selectedGender = state.userModel?.gender ?? 1;
+    _isPrivate = state.userModel?.isPrivate ?? false;
+    _accountType = state.userModel?.accountType ?? 1;
   }
 
   @override
@@ -38,6 +45,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _bio.dispose();
     _link.dispose();
     _displayName.dispose();
+    _pronouns.dispose();
+    _location.dispose();
     super.dispose();
   }
 
@@ -50,6 +59,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
         onImageSelected(File(file.path));
       }
     });
+  }
+
+  String _genderLabel(int value) {
+    switch (value) {
+      case 2: return 'Male';
+      case 3: return 'Female';
+      case 4: return 'Other';
+      default: return 'Not set';
+    }
+  }
+
+  String _accountTypeLabel(int value) {
+    switch (value) {
+      case 2: return 'Creator';
+      case 3: return 'Business';
+      default: return 'Personal';
+    }
   }
 
   @override
@@ -84,13 +110,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       onTap: () {
                                         Navigator.pop(context);
                                       },
-                                      child: Text("取消",
+                                      child: Text("Cancel",
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
                                               fontWeight: FontWeight.w400)))),
                               Text(
-                                "编辑资料   ",
+                                "Edit profile   ",
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -100,7 +126,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 padding: EdgeInsets.only(right: 15),
                                 child: GestureDetector(
                                     onTap: _submitButton,
-                                    child: Text("完成",
+                                    child: Text("Done",
                                         style: TextStyle(
                                             color: Colors.blue,
                                             fontSize: 20,
@@ -113,12 +139,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           elevation: 0,
           backgroundColor: Colors.transparent,
         ),
-        body: Padding(
-            padding: EdgeInsets.only(top: 100),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
+        body: SingleChildScrollView(
+            padding: EdgeInsets.only(top: 20),
+            child: Center(
+                child: Container(
                     width: 330,
                     decoration: BoxDecoration(
                       color: Color.fromARGB(255, 25, 25, 25),
@@ -134,255 +158,304 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Name + Avatar row
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: 200,
+                                Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        height: 10,
-                                      ),
-                                      Text(
-                                        "名称",
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 18),
-                                      ),
+                                      Container(height: 10),
+                                      Text("Name", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18)),
                                       CupertinoTextField(
                                         controller: _displayName,
-                                        prefix: Icon(
-                                          Icons.lock_outline_rounded,
-                                          size: 15,
-                                          color: Colors.white,
-                                        ),
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 18),
-                                        placeholder:
-                                            state.userModel!.displayName,
-                                        placeholderStyle: TextStyle(
-                                            color: Colors.grey, fontSize: 18),
+                                        prefix: Icon(Icons.lock_outline_rounded, size: 15, color: Colors.white),
+                                        style: TextStyle(color: Colors.white, fontSize: 18),
+                                        placeholder: state.userModel?.displayName ?? '',
+                                        placeholderStyle: TextStyle(color: Colors.grey, fontSize: 18),
                                         padding: EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
+                                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
                                       ),
-                                      Container(
-                                        height: 5,
-                                      ),
-                                      Container(
-                                        width: 300,
-                                        height: 0.5,
-                                        color: Colors.grey,
-                                      ),
-                                      Container(
-                                        height: 20,
-                                      ),
+                                      Container(height: 5),
+                                      _divider(),
+                                      Container(height: 20),
                                     ],
                                   ),
                                 ),
-                                Container(
-                                  width: 30,
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    showCupertinoModalPopup(
-                                        context: context,
-                                        builder: (BuildContext context) =>
-                                            CupertinoTheme(
-                                              data: CupertinoThemeData(
-                                                brightness: Brightness
-                                                    .dark, // Définir le mode sombre
-                                              ),
-                                              child: CupertinoActionSheet(
-                                                title: Text(
-                                                    '更换头像'),
-                                                message: Text(
-                                                    '你的头像对所有人可见，方便好友更容易找到你'),
-                                                actions: <Widget>[
-                                                  CupertinoActionSheetAction(
-                                                    child: Text('相册'),
-                                                    onPressed: () {
-                                                      getImage(context,
-                                                          ImageSource.gallery,
-                                                          (file) {
-                                                        setState(() {
-                                                          _image = file;
-                                                        });
-                                                      });
-                                                      setState(() {});
-                                                      Navigator.pop(context);
-                                                    },
-                                                  ),
-                                                  CupertinoActionSheetAction(
-                                                    child:
-                                                        Text('拍照'),
-                                                    onPressed: () {
-                                                      getImage(context,
-                                                          ImageSource.camera,
-                                                          (file) {
-                                                        setState(() {
-                                                          _image = file;
-                                                        });
-                                                      });
-                                                      Navigator.pop(context);
-                                                    },
-                                                  ),
-                                                  CupertinoActionSheetAction(
-                                                    child: Text(
-                                                      '删除头像',
-                                                      style: TextStyle(
-                                                          color: Colors.red),
-                                                    ),
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                  ),
-                                                ],
-                                                cancelButton:
-                                                    CupertinoActionSheetAction(
-                                                  child: Text('取消'),
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                ),
-                                              ),
-                                            ));
-                                  },
-                                  child: CircleAvatar(
-                                      backgroundColor: Colors.grey[800],
-                                      radius: 25,
-                                      backgroundImage: (_image != null
-                                          ? FileImage(_image!)
-                                          : (state.profileUserModel?.profilePic ?? '').isEmpty
-                                              ? null
-                                              : CachedNetworkImageProvider(
-                                                  scale: 2,
-                                                  state.profileUserModel!.profilePic!,
-                                                ) as ImageProvider),
-                                      child: (_image == null && (state.profileUserModel?.profilePic ?? '').isEmpty)
-                                          ? Icon(Icons.person, size: 30, color: Colors.grey[600])
-                                          : null),
-                                )
+                                Container(width: 15),
+                                _buildAvatarEdit(state),
                               ],
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "简介",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 18),
-                                ),
-                                CupertinoTextField(
-                                  controller: _bio,
-                                  prefix: Icon(
-                                    Icons.add,
-                                    size: 15,
-                                    color: Colors.white,
-                                  ),
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 18),
-                                  placeholder: '填写简介',
-                                  placeholderStyle: TextStyle(
-                                      color: Colors.grey, fontSize: 16),
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                Container(
-                                  height: 10,
-                                ),
-                                Container(
-                                  width: 300,
-                                  height: 0.5,
-                                  color: Colors.grey,
-                                ),
-                                Container(
-                                  height: 20,
-                                ),
-                              ],
+                            // Bio
+                            _fieldSection(
+                              label: "Bio",
+                              controller: _bio,
+                              placeholder: 'Add bio',
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "链接",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 18),
-                                ),
-                                CupertinoTextField(
-                                  controller: _link,
-                                  prefix: Icon(
-                                    Icons.add,
-                                    size: 15,
-                                    color: Colors.white,
-                                  ),
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 18),
-                                  placeholder: '添加链接',
-                                  placeholderStyle: TextStyle(
-                                      color: Colors.grey, fontSize: 16),
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              ],
+                            // Link
+                            _fieldSection(
+                              label: "Link",
+                              controller: _link,
+                              placeholder: 'Add link',
                             ),
+                            // Pronouns
+                            _fieldSection(
+                              label: "Pronouns",
+                              controller: _pronouns,
+                              placeholder: 'Add pronouns',
+                            ),
+                            // Location
+                            _fieldSection(
+                              label: "Location",
+                              controller: _location,
+                              placeholder: 'Add location',
+                            ),
+                            // Gender selector
+                            _selectorSection(
+                              label: "Gender",
+                              value: _genderLabel(_selectedGender),
+                              onTap: _showGenderPicker,
+                            ),
+                            // Account Type selector
+                            _selectorSection(
+                              label: "Account Type",
+                              value: _accountTypeLabel(_accountType),
+                              onTap: _showAccountTypePicker,
+                            ),
+                            // Private Account toggle
+                            _toggleSection(
+                              label: "Private Account",
+                              value: _isPrivate,
+                              onChanged: (val) {
+                                setState(() { _isPrivate = val; });
+                              },
+                            ),
+                            Container(height: 10),
                           ],
-                        ))),
+                        ))))));
+  }
+
+  Widget _divider() => Container(width: 300, height: 0.5, color: Colors.grey);
+
+  Widget _fieldSection({
+    required String label,
+    required TextEditingController controller,
+    required String placeholder,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18)),
+        CupertinoTextField(
+          controller: controller,
+          prefix: Icon(Icons.add, size: 15, color: Colors.white),
+          style: TextStyle(color: Colors.white, fontSize: 18),
+          placeholder: placeholder,
+          placeholderStyle: TextStyle(color: Colors.grey, fontSize: 16),
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+        ),
+        Container(height: 10),
+        _divider(),
+        Container(height: 20),
+      ],
+    );
+  }
+
+  Widget _selectorSection({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18)),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(255, 40, 40, 40),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(value, style: TextStyle(color: Colors.grey[300], fontSize: 14)),
+              ),
+            ],
+          ),
+        ),
+        Container(height: 10),
+        _divider(),
+        Container(height: 20),
+      ],
+    );
+  }
+
+  Widget _toggleSection({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18)),
+            CupertinoSwitch(
+              value: value,
+              onChanged: onChanged,
+              activeColor: Colors.blue,
+            ),
+          ],
+        ),
+        Container(height: 10),
+        _divider(),
+        Container(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildAvatarEdit(AuthState state) {
+    return GestureDetector(
+      onTap: () {
+        showCupertinoModalPopup(
+          context: context,
+          builder: (BuildContext context) => CupertinoTheme(
+            data: CupertinoThemeData(brightness: Brightness.dark),
+            child: CupertinoActionSheet(
+              title: Text('Change avatar'),
+              message: Text('Your avatar is visible to everyone'),
+              actions: <Widget>[
+                CupertinoActionSheetAction(
+                  child: Text('Gallery'),
+                  onPressed: () {
+                    getImage(context, ImageSource.gallery, (file) {
+                      setState(() { _image = file; });
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+                CupertinoActionSheetAction(
+                  child: Text('Camera'),
+                  onPressed: () {
+                    getImage(context, ImageSource.camera, (file) {
+                      setState(() { _image = file; });
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+                CupertinoActionSheetAction(
+                  child: Text('Remove', style: TextStyle(color: Colors.red)),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
               ],
-            )));
+              cancelButton: CupertinoActionSheetAction(
+                child: Text('Cancel'),
+                onPressed: () { Navigator.pop(context); },
+              ),
+            ),
+          ),
+        );
+      },
+      child: CircleAvatar(
+        backgroundColor: Colors.grey[800],
+        radius: 25,
+        backgroundImage: (_image != null
+            ? FileImage(_image!)
+            : (state.profileUserModel?.profilePic ?? '').isEmpty
+                ? null
+                : CachedNetworkImageProvider(
+                    scale: 2,
+                    state.profileUserModel!.profilePic!,
+                  ) as ImageProvider),
+        child: (_image == null && (state.profileUserModel?.profilePic ?? '').isEmpty)
+            ? Icon(Icons.person, size: 30, color: Colors.grey[600])
+            : null,
+      ),
+    );
+  }
+
+  void _showGenderPicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) => CupertinoTheme(
+        data: CupertinoThemeData(brightness: Brightness.dark),
+        child: CupertinoActionSheet(
+          title: Text('Gender'),
+          actions: [
+            CupertinoActionSheetAction(
+              child: Text('Not set', style: _selectedGender == 1 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              onPressed: () { setState(() { _selectedGender = 1; }); Navigator.pop(context); },
+            ),
+            CupertinoActionSheetAction(
+              child: Text('Male', style: _selectedGender == 2 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              onPressed: () { setState(() { _selectedGender = 2; }); Navigator.pop(context); },
+            ),
+            CupertinoActionSheetAction(
+              child: Text('Female', style: _selectedGender == 3 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              onPressed: () { setState(() { _selectedGender = 3; }); Navigator.pop(context); },
+            ),
+            CupertinoActionSheetAction(
+              child: Text('Other', style: _selectedGender == 4 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              onPressed: () { setState(() { _selectedGender = 4; }); Navigator.pop(context); },
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            child: Text('Cancel'),
+            onPressed: () { Navigator.pop(context); },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAccountTypePicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) => CupertinoTheme(
+        data: CupertinoThemeData(brightness: Brightness.dark),
+        child: CupertinoActionSheet(
+          title: Text('Account Type'),
+          actions: [
+            CupertinoActionSheetAction(
+              child: Text('Personal', style: _accountType == 1 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              onPressed: () { setState(() { _accountType = 1; }); Navigator.pop(context); },
+            ),
+            CupertinoActionSheetAction(
+              child: Text('Creator', style: _accountType == 2 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              onPressed: () { setState(() { _accountType = 2; }); Navigator.pop(context); },
+            ),
+            CupertinoActionSheetAction(
+              child: Text('Business', style: _accountType == 3 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              onPressed: () { setState(() { _accountType = 3; }); Navigator.pop(context); },
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            child: Text('Cancel'),
+            onPressed: () { Navigator.pop(context); },
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _submitButton() async {
     if (_displayName.text.length > 100) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-        backgroundColor: Colors.white,
-        content: Container(
-            alignment: Alignment.center,
-            height: 30,
-            child: Text(
-              '最多100个字符',
-              style: TextStyle(
-                  fontFamily: "icons.ttf",
-                  color: Colors.black,
-                  fontSize: 25,
-                  fontWeight: FontWeight.w900),
-            )),
+        content: Text('Max 100 characters'),
       ));
       return;
     }
-    if (_bio.text.length > 100) {
+    if (_bio.text.length > 500) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-        backgroundColor: Colors.white,
-        content: Container(
-            alignment: Alignment.center,
-            height: 30,
-            child: Text(
-              '最多100个字符',
-              style: TextStyle(
-                  fontFamily: "icons.ttf",
-                  color: Colors.black,
-                  fontSize: 25,
-                  fontWeight: FontWeight.w900),
-            )),
+        content: Text('Max 500 characters for bio'),
       ));
       return;
     }
@@ -391,6 +464,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
       displayName: _displayName.text,
       bio: _bio.text,
       link: _link.text,
+      pronouns: _pronouns.text.isEmpty ? null : _pronouns.text,
+      gender: _selectedGender,
+      location: _location.text.isEmpty ? null : _location.text,
+      isPrivate: _isPrivate,
+      accountType: _accountType,
     );
     try {
       await state.updateUserProfile(model, image: _image);
@@ -398,7 +476,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('更新失败，请重试'),
+          content: Text('Update failed, please retry'),
         ));
       }
     }

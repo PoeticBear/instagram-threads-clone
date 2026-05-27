@@ -194,6 +194,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filterVerify => '认证';
 
   @override
+  String get noNotifications => '暂无通知';
+
+  @override
   String get editProfile => '编辑资料';
 
   @override
@@ -207,4 +210,598 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noThreadsYet => '你还没有发布任何主题。';
+
+  @override
+  String get notificationSettings => '通知设置';
+
+  @override
+  String get notifyLikes => '赞';
+
+  @override
+  String get notifyReplies => '回复';
+
+  @override
+  String get notifyMentions => '提及';
+
+  @override
+  String get notifyFollows => '关注';
+
+  @override
+  String get notifyTrending => '热门';
+
+  @override
+  String get notifySystem => '系统';
+
+  @override
+  String get notifyGroupMessages => '群消息';
+
+  @override
+  String get notifyQuotes => '引用';
+
+  @override
+  String get notifyReposts => '转发';
+
+  @override
+  String get notifyPolls => '投票';
+
+  @override
+  String get notifyCommunities => '社区';
+
+  @override
+  String get privacySettings => '隐私设置';
+
+  @override
+  String get whoCanReplyToYou => '谁可以回复你';
+
+  @override
+  String get whoCanMentionYou => '谁可以提及你';
+
+  @override
+  String get messageRequests => '消息请求';
+
+  @override
+  String get messageRequestAllowType => '谁可以发送消息请求';
+
+  @override
+  String get interactionRestriction => '互动限制';
+
+  @override
+  String get showReadReceipts => '显示已读回执';
+
+  @override
+  String get showOnlineStatus => '显示在线状态';
+
+  @override
+  String get allowRecommend => '允许推荐账号';
+
+  @override
+  String get hideLikesCount => '隐藏点赞数';
+
+  @override
+  String get silentMode => '静默模式';
+
+  @override
+  String get contentRating => '内容分级';
+
+  @override
+  String get replyEveryone => '所有人';
+
+  @override
+  String get replyFollowers => '粉丝';
+
+  @override
+  String get replyPagesYouFollow => '你关注的页面';
+
+  @override
+  String get replyMentioned => '仅被提及的人';
+
+  @override
+  String get mentionEveryone => '所有人';
+
+  @override
+  String get mentionUsersYouFollow => '你关注的用户';
+
+  @override
+  String get mentionMutuals => '仅互关好友';
+
+  @override
+  String get msgReqAnyone => '所有人';
+
+  @override
+  String get msgReqFollowedOnly => '仅你关注的用户';
+
+  @override
+  String get restrictionNone => '无限制';
+
+  @override
+  String get restrictionFollowedOneWeek => '关注超过一周';
+
+  @override
+  String get restrictionMutualsOnly => '仅互关好友';
+
+  @override
+  String get ratingAll => '全部';
+
+  @override
+  String get ratingTeen => '青少年';
+
+  @override
+  String get ratingAdult => '成人';
+
+  @override
+  String get on => '开';
+
+  @override
+  String get off => '关';
+
+  @override
+  String get replies => '回复';
+
+  @override
+  String get reply => '回复';
+
+  @override
+  String get repost => '转发';
+
+  @override
+  String get undoRepost => '撤销转发';
+
+  @override
+  String get quote => '引用';
+
+  @override
+  String get save => '收藏';
+
+  @override
+  String get unsave => '取消收藏';
+
+  @override
+  String get share => '分享';
+
+  @override
+  String get copyLink => '复制链接';
+
+  @override
+  String get linkCopied => '链接已复制到剪贴板';
+
+  @override
+  String get report => '举报';
+
+  @override
+  String get notInterested => '不感兴趣';
+
+  @override
+  String get follow => '关注';
+
+  @override
+  String get unfollow => '取消关注';
+
+  @override
+  String get followers => '粉丝';
+
+  @override
+  String get following => '关注';
+
+  @override
+  String get posts => '帖子';
+
+  @override
+  String get linkCopiedToClipboard => '链接已复制到剪贴板';
+
+  @override
+  String get replyToPost => '回复帖子...';
+
+  @override
+  String get commentsComingSoon => '评论功能即将推出';
+
+  @override
+  String get messages => '消息';
+
+  @override
+  String get allMessages => '全部消息';
+
+  @override
+  String get noConversations => '暂无会话';
+
+  @override
+  String get noMessageRequests => '暂无消息请求';
+
+  @override
+  String get newMessage => '新消息';
+
+  @override
+  String get searchForUser => '搜索用户开始聊天';
+
+  @override
+  String get messagePlaceholder => '消息...';
+
+  @override
+  String get noMessagesYet => '暂无消息';
+
+  @override
+  String get quotedMessage => '引用消息';
+
+  @override
+  String get videoMessage => '视频消息';
+
+  @override
+  String get voiceMessage => '语音消息';
+
+  @override
+  String get fileMessage => '文件';
+
+  @override
+  String get createGroup => '创建群聊';
+
+  @override
+  String get groupName => '群聊名称';
+
+  @override
+  String get groupAvatar => '群聊头像';
+
+  @override
+  String get needApprove => '需要审批';
+
+  @override
+  String get inviteLinkEnabled => '开启邀请链接';
+
+  @override
+  String get create => '创建';
+
+  @override
+  String get groupInfo => '群聊信息';
+
+  @override
+  String get members => '成员';
+
+  @override
+  String get copyInviteLink => '复制邀请链接';
+
+  @override
+  String get leaveGroup => '退出群聊';
+
+  @override
+  String get leaveGroupConfirm => '确定退出此群聊？';
+
+  @override
+  String get joinRequests => '入群请求';
+
+  @override
+  String get noPendingRequests => '暂无待处理请求';
+
+  @override
+  String get approve => '批准';
+
+  @override
+  String get decline => '拒绝';
+
+  @override
+  String get removeMember => '移除成员';
+
+  @override
+  String get admin => '管理员';
+
+  @override
+  String get member => '成员';
+
+  @override
+  String get groupCreated => '群聊已创建';
+
+  @override
+  String get editGroupName => '编辑群聊名称';
+
+  @override
+  String get topic => '话题';
+
+  @override
+  String get followTopic => '关注话题';
+
+  @override
+  String get unfollowTopic => '取消关注';
+
+  @override
+  String get hot => '热门';
+
+  @override
+  String get latest => '最新';
+
+  @override
+  String get relatedTopics => '相关话题';
+
+  @override
+  String get muteTopic => '静音话题';
+
+  @override
+  String get unmuteTopic => '取消静音';
+
+  @override
+  String get topicMuted => '话题已静音';
+
+  @override
+  String get drafts => '草稿';
+
+  @override
+  String get noDrafts => '暂无草稿';
+
+  @override
+  String get saveDraft => '保存草稿';
+
+  @override
+  String get deleteDraft => '删除草稿';
+
+  @override
+  String get deleteDraftConfirm => '确定删除此草稿？';
+
+  @override
+  String get draftSaved => '草稿已保存';
+
+  @override
+  String get draftDeleted => '草稿已删除';
+
+  @override
+  String get loadDraft => '加载草稿';
+
+  @override
+  String get communities => '社区';
+
+  @override
+  String get communityDetail => '社区详情';
+
+  @override
+  String get communityMembers => '成员';
+
+  @override
+  String get communityPosts => '帖子';
+
+  @override
+  String get joinCommunity => '加入';
+
+  @override
+  String get leaveCommunity => '退出';
+
+  @override
+  String get leaveCommunityConfirm => '确定退出此社区？';
+
+  @override
+  String get noCommunities => '暂无社区';
+
+  @override
+  String get noCommunityMembers => '暂无成员';
+
+  @override
+  String get noCommunityPosts => '暂无帖子';
+
+  @override
+  String get setChampion => '设为冠军';
+
+  @override
+  String get removeChampion => '取消冠军';
+
+  @override
+  String get searchMembers => '搜索成员';
+
+  @override
+  String get recentPosts => '最新';
+
+  @override
+  String get topPosts => '热门';
+
+  @override
+  String get accountControls => '账号管控';
+
+  @override
+  String get mutedUsers => '已静音';
+
+  @override
+  String get restrictedUsers => '已限制';
+
+  @override
+  String get blockedUsers => '已拉黑';
+
+  @override
+  String get unmute => '取消静音';
+
+  @override
+  String get unrestrict => '取消限制';
+
+  @override
+  String get unblock => '取消拉黑';
+
+  @override
+  String get noMutedUsers => '暂无静音用户';
+
+  @override
+  String get noRestrictedUsers => '暂无限制用户';
+
+  @override
+  String get noBlockedUsers => '暂无拉黑用户';
+
+  @override
+  String get collections => '收藏夹';
+
+  @override
+  String get createCollection => '创建收藏夹';
+
+  @override
+  String get collectionName => '收藏夹名称';
+
+  @override
+  String get deleteCollection => '删除收藏夹';
+
+  @override
+  String get deleteCollectionConfirm => '确定删除此收藏夹？';
+
+  @override
+  String get noCollections => '暂无收藏夹';
+
+  @override
+  String get defaultCollection => '默认';
+
+  @override
+  String get hiddenWords => '隐藏词';
+
+  @override
+  String get keywords => '关键词';
+
+  @override
+  String get phrases => '短语';
+
+  @override
+  String get emoji => '表情';
+
+  @override
+  String get addWord => '添加词汇';
+
+  @override
+  String get wordContent => '内容';
+
+  @override
+  String get wordType => '类型';
+
+  @override
+  String get deleteWord => '删除词汇';
+
+  @override
+  String get deleteWordConfirm => '确定删除此隐藏词？';
+
+  @override
+  String get noHiddenWords => '暂无隐藏词';
+
+  @override
+  String get links => '链接';
+
+  @override
+  String get addLink => '添加链接';
+
+  @override
+  String get editLink => '编辑链接';
+
+  @override
+  String get linkTitle => '标题';
+
+  @override
+  String get linkUrl => '网址';
+
+  @override
+  String get deleteLink => '删除链接';
+
+  @override
+  String get deleteLinkConfirm => '确定删除此链接？';
+
+  @override
+  String get noLinks => '暂无链接';
+
+  @override
+  String get guestReplyReviewTitle => '幽灵回复审核';
+
+  @override
+  String get reject => '拒绝';
+
+  @override
+  String get approved => '已通过';
+
+  @override
+  String get rejected => '已拒绝';
+
+  @override
+  String get addLocation => '添加位置';
+
+  @override
+  String get enterLocation => '输入位置名称';
+
+  @override
+  String get clearLocation => '清除';
+
+  @override
+  String get scheduledPosts => '定时帖子';
+
+  @override
+  String get noScheduledPosts => '暂无定时帖子';
+
+  @override
+  String get cancelSchedule => '取消定时';
+
+  @override
+  String get editHistory => '编辑历史';
+
+  @override
+  String get editPost => '编辑';
+
+  @override
+  String get deletePost => '删除';
+
+  @override
+  String get deletePostConfirm => '确定删除此帖子？';
+
+  @override
+  String get pinPost => '置顶到主页';
+
+  @override
+  String get unpinPost => '取消置顶';
+
+  @override
+  String get postDeleted => '帖子已删除';
+
+  @override
+  String get postUpdated => '帖子已更新';
+
+  @override
+  String get nearbyPosts => '附近帖子';
+
+  @override
+  String get savedPosts => '已收藏帖子';
+
+  @override
+  String get noSavedPosts => '暂无收藏帖子';
+
+  @override
+  String get postDetail => '帖子详情';
+
+  @override
+  String get noRepliesYet => '暂无回复';
+
+  @override
+  String get justNow => '刚刚';
+
+  @override
+  String minutesAgo(int count) => '$count分钟前';
+
+  @override
+  String hoursAgo(int count) => '$count小时前';
+
+  @override
+  String daysAgo(int count) => '$count天前';
+
+  @override
+  String get notifiedLikedPost => '赞了你的帖子';
+
+  @override
+  String get notifiedRepliedToYou => '回复了你';
+
+  @override
+  String get notifiedFollowedYou => '关注了你';
+
+  @override
+  String get notifiedMentionedYou => '提及了你';
+
+  @override
+  String get notifiedRepostedPost => '转发了你的帖子';
+
+  @override
+  String get notifiedQuotedPost => '引用了你的帖子';
+
+  @override
+  String get filterLikes => '赞';
+
+  @override
+  String get filterFollows => '关注';
+
+  @override
+  String get quoteRepost => '引用此帖子';
+
+  @override
+  String get quotePlaceholder => '添加评论...';
+
+  @override
+  String get noThreadsYetOthers => '暂无帖子';
 }

@@ -205,6 +205,12 @@ class AuthState extends AppStates {
         isPrivate: userInfo.isPrivate,
         followersCount: userInfo.followersCount,
         followingCount: userInfo.followingCount,
+        pronouns: userInfo.pronouns,
+        gender: userInfo.gender,
+        location: userInfo.location,
+        isVerified: userInfo.isVerified,
+        accountType: userInfo.accountType,
+        postsCount: userInfo.postsCount,
       );
 
       getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
@@ -229,6 +235,12 @@ class AuthState extends AppStates {
           isPrivate: userInfo.isPrivate,
           followersCount: userInfo.followersCount,
           followingCount: userInfo.followingCount,
+          pronouns: userInfo.pronouns,
+          gender: userInfo.gender,
+          location: userInfo.location,
+          isVerified: userInfo.isVerified,
+          accountType: userInfo.accountType,
+          postsCount: userInfo.postsCount,
         );
         getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
         authStatus = AuthStatus.LOGGED_IN;
@@ -260,6 +272,11 @@ class AuthState extends AppStates {
           bio: userModel.bio,
           websiteUrl: userModel.link,
           avatarUrl: avatarUrl ?? userModel.profilePic,
+          pronouns: userModel.pronouns,
+          gender: userModel.gender,
+          location: userModel.location,
+          isPrivate: userModel.isPrivate == true ? 1 : 0,
+          accountType: userModel.accountType,
         );
 
         _userModel = userModel.copyWith(
@@ -267,6 +284,12 @@ class AuthState extends AppStates {
           bio: updatedInfo.bio,
           profilePic: updatedInfo.profilePic,
           link: updatedInfo.link,
+          pronouns: updatedInfo.pronouns,
+          gender: updatedInfo.gender,
+          location: updatedInfo.location,
+          isVerified: updatedInfo.isVerified,
+          accountType: updatedInfo.accountType,
+          postsCount: updatedInfo.postsCount,
         );
       }
 
@@ -295,6 +318,12 @@ class AuthState extends AppStates {
         followersCount: userInfo.followersCount,
         followingCount: userInfo.followingCount,
         link: userInfo.link,
+        pronouns: userInfo.pronouns,
+        gender: userInfo.gender,
+        location: userInfo.location,
+        isVerified: userInfo.isVerified,
+        accountType: userInfo.accountType,
+        postsCount: userInfo.postsCount,
       );
     } catch (error) {
       return null;
@@ -324,6 +353,12 @@ class AuthState extends AppStates {
         isPrivate: fullProfile.isPrivate,
         followersCount: fullProfile.followersCount,
         followingCount: fullProfile.followingCount,
+        pronouns: fullProfile.pronouns,
+        gender: fullProfile.gender,
+        location: fullProfile.location,
+        isVerified: fullProfile.isVerified,
+        accountType: fullProfile.accountType,
+        postsCount: fullProfile.postsCount,
       );
 
       debugPrint('getProfileUser - _userModel: displayName=${_userModel?.displayName}');

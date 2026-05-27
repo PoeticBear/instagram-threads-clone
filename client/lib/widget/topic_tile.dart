@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:threads/pages/topic/topic_detail_page.dart';
 import 'package:threads/services/search_service.dart';
 
 class TopicTile extends StatelessWidget {
@@ -7,10 +8,26 @@ class TopicTile extends StatelessWidget {
 
   const TopicTile({super.key, required this.topic, this.onTap});
 
+  void _navigateToDetail(BuildContext context) {
+    if (onTap != null) {
+      onTap!();
+      return;
+    }
+    final topicId = int.tryParse(topic.id);
+    if (topicId == null) return;
+    Navigator.push(
+      context,
+      TopicDetailPage.getRoute(
+        topicId: topicId,
+        topicName: topic.name,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => _navigateToDetail(context),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
         child: Row(

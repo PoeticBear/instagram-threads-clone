@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/widget/feedpost.dart';
+import 'package:threads/pages/composePost/post.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -146,42 +148,51 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
       );
     }
 
-    return Container(
-      color: Colors.black,
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          avatar(profilePic, 40),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName.isNotEmpty ? displayName : (userModel?.userName ?? AppLocalizations.of(context)!.anonymousUser),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
-                SizedBox(height: 6),
-                TextField(
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                    hintText: AppLocalizations.of(context)!.whatsNew,
-                    hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                    border: InputBorder.none,
-                  ),
-                  maxLines: 1,
-                ),
-              ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (_) => ComposePost(
+              onPostSuccess: () {
+                final state = Provider.of<PostState>(context, listen: false);
+                state.getDataFromDatabase();
+              },
             ),
           ),
-        ],
+        );
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        color: Colors.black,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            avatar(profilePic, 40),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName.isNotEmpty ? displayName : (userModel?.userName ?? AppLocalizations.of(context)!.anonymousUser),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    AppLocalizations.of(context)!.whatsNew,
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

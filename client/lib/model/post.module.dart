@@ -15,10 +15,21 @@ class PostModel {
   int? sharesCount;
   bool? isLiked;
   bool? isSaved;
+  bool? isReposted;
   String? postId;  // API uses post_id
   String? replyToPostId;
   String? replyToUserId;
   PollData? pollData;
+  // P3 additional fields
+  String? location;
+  List<int>? topicIds;
+  bool? isGhost;
+  int? communityId;
+  int? replySettings;
+  int? quoteRepostId;
+  bool? isPinned;
+  String? scheduledTime;
+  bool? isAi;
 
   PostModel({
     this.key,
@@ -33,10 +44,20 @@ class PostModel {
     this.sharesCount,
     this.isLiked,
     this.isSaved,
+    this.isReposted,
     this.postId,
     this.replyToPostId,
     this.replyToUserId,
     this.pollData,
+    this.location,
+    this.topicIds,
+    this.isGhost,
+    this.communityId,
+    this.replySettings,
+    this.quoteRepostId,
+    this.isPinned,
+    this.scheduledTime,
+    this.isAi,
   });
 
   // Support both Firebase format (camelCase) and API format (snake_case)
@@ -54,8 +75,20 @@ class PostModel {
       repostsCount: map['repostsCount'] ?? map['reposts_count'],
       isLiked: map['isLiked'] ?? map['is_liked'],
       isSaved: map['isSaved'] ?? map['is_saved'],
+      isReposted: map['isReposted'] ?? map['is_reposted'],
       replyToPostId: map['reply_to_post_id']?.toString(),
       replyToUserId: map['reply_to_user_id']?.toString(),
+      location: map['location'],
+      topicIds: map['topic_ids'] is List
+          ? (map['topic_ids'] as List).map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList()
+          : null,
+      isGhost: map['is_ghost'] ?? map['isGhost'],
+      communityId: map['community_id'] ?? map['communityId'],
+      replySettings: map['reply_settings'] ?? map['replySettings'],
+      quoteRepostId: map['quote_repost_id'] ?? map['quoteRepostId'],
+      isPinned: map['is_pinned'] ?? map['isPinned'],
+      scheduledTime: map['scheduled_time'] ?? map['scheduledTime'],
+      isAi: map['is_ai'] ?? map['isAi'],
     );
   }
 
@@ -76,8 +109,18 @@ class PostModel {
       'reposts_count': repostsCount,
       'is_liked': isLiked,
       'is_saved': isSaved,
+      'is_reposted': isReposted,
       'reply_to_post_id': replyToPostId,
       'reply_to_user_id': replyToUserId,
+      'location': location,
+      'topic_ids': topicIds,
+      'is_ghost': isGhost,
+      'community_id': communityId,
+      'reply_settings': replySettings,
+      'quote_repost_id': quoteRepostId,
+      'is_pinned': isPinned,
+      'scheduled_time': scheduledTime,
+      'is_ai': isAi,
     };
   }
 
@@ -94,10 +137,20 @@ class PostModel {
     int? sharesCount,
     bool? isLiked,
     bool? isSaved,
+    bool? isReposted,
     String? postId,
     String? replyToPostId,
     String? replyToUserId,
     PollData? pollData,
+    String? location,
+    List<int>? topicIds,
+    bool? isGhost,
+    int? communityId,
+    int? replySettings,
+    int? quoteRepostId,
+    bool? isPinned,
+    String? scheduledTime,
+    bool? isAi,
   }) {
     return PostModel(
       key: key ?? this.key,
@@ -112,10 +165,20 @@ class PostModel {
       sharesCount: sharesCount ?? this.sharesCount,
       isLiked: isLiked ?? this.isLiked,
       isSaved: isSaved ?? this.isSaved,
+      isReposted: isReposted ?? this.isReposted,
       postId: postId ?? this.postId,
       replyToPostId: replyToPostId ?? this.replyToPostId,
       replyToUserId: replyToUserId ?? this.replyToUserId,
       pollData: pollData ?? this.pollData,
+      location: location ?? this.location,
+      topicIds: topicIds ?? this.topicIds,
+      isGhost: isGhost ?? this.isGhost,
+      communityId: communityId ?? this.communityId,
+      replySettings: replySettings ?? this.replySettings,
+      quoteRepostId: quoteRepostId ?? this.quoteRepostId,
+      isPinned: isPinned ?? this.isPinned,
+      scheduledTime: scheduledTime ?? this.scheduledTime,
+      isAi: isAi ?? this.isAi,
     );
   }
 

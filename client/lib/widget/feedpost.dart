@@ -1,11 +1,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/helper/utility.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/post.module.dart';
+import 'package:threads/model/user.module.dart';
+import 'package:threads/network/api_config.dart';
+import 'package:threads/pages/composePost/post.dart';
+import 'package:threads/pages/profile/profile.dart';
+import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/widget/poll_widget.dart';
+import 'package:threads/widget/edit_history_sheet.dart';
+import 'package:threads/widget/reply_bottom_sheet.dart';
 
 // ignore: must_be_immutable
 class FeedPostWidget extends StatefulWidget {
@@ -65,15 +74,21 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                avatar(profilePic, 35),
+                GestureDetector(
+                  onTap: () => _navigateToProfile(context),
+                  child: avatar(profilePic, 35),
+                ),
                 Container(
                   width: 5,
                 ),
-                Text(
-                  displayName,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+                GestureDetector(
+                  onTap: () => _navigateToProfile(context),
+                  child: Text(
+                    displayName,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 Container(
@@ -87,7 +102,10 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 Container(
                   width: 5,
                 ),
-                Icon(Icons.more_horiz, color: Colors.white)
+                GestureDetector(
+                  onTap: () => _showMoreMenu(context),
+                  child: Icon(Icons.more_horiz, color: Colors.white),
+                ),
               ],
             ),
             Padding(
@@ -119,7 +137,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                                 color: const Color.fromARGB(255, 46, 46, 46),
                               ),
                               Container(
-                            height: 5,
+                                height: 5,
                           ),
                               avatar(profilePic, 15),
                             ],
@@ -144,7 +162,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                               ),
                               Container(
                                 height: 5,
-                              ),
+                          ),
                               avatar(profilePic, 15),
                             ],
                           ),
@@ -186,6 +204,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 Container(
                   width: 50,
                 ),
+                // Like button
                 GestureDetector(
                   onTap: () {
                     final state = Provider.of<PostState>(context, listen: false);
@@ -209,18 +228,14 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 Container(width: 4),
                 Text('${widget.postModel.likesCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
                 Container(width: 10),
+                // Comment button
                 GestureDetector(
                   onTap: () {
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.black,
-                      builder: (context) => Container(
-                        height: MediaQuery.of(context).size.height * 0.9,
-                        child: Center(
-                          child: Text('评论', style: TextStyle(color: Colors.white)),
-                        ),
-                      ),
+                      builder: (context) => ReplyBottomSheet(postId: widget.postModel.id),
                     );
                   },
                   child: Icon(
@@ -232,19 +247,31 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 Container(width: 4),
                 Text('${widget.postModel.repliesCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
                 Container(width: 10),
-                Icon(
-                  Iconsax.repeat,
-                  size: 20,
+                // Repost button
+                GestureDetector(
+                  onTap: () => _showRepostSheet(context),
+                  child: Icon(
+                    Iconsax.repeat,
+                    size: 20,
+                    color: widget.postModel.isReposted == true
+                        ? Colors.green
+                        : Colors.white,
+                  ),
                 ),
                 Container(width: 4),
                 Text('${widget.postModel.repostsCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
                 Container(width: 10),
-                Icon(
-                  Iconsax.send_2,
-                  size: 20,
+                // Share button
+                GestureDetector(
+                  onTap: () => _showShareSheet(context),
+                  child: Icon(
+                    Iconsax.send_2,
+                    size: 20,
+                    color: Colors.white,
+                  ),
                 ),
                 Container(width: 4),
-                Text('${widget.postModel.repliesCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text('${widget.postModel.sharesCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
               ],
             ),
             Container(
@@ -252,5 +279,418 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             ),
           ],
         ));
+  }
+
+  // ==================== Navigation ====================
+
+  void _navigateToProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProfilePage(
+          profileId: widget.postModel.user?.userId.toString() ?? '',
+        ),
+      ),
+    );
+  }
+
+  // ==================== Bottom Sheet Helpers ====================
+
+  Widget _buildSheetDivider() {
+    return Divider(color: Color.fromARGB(255, 46, 46, 46), height: 0.5);
+  }
+
+  Widget _buildSheetOption({
+    required String label,
+    required VoidCallback onTap,
+    Color textColor = Colors.white,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==================== Repost Sheet ====================
+
+  void _showRepostSheet(BuildContext context) {
+    final isReposted = widget.postModel.isReposted == true;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isReposted) ...[
+              _buildSheetOption(
+                label: 'Repost',
+                onTap: () {
+                  Navigator.pop(context);
+                  final state = Provider.of<PostState>(context, listen: false);
+                  state.repost(widget.postModel.id);
+                },
+              ),
+              _buildSheetDivider(),
+            ],
+            _buildSheetOption(
+              label: AppLocalizations.of(context)!.quote,
+              onTap: () {
+                Navigator.pop(context);
+                _showQuoteSheet(context);
+              },
+            ),
+            _buildSheetDivider(),
+            if (isReposted) ...[
+              _buildSheetOption(
+                label: 'Undo Repost',
+                textColor: Colors.red,
+                onTap: () {
+                  Navigator.pop(context);
+                  final state = Provider.of<PostState>(context, listen: false);
+                  state.unrepost(widget.postModel.id);
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== Quote Sheet ====================
+
+  void _showQuoteSheet(BuildContext context) {
+    final controller = TextEditingController();
+    final l10n = AppLocalizations.of(context)!;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.quoteRepost,
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(sheetContext),
+                    child: Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              // Quoted post preview
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Color(0xff1a1a1a),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Color(0xff333333), width: 0.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.postModel.user?.displayName ?? '',
+                      style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      widget.postModel.bio ?? '',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                style: TextStyle(color: Colors.white),
+                maxLines: 3,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: l10n.quotePlaceholder,
+                  hintStyle: TextStyle(color: Color(0xff888888)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Color(0xff333333)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Color(0xff333333)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    final state = Provider.of<PostState>(context, listen: false);
+                    final authState = Provider.of<AuthState>(context, listen: false);
+                    final postModel = PostModel(
+                      user: UserModel(
+                        userId: authState.userId != null ? int.tryParse(authState.userId!) : null,
+                        userName: authState.userModel?.userName ?? '',
+                        displayName: authState.userModel?.displayName ?? '',
+                        profilePic: authState.userModel?.profilePic,
+                      ),
+                      bio: controller.text,
+                      createdAt: DateTime.now().toIso8601String(),
+                      key: authState.userId,
+                    );
+                    await state.createPost(
+                      postModel,
+                      quoteRepostId: int.tryParse(widget.postModel.id),
+                    );
+                  },
+                  child: Text(l10n.post, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==================== Share Sheet ====================
+
+  void _showShareSheet(BuildContext context) {
+    final postId = widget.postModel.id;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildSheetOption(
+              label: 'Copy Link',
+              onTap: () {
+                Navigator.pop(context);
+                Clipboard.setData(ClipboardData(
+                  text: '${ApiConfig.baseUrl}t/$postId',
+                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Link copied to clipboard'),
+                    backgroundColor: Colors.grey[900],
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+            _buildSheetDivider(),
+            _buildSheetOption(
+              label: 'Share',
+              onTap: () {
+                Navigator.pop(context);
+                final state = Provider.of<PostState>(context, listen: false);
+                state.sharePost(postId);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== More Menu Sheet ====================
+
+  void _showMoreMenu(BuildContext context) {
+    final isSaved = widget.postModel.isSaved == true;
+    final isPinned = widget.postModel.isPinned == true;
+    final postId = widget.postModel.id;
+    final l10n = AppLocalizations.of(context)!;
+
+    // Check if this is the current user's post
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final currentUserId = authState.userId;
+    final postUserId = widget.postModel.user?.userId?.toString();
+    final isOwnPost = currentUserId != null && postUserId != null && currentUserId == postUserId;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isOwnPost) ...[
+              _buildSheetOption(
+                label: l10n.editPost,
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ComposePost(
+                        onPostSuccess: () {
+                          final state = Provider.of<PostState>(context, listen: false);
+                          state.getDataFromDatabase();
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+              _buildSheetDivider(),
+              _buildSheetOption(
+                label: l10n.deletePost,
+                textColor: Colors.red,
+                onTap: () async {
+                  Navigator.pop(context);
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: Color(0xff1a1a1a),
+                      title: Text(l10n.deletePost, style: TextStyle(color: Colors.white)),
+                      content: Text(l10n.deletePostConfirm, style: TextStyle(color: Colors.grey)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(l10n.cancel, style: TextStyle(color: Colors.grey)),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(l10n.deletePost, style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed == true) {
+                    final state = Provider.of<PostState>(context, listen: false);
+                    final success = await state.deletePost(postId);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(success ? l10n.postDeleted : 'Failed'),
+                          backgroundColor: success ? Colors.green : Colors.red,
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+              _buildSheetDivider(),
+              _buildSheetOption(
+                label: isPinned ? l10n.unpinPost : l10n.pinPost,
+                onTap: () {
+                  Navigator.pop(context);
+                  final state = Provider.of<PostState>(context, listen: false);
+                  if (isPinned) {
+                    state.unpinPost(postId);
+                  } else {
+                    state.pinPost(postId);
+                  }
+                },
+              ),
+              _buildSheetDivider(),
+            ],
+            _buildSheetOption(
+              label: isSaved ? l10n.unsave : l10n.save,
+              onTap: () {
+                Navigator.pop(context);
+                final state = Provider.of<PostState>(context, listen: false);
+                if (isSaved) {
+                  state.unsavePost(postId);
+                } else {
+                  state.savePost(postId);
+                }
+              },
+            ),
+            _buildSheetDivider(),
+            if (!isOwnPost) ...[
+              _buildSheetOption(
+                label: l10n.report,
+                textColor: Colors.red,
+                onTap: () {
+                  Navigator.pop(context);
+                  final state = Provider.of<PostState>(context, listen: false);
+                  state.reportPost(postId, reason: 'Inappropriate content');
+                },
+              ),
+              _buildSheetDivider(),
+            ],
+            _buildSheetOption(
+              label: l10n.editHistory,
+              onTap: () {
+                Navigator.pop(context);
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.black,
+                  builder: (context) => EditHistorySheet(postId: postId),
+                );
+              },
+            ),
+            _buildSheetDivider(),
+            _buildSheetOption(
+              label: l10n.notInterested,
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

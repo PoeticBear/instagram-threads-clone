@@ -11,6 +11,11 @@ import 'package:threads/state/locale.state.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/search.state.dart';
+import 'package:threads/state/message.state.dart';
+import 'package:threads/state/notification.state.dart';
+import 'package:threads/state/settings.state.dart';
+import 'package:threads/state/draft.state.dart';
+import 'package:threads/state/community.state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 List<CameraDescription> cameras = [];
@@ -52,6 +57,11 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<AuthState>(create: (_) => AuthState()),
         ChangeNotifierProvider<PostState>(create: (_) => PostState()),
         ChangeNotifierProvider<SearchState>(create: (_) => SearchState()),
+        ChangeNotifierProvider<NotificationState>(create: (_) => NotificationState()),
+        ChangeNotifierProvider<SettingsState>(create: (_) => SettingsState()..loadSettings()),
+        ChangeNotifierProvider<DraftState>(create: (_) => DraftState()),
+        ChangeNotifierProvider<MessageState>(create: (_) => MessageState()),
+        ChangeNotifierProvider<CommunityState>(create: (_) => CommunityState()),
         ChangeNotifierProvider<LocaleProvider>(create: (_) => LocaleProvider()),
       ],
       child: Consumer<LocaleProvider>(

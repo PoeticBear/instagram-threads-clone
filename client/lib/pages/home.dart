@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/pages/composePost/post.dart';
+import 'package:threads/pages/message/message_page.dart';
 import 'package:threads/pages/notification/notification.dart';
 import 'package:threads/pages/search/search.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/state/notification.state.dart';
 import 'package:threads/pages/profile/myprofile.dart';
 import 'camera/camera.dart';
 import 'feed/feed.dart';
@@ -24,6 +26,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       initPosts();
       initProfile();
+      initNotifications();
     });
     super.initState();
   }
@@ -43,6 +46,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     state.getDataFromDatabase();
   }
 
+  void initNotifications() {
+    var state = Provider.of<NotificationState>(context, listen: false);
+    state.loadNotifications();
+    state.fetchUnreadCount();
+  }
+
   Widget tabPage(int index) {
     if (index == 0) return FeedPage();
     if (index == 1) return SearchPage();
@@ -54,7 +63,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       },
     );
     if (index == 3) return NotificationPage();
-    if (index == 4) return MyProfilePage();
+    if (index == 4) return MessagePage();
+    if (index == 5) return MyProfilePage();
     return FeedPage();
   }
 
@@ -91,8 +101,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           separator,
           iconBar(3, Iconsax.heart),
           separator,
+          iconBar(4, Iconsax.message),
+          separator,
           iconBar(
-            4,
+            5,
             CupertinoIcons.person,
           ),
         ]));

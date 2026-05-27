@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
-import 'package:threads/model/post.module.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/common/settings.dart';
 import 'package:threads/state/post.state.dart';
@@ -296,16 +295,25 @@ class _ProfilePageState extends State<MyProfilePage>
                                   );
                                 });
                           }),
-                          Container(
-                            height: 100,
-                            width: 200,
-                            alignment: Alignment.center,
-                            child: Text(
-                              AppLocalizations.of(context)!.noThreadsYet,
-                              style: TextStyle(
-                                  color: Color.fromARGB(255, 84, 60, 60)),
-                            ),
-                          )
+                          Consumer<PostState>(builder: (context, postState, child) {
+                            final replies = (postState.userPosts ?? [])
+                                .where((p) => p.replyToPostId != null && p.replyToPostId!.isNotEmpty)
+                                .toList();
+                            if (replies.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  AppLocalizations.of(context)!.noRepliesYet,
+                                  style: TextStyle(color: Color(0xff555555)),
+                                ),
+                              );
+                            }
+                            return ListView.builder(
+                              itemCount: replies.length,
+                              itemBuilder: (context, index) {
+                                return FeedPostWidget(postModel: replies[index]);
+                              },
+                            );
+                          }),
                         ]))
                   ]))
         ])));

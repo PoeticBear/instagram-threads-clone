@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
@@ -9,7 +10,10 @@ import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/state/auth.state.dart';
+import 'package:threads/state/draft.state.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/model/draft.module.dart';
+import 'package:threads/widget/draft_list_sheet.dart';
 
 class ComposePost extends StatefulWidget {
   final VoidCallback? onPostSuccess;
@@ -26,6 +30,7 @@ class _ComposePostState extends State<ComposePost> {
   List<TextEditingController> _pollControllers = [];
   int _replyType = 1;
   bool _isSubmitting = false;
+  String? _location;
 
   static const int _maxImages = 10;
   static const int _maxPollOptions = 4;
@@ -139,6 +144,78 @@ class _ComposePostState extends State<ComposePost> {
     }
   }
 
+  // ─── Draft ────────────────────────────────────────────────
+
+  void _showDraftListSheet() {
+    final draftState = Provider.of<DraftState>(context, listen: false);
+    draftState.loadDrafts();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraftListSheet(
+        onDraftSelected: (draft) => _onDraftSelected(draft),
+      ),
+    );
+  }
+
+  void _onDraftSelected(DraftInfo draft) {
+    setState(() {
+      _textEditingController.text = draft.content;
+      if (draft.pollOptions != null && draft.pollOptions!.isNotEmpty) {
+        _showPollEditor = true;
+        _imageFiles.clear();
+        _pollControllers = draft.pollOptions!
+            .map((opt) => TextEditingController(text: opt))
+            .toList();
+        if (_pollControllers.length < _minPollOptions) {
+          while (_pollControllers.length < _minPollOptions) {
+            _pollControllers.add(TextEditingController());
+          }
+        }
+      }
+      if (draft.replySettings != null) {
+        _replyType = draft.replySettings!;
+      }
+    });
+  }
+
+  Future<void> _saveCurrentDraft() async {
+    final content = _textEditingController.text.trim();
+    if (content.isEmpty && _imageFiles.isEmpty && !_showPollEditor) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nothing to save as draft'),
+          backgroundColor: Colors.grey[700],
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+    final draftState = Provider.of<DraftState>(context, listen: false);
+    final saved = await draftState.saveDraft(
+      content: content,
+      pollOptions: _getValidPollOptions(),
+      replySettings: _replyType != 1 ? _replyType : null,
+    );
+    if (!mounted) return;
+    if (saved != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Draft saved'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 1),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save draft'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   // ─── Submit ───────────────────────────────────────────────
 
   Future<PostModel> _createPostModel() async {
@@ -180,6 +257,7 @@ class _ComposePostState extends State<ComposePost> {
       imageFiles: _imageFiles.isNotEmpty ? _imageFiles : null,
       pollOptions: pollOptions,
       replyType: _replyType != 1 ? _replyType : null,
+      location: _location,
     );
 
     print('🚀 _submit 结果: postId=$postId');
@@ -204,6 +282,7 @@ class _ComposePostState extends State<ComposePost> {
         _imageFiles.clear();
         _showPollEditor = false;
         _replyType = 1;
+        _location = null;
       });
       widget.onPostSuccess?.call();
     } else {
@@ -214,6 +293,58 @@ class _ComposePostState extends State<ComposePost> {
         ),
       );
     }
+  }
+
+  // ─── Location ────────────────────────────────────────────
+
+  void _showLocationDialog() {
+    final controller = TextEditingController(text: _location ?? '');
+    showCupertinoDialog(
+      context: context,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: Text(
+          AppLocalizations.of(context)!.addLocation,
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: CupertinoTextField(
+            controller: controller,
+            placeholder: AppLocalizations.of(context)!.enterLocation,
+            placeholderStyle: const TextStyle(color: Color(0xff888888)),
+            style: const TextStyle(color: Colors.white),
+            decoration: BoxDecoration(
+              color: const Color(0xff1a1a1a),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              setState(() => _location = null);
+              Navigator.pop(dialogContext);
+            },
+            child: Text(AppLocalizations.of(context)!.clearLocation),
+          ),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () {
+              final value = controller.text.trim();
+              setState(() => _location = value.isEmpty ? null : value);
+              Navigator.pop(dialogContext);
+            },
+            child: Text(AppLocalizations.of(context)!.save),
+          ),
+        ],
+      ),
+    );
   }
 
   // ─── Reply Permission Sheet ──────────────────────────────
@@ -428,6 +559,29 @@ class _ComposePostState extends State<ComposePost> {
                       padding: EdgeInsets.only(left: 52, top: 12),
                       child: _buildPollEditor(),
                     ),
+
+                  // ── Location chip ──
+                  if (_location != null)
+                    Padding(
+                      padding: EdgeInsets.only(left: 52, top: 8),
+                      child: GestureDetector(
+                        onTap: _showLocationDialog,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Iconsax.location, size: 14, color: Colors.grey[500]),
+                            SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                _location!,
+                                style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -611,7 +765,34 @@ class _ComposePostState extends State<ComposePost> {
               onPressed: _showReplyTypeSheet,
               icon: Icon(_replyTypeIcon, size: 22, color: Colors.grey[500]),
             ),
+            // Drafts button
+            IconButton(
+              onPressed: _showDraftListSheet,
+              icon: Icon(Iconsax.note_text, size: 22, color: Colors.grey[500]),
+            ),
+            // Location button
+            IconButton(
+              onPressed: _showLocationDialog,
+              icon: Icon(Iconsax.location,
+                  size: 22,
+                  color: _location != null ? Colors.blue : Colors.grey[500]),
+            ),
             Spacer(),
+            // Save draft text button
+            if (_hasContent)
+              GestureDetector(
+                onTap: _saveCurrentDraft,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 12),
+                  child: Text(
+                    'Draft',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
             // Post button
             GestureDetector(
               onTap: _canPost ? _submit : null,

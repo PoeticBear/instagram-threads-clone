@@ -33,10 +33,10 @@ class FollowService {
     }
   }
 
-  Future<List<UserInfo>> getFollowing(int userId, {int page = 1, int pageSize = 20}) async {
+  Future<List<UserInfo>> getFollowing({int page = 1, int pageSize = 20}) async {
     try {
       final response = await _apiClient.get(
-        'follow/following/$userId',
+        'follow/following',
         queryParameters: {
           'page': page.toString(),
           'page_size': pageSize.toString(),
@@ -65,10 +65,10 @@ class FollowService {
     }
   }
 
-  Future<List<UserInfo>> getMutualFollowers(int userId, {int page = 1, int pageSize = 20}) async {
+  Future<List<UserInfo>> getMutualFollowers({int page = 1, int pageSize = 20}) async {
     try {
       final response = await _apiClient.get(
-        'follow/mutual/$userId',
+        'follow/mutual',
         queryParameters: {
           'page': page.toString(),
           'page_size': pageSize.toString(),

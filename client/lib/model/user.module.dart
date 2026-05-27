@@ -16,6 +16,13 @@ class UserModel extends Equatable {
   List<String>? followingList;
   int? followersCount;  // Added for API
   int? followingCount;  // Added for API
+  String? pronouns;
+  int? gender;        // 1=Not set, 2=Male, 3=Female, 4=Other
+  String? location;
+  bool? isVerified;
+  int? accountType;   // 1=Personal, 2=Creator, 3=Business
+  int? postsCount;
+  String? lastActiveTime;
 
   UserModel({
     this.email,
@@ -33,6 +40,13 @@ class UserModel extends Equatable {
     this.fcmToken,
     this.followersCount,
     this.followingCount,
+    this.pronouns,
+    this.gender,
+    this.location,
+    this.isVerified,
+    this.accountType,
+    this.postsCount,
+    this.lastActiveTime,
   });
 
   // Support both Firebase format (camelCase) and API format (snake_case)
@@ -61,6 +75,13 @@ class UserModel extends Equatable {
       followingCount: map['followingCount'] ?? map['following_count'],
       followersList: _parseStringList(map['followerList'] ?? map['followersList']),
       followingList: _parseStringList(map['followingList'] ?? map['followingList']),
+      pronouns: map['pronouns'],
+      gender: map['gender'],
+      location: map['location'],
+      isVerified: map['is_verified'] ?? map['isVerified'],
+      accountType: map['account_type'] ?? map['accountType'],
+      postsCount: map['posts_count'] ?? map['postsCount'],
+      lastActiveTime: map['last_active_time'] ?? map['lastActiveTime'],
     );
   }
 
@@ -89,6 +110,13 @@ class UserModel extends Equatable {
       'following_list': followingList,
       'followers_count': followersCount,
       'following_count': followingCount,
+      'pronouns': pronouns,
+      'gender': gender,
+      'location': location,
+      'is_verified': isVerified,
+      'account_type': accountType,
+      'posts_count': postsCount,
+      'last_active_time': lastActiveTime,
     };
   }
 
@@ -125,6 +153,13 @@ class UserModel extends Equatable {
     List<String>? followersList,
     int? followersCount,
     int? followingCount,
+    String? pronouns,
+    int? gender,
+    String? location,
+    bool? isVerified,
+    int? accountType,
+    int? postsCount,
+    String? lastActiveTime,
   }) {
     return UserModel(
       email: email ?? this.email,
@@ -142,6 +177,13 @@ class UserModel extends Equatable {
       followingList: followingList ?? this.followingList,
       followersCount: followersCount ?? this.followersCount,
       followingCount: followingCount ?? this.followingCount,
+      pronouns: pronouns ?? this.pronouns,
+      gender: gender ?? this.gender,
+      location: location ?? this.location,
+      isVerified: isVerified ?? this.isVerified,
+      accountType: accountType ?? this.accountType,
+      postsCount: postsCount ?? this.postsCount,
+      lastActiveTime: lastActiveTime ?? this.lastActiveTime,
     );
   }
 
@@ -165,5 +207,12 @@ class UserModel extends Equatable {
         followingList,
         followersCount,
         followingCount,
+        pronouns,
+        gender,
+        location,
+        isVerified,
+        accountType,
+        postsCount,
+        lastActiveTime,
       ];
 }

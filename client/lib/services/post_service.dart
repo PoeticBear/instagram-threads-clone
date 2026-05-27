@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 
+import '../model/draft.module.dart';
 import '../network/api_client.dart';
 import '../network/api_config.dart';
 import '../network/api_exception.dart';
@@ -18,6 +19,11 @@ class PostService {
     int? replyType,
     String? replyToPostId,
     int? replyToUserId,
+    String? location,
+    List<int>? topicIds,
+    int? communityId,
+    int? quoteRepostId,
+    String? scheduledTime,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -37,6 +43,11 @@ class PostService {
         body['reply_to_post_id'] = int.tryParse(replyToPostId);
       }
       if (replyToUserId != null) body['reply_to_user_id'] = replyToUserId;
+      if (location != null) body['location'] = location;
+      if (topicIds != null && topicIds.isNotEmpty) body['topic_ids'] = topicIds;
+      if (communityId != null) body['community_id'] = communityId;
+      if (quoteRepostId != null) body['quote_repost_id'] = quoteRepostId;
+      if (scheduledTime != null) body['scheduled_time'] = scheduledTime;
 
       print('📤 createPost 请求体: ${json.encode(body)}');
       final response = await _apiClient.post('post/create', body: body);
@@ -214,6 +225,14 @@ class PostService {
     }
   }
 
+  Future<void> sharePost(String postId) async {
+    try {
+      await _apiClient.post('post/share/$postId');
+    } on ApiException {
+      rethrow;
+    }
+  }
+
   Future<void> pinPost(String postId) async {
     try {
       await _apiClient.post('post/pin/$postId');
@@ -316,6 +335,263 @@ class PostService {
       rethrow;
     }
   }
+
+  Future<List<Post>> getScheduledPosts({int page = 1, int size = 20}) async {
+    try {
+      final response = await _apiClient.get(
+        'post/scheduled',
+        queryParameters: {
+          'page': page.toString(),
+          'size': size.toString(),
+        },
+      );
+      final data = response['data'];
+      List items;
+      if (data is List) {
+        items = data;
+      } else if (data is Map && data.containsKey('items')) {
+        items = data['items'] as List? ?? [];
+      } else {
+        items = [];
+      }
+      return items.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<void> cancelSchedule(String postId) async {
+    try {
+      await _apiClient.delete('post/$postId/schedule');
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<List<EditHistory>> getEditHistory(String postId) async {
+    try {
+      final response = await _apiClient.get('post/$postId/edit-history');
+      final list = response['data'] as List? ?? [];
+      return list.map((e) => EditHistory.fromJson(e as Map<String, dynamic>)).toList();
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getNearbyPosts({
+    required double latitude,
+    required double longitude,
+    double radius = 10.0,
+    int page = 1,
+    int size = 20,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        'post/nearby',
+        body: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'radius': radius,
+          'page': page,
+          'size': size,
+        },
+      );
+      return response['data'] ?? {};
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getOEmbed(String url) async {
+    try {
+      final response = await _apiClient.get(
+        'post/oembed',
+        queryParameters: {'url': url},
+      );
+      return response['data'] ?? {};
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  // ==================== Draft ====================
+
+  Future<DraftInfo> saveDraft({
+    required String content,
+    List<String>? mediaUrls,
+    List<String>? pollOptions,
+    List<int>? topicIds,
+    int? replySettings,
+  }) async {
+    try {
+      final body = <String, dynamic>{'content': content};
+      if (mediaUrls != null && mediaUrls.isNotEmpty) body['media_urls'] = mediaUrls;
+      if (pollOptions != null && pollOptions.isNotEmpty) body['poll_options'] = pollOptions;
+      if (topicIds != null && topicIds.isNotEmpty) body['topic_ids'] = topicIds;
+      if (replySettings != null) body['reply_settings'] = replySettings;
+
+      final response = await _apiClient.post('post/draft', body: body);
+      return DraftInfo.fromJson(response['data']);
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<List<DraftInfo>> getDrafts({int page = 1, int size = 20}) async {
+    try {
+      final response = await _apiClient.get(
+        'post/draft/list',
+        queryParameters: {'page': page.toString(), 'size': size.toString()},
+      );
+      final data = response['data'];
+      List items;
+      if (data is List) {
+        items = data;
+      } else if (data is Map && data.containsKey('items')) {
+        items = data['items'] as List? ?? [];
+      } else {
+        items = [];
+      }
+      return items.map((e) => DraftInfo.fromJson(e as Map<String, dynamic>)).toList();
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<DraftInfo> getDraftDetail(int draftId) async {
+    try {
+      final response = await _apiClient.get('post/draft/$draftId');
+      return DraftInfo.fromJson(response['data']);
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteDraft(int draftId) async {
+    try {
+      await _apiClient.delete('post/draft/$draftId');
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  // ==================== Guest Reply Request (幽灵帖审核) ====================
+
+  Future<void> requestGuestReply(String postId, {String? content}) async {
+    try {
+      final body = <String, dynamic>{'post_id': postId};
+      if (content != null) body['content'] = content;
+      await _apiClient.post('post/guest-reply-request', body: body);
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<void> approveGuestReply(String postId) async {
+    try {
+      await _apiClient.post('post/guest-reply-request/$postId/approve');
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<void> rejectGuestReply(String postId) async {
+    try {
+      await _apiClient.post('post/guest-reply-request/$postId/reject');
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<List<GuestReplyRequest>> getPendingGuestReplies(String postId) async {
+    try {
+      final response = await _apiClient.get('post/guest-reply-request/$postId/pending');
+      final list = response['data'] as List? ?? [];
+      return list.map((e) => GuestReplyRequest.fromJson(e as Map<String, dynamic>)).toList();
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  // ==================== Reply Pin / Unpin ====================
+
+  Future<void> pinReply(int replyId) async {
+    try {
+      await _apiClient.post('post/reply/pin/$replyId');
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<void> unpinReply(int replyId) async {
+    try {
+      await _apiClient.delete('post/reply/pin/$replyId');
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  // ==================== Pending Reply Moderation ====================
+
+  Future<List<Reply>> getPendingReplies(int postId) async {
+    try {
+      final response = await _apiClient.get('post/reply/pending/$postId');
+      final list = response['data'] as List? ?? [];
+      return list.map((e) => Reply.fromJson(e as Map<String, dynamic>)).toList();
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<void> approvePendingReply(int postId, int replyId) async {
+    try {
+      await _apiClient.post(
+        'post/reply/pending/$postId/approve',
+        body: {'reply_id': replyId},
+      );
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  Future<void> rejectPendingReply(int postId, int replyId) async {
+    try {
+      await _apiClient.post(
+        'post/reply/pending/$postId/reject',
+        body: {'reply_id': replyId},
+      );
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  // ==================== Poll Results ====================
+
+  Future<PollData?> getPollResults(int postId) async {
+    try {
+      final response = await _apiClient.get('post/poll/$postId');
+      final data = response['data'];
+      if (data == null) return null;
+
+      // Parse poll data from response
+      final pollOptionsRaw = data['poll_options'];
+      final pollId = data['poll_id'];
+      if (pollId != null && pollOptionsRaw is List && pollOptionsRaw.isNotEmpty) {
+        final options = pollOptionsRaw.map((e) => PollOption.fromJson(e as Map<String, dynamic>)).toList();
+        final expireStr = data['poll_expire_time'];
+        return PollData(
+          pollId: pollId is int ? pollId : int.tryParse(pollId.toString()),
+          options: options,
+          totalVotes: data['poll_total_votes'] ?? 0,
+          expireTime: expireStr != null ? DateTime.tryParse(expireStr.toString()) : null,
+          userVotedOptionId: data['poll_user_voted_option_id'] is int ? data['poll_user_voted_option_id'] : null,
+        );
+      }
+      return null;
+    } on ApiException {
+      rethrow;
+    }
+  }
 }
 
 class Post {
@@ -337,6 +613,17 @@ class Post {
   final bool isReposted;
   final Post? replyTo;
   final Reply? replyToReply;
+  // P3 additional fields
+  final String? location;
+  final List<int> topicIds;
+  final bool isGhost;
+  final int? communityId;
+  final int? replySettings;
+  final int? quoteRepostId;
+  final bool isPinned;
+  // P3 remaining fields
+  final String? scheduledTime;
+  final bool isAi;
 
   Post({
     required this.id,
@@ -357,6 +644,15 @@ class Post {
     this.isReposted = false,
     this.replyTo,
     this.replyToReply,
+    this.location,
+    this.topicIds = const [],
+    this.isGhost = false,
+    this.communityId,
+    this.replySettings,
+    this.quoteRepostId,
+    this.isPinned = false,
+    this.scheduledTime,
+    this.isAi = false,
   });
 
   /// First image URL from mediaList, or null
@@ -418,6 +714,15 @@ class Post {
       );
     }
 
+    // Parse topic_ids
+    final topicIdsRaw = json['topic_ids'] ?? json['topicIds'];
+    final List<int> topicIds;
+    if (topicIdsRaw is List) {
+      topicIds = topicIdsRaw.map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList();
+    } else {
+      topicIds = [];
+    }
+
     return Post(
       id: json['id']?.toString() ?? json['post_id']?.toString() ?? '',
       userId: userId,
@@ -437,6 +742,16 @@ class Post {
       isReposted: json['is_reposted'] ?? json['isReposted'] ?? false,
       replyTo: json['reply_to'] != null ? Post.fromJson(json['reply_to']) : null,
       replyToReply: json['reply_to_reply'] != null ? Reply.fromJson(json['reply_to_reply']) : null,
+      // P3 fields
+      location: json['location'],
+      topicIds: topicIds,
+      isGhost: json['is_ghost'] ?? json['isGhost'] ?? false,
+      communityId: json['community_id'] ?? json['communityId'],
+      replySettings: json['reply_settings'] ?? json['replySettings'],
+      quoteRepostId: json['quote_repost_id'] ?? json['quoteRepostId'],
+      isPinned: json['is_pinned'] ?? json['isPinned'] ?? false,
+      scheduledTime: json['scheduled_time'] ?? json['scheduledTime'],
+      isAi: json['is_ai'] ?? json['isAi'] ?? false,
     );
   }
 
@@ -590,6 +905,69 @@ class Reply {
       isLiked: json['is_liked'] ?? json['isLiked'] ?? false,
       isPinned: json['is_pinned'] ?? json['isPinned'] ?? false,
       isHidden: json['is_hidden'] ?? json['isHidden'] ?? false,
+    );
+  }
+}
+
+class GuestReplyRequest {
+  final int id;
+  final String postId;
+  final int userId;
+  final String username;
+  final String? displayName;
+  final String? avatarUrl;
+  final String? content;
+  final int status; // 0=pending, 1=approved, 2=rejected
+  final String? createTime;
+
+  GuestReplyRequest({
+    required this.id,
+    required this.postId,
+    required this.userId,
+    required this.username,
+    this.displayName,
+    this.avatarUrl,
+    this.content,
+    this.status = 0,
+    this.createTime,
+  });
+
+  factory GuestReplyRequest.fromJson(Map<String, dynamic> json) {
+    return GuestReplyRequest(
+      id: json['id'] ?? 0,
+      postId: json['post_id']?.toString() ?? json['postId']?.toString() ?? '',
+      userId: json['user_id'] ?? json['userId'] ?? 0,
+      username: json['username'] ?? '',
+      displayName: json['display_name'] ?? json['displayName'],
+      avatarUrl: json['avatar_url'] ?? json['avatarUrl'],
+      content: json['content'],
+      status: json['status'] ?? 0,
+      createTime: json['create_time'] ?? json['createTime'],
+    );
+  }
+}
+
+class EditHistory {
+  final int id;
+  final String postId;
+  final String content;
+  final DateTime editedAt;
+
+  EditHistory({
+    required this.id,
+    required this.postId,
+    required this.content,
+    required this.editedAt,
+  });
+
+  factory EditHistory.fromJson(Map<String, dynamic> json) {
+    return EditHistory(
+      id: json['id'] ?? 0,
+      postId: json['post_id']?.toString() ?? '',
+      content: json['content'] ?? '',
+      editedAt: json['edited_at'] != null
+          ? DateTime.parse(json['edited_at'])
+          : (json['editedAt'] != null ? DateTime.parse(json['editedAt']) : DateTime.now()),
     );
   }
 }

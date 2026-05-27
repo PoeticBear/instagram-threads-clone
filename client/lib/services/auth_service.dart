@@ -166,6 +166,30 @@ class AuthService {
     }
   }
 
+  // Register device token for push notifications
+  Future<void> registerDeviceToken(String deviceToken) async {
+    try {
+      await _apiClient.post(
+        'user/device-token/register',
+        body: {'device_token': deviceToken},
+      );
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  // Deregister device token
+  Future<void> deregisterDeviceToken(String deviceToken) async {
+    try {
+      await _apiClient.post(
+        'user/device-token/deregister',
+        body: {'device_token': deviceToken},
+      );
+    } on ApiException {
+      rethrow;
+    }
+  }
+
   Future<void> _saveTokens({
     required String accessToken,
     required String refreshToken,
@@ -237,6 +261,12 @@ class UserInfo {
   final bool isPrivate;
   final int followersCount;
   final int followingCount;
+  final String? pronouns;
+  final int? gender;        // 1=Not set, 2=Male, 3=Female, 4=Other
+  final String? location;
+  final bool? isVerified;
+  final int? accountType;   // 1=Personal, 2=Creator, 3=Business
+  final int? postsCount;
 
   UserInfo({
     required this.userId,
@@ -248,6 +278,12 @@ class UserInfo {
     this.isPrivate = false,
     this.followersCount = 0,
     this.followingCount = 0,
+    this.pronouns,
+    this.gender,
+    this.location,
+    this.isVerified,
+    this.accountType,
+    this.postsCount,
   });
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
@@ -267,6 +303,12 @@ class UserInfo {
       isPrivate: isPrivate,
       followersCount: json['followers_count'] ?? json['followersCount'] ?? 0,
       followingCount: json['following_count'] ?? json['followingCount'] ?? 0,
+      pronouns: json['pronouns'],
+      gender: json['gender'],
+      location: json['location'],
+      isVerified: json['is_verified'] ?? json['isVerified'],
+      accountType: json['account_type'] ?? json['accountType'],
+      postsCount: json['posts_count'] ?? json['postsCount'],
     );
   }
 }

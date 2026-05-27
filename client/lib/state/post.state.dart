@@ -59,6 +59,10 @@ class PostState extends AppStates {
     List<File>? imageFiles,
     List<String>? pollOptions,
     int? replyType,
+    String? location,
+    List<int>? topicIds,
+    int? communityId,
+    int? quoteRepostId,
   }) async {
     try {
       isBusy = true;
@@ -88,6 +92,10 @@ class PostState extends AppStates {
         replyToPostId: model.replyToPostId,
         replyToUserId:
             model.replyToUserId != null ? int.tryParse(model.replyToUserId!) : null,
+        location: location,
+        topicIds: topicIds,
+        communityId: communityId,
+        quoteRepostId: quoteRepostId,
       );
 
       developer.log('✅ 帖子创建成功: postId=${post.id}', name: 'PostState');
@@ -105,6 +113,7 @@ class PostState extends AppStates {
         repostsCount: post.repostsCount,
         isLiked: post.isLiked,
         isSaved: post.isSaved,
+        isReposted: post.isReposted,
         pollData: post.pollData,
       );
 
@@ -211,6 +220,7 @@ class PostState extends AppStates {
         sharesCount: apiPost.sharesCount,
         isLiked: apiPost.isLiked,
         isSaved: apiPost.isSaved,
+        isReposted: apiPost.isReposted,
         pollData: apiPost.pollData,
       )).toList();
 
@@ -291,6 +301,7 @@ class PostState extends AppStates {
           sharesCount: apiPost.sharesCount,
           isLiked: apiPost.isLiked,
           isSaved: apiPost.isSaved,
+          isReposted: apiPost.isReposted,
           pollData: apiPost.pollData,
         )).toList();
 
@@ -464,6 +475,7 @@ class PostState extends AppStates {
         repostsCount: apiPost.repostsCount,
         isLiked: apiPost.isLiked,
         isSaved: apiPost.isSaved,
+        isReposted: apiPost.isReposted,
       )).toList();
     } catch (error) {
       return [];
@@ -517,5 +529,322 @@ class PostState extends AppStates {
         notifyListeners();
       }
     }
+  }
+
+  // ==================== Repost ====================
+
+  /// Repost a post with optimistic update.
+  /// Sets isReposted=true and increments repostsCount immediately,
+  /// then calls the API. Rolls back on failure.
+  Future<void> repost(String postId, {String? content}) async {
+    _updatePostRepostStatus(postId, true);
+    try {
+      await postService.repost(postId, content: content);
+    } catch (error) {
+      developer.log('repost failed, rolling back: $error', name: 'PostState');
+      _updatePostRepostStatus(postId, false);
+    }
+  }
+
+  /// Unrepost a post with optimistic update.
+  /// Sets isReposted=false and decrements repostsCount immediately.
+  /// Since PostService does not have a dedicated unrepost endpoint,
+  /// we call repost again to toggle the state (the backend treats it as a toggle).
+  /// Rolls back on failure.
+  Future<void> unrepost(String postId, {String? content}) async {
+    _updatePostRepostStatus(postId, false);
+    try {
+      await postService.repost(postId, content: content);
+    } catch (error) {
+      developer.log('unrepost failed, rolling back: $error', name: 'PostState');
+      _updatePostRepostStatus(postId, true);
+    }
+  }
+
+  void _updatePostRepostStatus(String postId, bool isReposted) {
+    if (_feedlist != null) {
+      final index = _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+      if (index != -1) {
+        final post = _feedlist![index];
+        _feedlist![index] = post.copyWith(
+          isReposted: isReposted,
+          repostsCount: (post.repostsCount ?? 0) + (isReposted ? 1 : -1),
+        );
+        notifyListeners();
+      }
+    }
+  }
+
+  // ==================== Save / Unsave ====================
+
+  /// Save a post with optimistic update.
+  /// Sets isSaved=true immediately, then calls the API. Rolls back on failure.
+  Future<void> savePost(String postId) async {
+    _updatePostSaveStatus(postId, true);
+    try {
+      await postService.savePost(postId);
+    } catch (error) {
+      developer.log('savePost failed, rolling back: $error', name: 'PostState');
+      _updatePostSaveStatus(postId, false);
+    }
+  }
+
+  /// Unsave a post with optimistic update.
+  /// Sets isSaved=false immediately, then calls the API. Rolls back on failure.
+  Future<void> unsavePost(String postId) async {
+    _updatePostSaveStatus(postId, false);
+    try {
+      await postService.unsavePost(postId);
+    } catch (error) {
+      developer.log('unsavePost failed, rolling back: $error', name: 'PostState');
+      _updatePostSaveStatus(postId, true);
+    }
+  }
+
+  void _updatePostSaveStatus(String postId, bool isSaved) {
+    if (_feedlist != null) {
+      final index = _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+      if (index != -1) {
+        final post = _feedlist![index];
+        _feedlist![index] = post.copyWith(isSaved: isSaved);
+        notifyListeners();
+      }
+    }
+  }
+
+  // ==================== Share ====================
+
+  /// Share a post. No optimistic update needed -- just increments sharesCount
+  /// optimistically and calls the API.
+  Future<void> sharePost(String postId) async {
+    _updatePostShareCount(postId, increment: true);
+    try {
+      await postService.sharePost(postId);
+    } catch (error) {
+      developer.log('sharePost failed, rolling back: $error', name: 'PostState');
+      _updatePostShareCount(postId, increment: false);
+    }
+  }
+
+  void _updatePostShareCount(String postId, {required bool increment}) {
+    if (_feedlist != null) {
+      final index = _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+      if (index != -1) {
+        final post = _feedlist![index];
+        _feedlist![index] = post.copyWith(
+          sharesCount: (post.sharesCount ?? 0) + (increment ? 1 : -1),
+        );
+        notifyListeners();
+      }
+    }
+  }
+
+  // ==================== Report ====================
+
+  /// Report a post. No optimistic UI update needed.
+  Future<void> reportPost(String postId, {String? reason}) async {
+    try {
+      await postService.reportPost(postId, reason: reason);
+      developer.log('reportPost succeeded for postId=$postId', name: 'PostState');
+    } catch (error) {
+      developer.log('reportPost failed: $error', name: 'PostState');
+      rethrow;
+    }
+  }
+
+  // ==================== Delete / Update ====================
+
+  Future<bool> deletePost(String postId) async {
+    try {
+      await postService.deletePost(postId);
+      _feedlist?.removeWhere((p) => p.id == postId);
+      _userPosts?.removeWhere((p) => p.id == postId);
+      notifyListeners();
+      return true;
+    } catch (error) {
+      developer.log('deletePost failed: $error', name: 'PostState');
+      return false;
+    }
+  }
+
+  Future<PostModel?> updatePost(String postId, {String? content, String? imageUrl}) async {
+    try {
+      final updated = await postService.updatePost(
+        postId: postId,
+        content: content,
+        imageUrl: imageUrl,
+      );
+      final updatedModel = PostModel(
+        key: updated.id,
+        postId: updated.id,
+        bio: updated.content,
+        createdAt: updated.createdAt.toIso8601String(),
+        imagePath: updated.imageUrl,
+        likesCount: updated.likesCount,
+        repliesCount: updated.repliesCount,
+        repostsCount: updated.repostsCount,
+        sharesCount: updated.sharesCount,
+        isLiked: updated.isLiked,
+        isSaved: updated.isSaved,
+        isReposted: updated.isReposted,
+      );
+      _updatePostInList(postId, updatedModel);
+      return updatedModel;
+    } catch (error) {
+      developer.log('updatePost failed: $error', name: 'PostState');
+      return null;
+    }
+  }
+
+  // ==================== Pin / Unpin ====================
+
+  Future<void> pinPost(String postId) async {
+    try {
+      await postService.pinPost(postId);
+      _updatePostField(postId, isPinned: true);
+    } catch (error) {
+      developer.log('pinPost failed: $error', name: 'PostState');
+    }
+  }
+
+  Future<void> unpinPost(String postId) async {
+    try {
+      await postService.unpinPost(postId);
+      _updatePostField(postId, isPinned: false);
+    } catch (error) {
+      developer.log('unpinPost failed: $error', name: 'PostState');
+    }
+  }
+
+  void _updatePostField(String postId, {bool? isPinned}) {
+    for (final list in [_feedlist, _userPosts]) {
+      if (list == null) continue;
+      final index = list.indexWhere((p) => p.id == postId);
+      if (index != -1) {
+        list[index] = list[index].copyWith(isPinned: isPinned);
+      }
+    }
+    notifyListeners();
+  }
+
+  void _updatePostInList(String postId, PostModel updated) {
+    for (final list in [_feedlist, _userPosts]) {
+      if (list == null) continue;
+      final index = list.indexWhere((p) => p.id == postId);
+      if (index != -1) {
+        list[index] = list[index].copyWith(
+          bio: updated.bio,
+          imagePath: updated.imagePath,
+        );
+      }
+    }
+    notifyListeners();
+  }
+
+  // ==================== Saved Posts ====================
+
+  List<PostModel> _savedPosts = [];
+  bool _isLoadingSavedPosts = false;
+  bool get isLoadingSavedPosts => _isLoadingSavedPosts;
+  List<PostModel> get savedPosts => _savedPosts;
+
+  Future<void> loadSavedPosts({int page = 1, int pageSize = 20}) async {
+    _isLoadingSavedPosts = true;
+    notifyListeners();
+    try {
+      final posts = await postService.getSavedPosts(page: page, pageSize: pageSize);
+      _savedPosts = posts.map((apiPost) => PostModel(
+        key: apiPost.id,
+        postId: apiPost.id,
+        bio: apiPost.content,
+        createdAt: apiPost.createdAt.toIso8601String(),
+        imagePath: apiPost.imageUrl,
+        user: UserModel(
+          userId: apiPost.user.userId,
+          userName: apiPost.user.userName,
+          displayName: apiPost.user.displayName,
+          profilePic: apiPost.user.profilePic,
+        ),
+        likesCount: apiPost.likesCount,
+        repliesCount: apiPost.repliesCount,
+        repostsCount: apiPost.repostsCount,
+        sharesCount: apiPost.sharesCount,
+        isLiked: apiPost.isLiked,
+        isSaved: true,
+        isReposted: apiPost.isReposted,
+      )).toList();
+    } catch (_) {
+      _savedPosts = [];
+    }
+    _isLoadingSavedPosts = false;
+    notifyListeners();
+  }
+
+  // ==================== Scheduled Posts ====================
+
+  List<PostModel> _scheduledPosts = [];
+  bool _isLoadingScheduled = false;
+  bool get isLoadingScheduled => _isLoadingScheduled;
+  List<PostModel> get scheduledPosts => _scheduledPosts;
+
+  Future<void> loadScheduledPosts({int page = 1, int size = 20}) async {
+    _isLoadingScheduled = true;
+    notifyListeners();
+    try {
+      final posts = await postService.getScheduledPosts(page: page, size: size);
+      _scheduledPosts = posts.map((apiPost) => PostModel(
+        key: apiPost.id,
+        postId: apiPost.id,
+        bio: apiPost.content,
+        createdAt: apiPost.createdAt.toIso8601String(),
+        imagePath: apiPost.imageUrl,
+        scheduledTime: apiPost.scheduledTime,
+        user: UserModel(
+          userId: apiPost.user.userId,
+          userName: apiPost.user.userName,
+          displayName: apiPost.user.displayName,
+          profilePic: apiPost.user.profilePic,
+        ),
+      )).toList();
+    } catch (_) {
+      _scheduledPosts = [];
+    }
+    _isLoadingScheduled = false;
+    notifyListeners();
+  }
+
+  Future<bool> cancelSchedule(String postId) async {
+    try {
+      await postService.cancelSchedule(postId);
+      _scheduledPosts.removeWhere((p) => p.id == postId);
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ==================== Reply Pin / Unpin ====================
+
+  Future<void> pinReply(int replyId) async {
+    try {
+      await postService.pinReply(replyId);
+      developer.log('pinReply succeeded for replyId=$replyId', name: 'PostState');
+    } catch (error) {
+      developer.log('pinReply failed: $error', name: 'PostState');
+      rethrow;
+    }
+    notifyListeners();
+  }
+
+  Future<void> unpinReply(int replyId) async {
+    try {
+      await postService.unpinReply(replyId);
+      developer.log('unpinReply succeeded for replyId=$replyId', name: 'PostState');
+    } catch (error) {
+      developer.log('unpinReply failed: $error', name: 'PostState');
+      rethrow;
+    }
+    notifyListeners();
   }
 }
