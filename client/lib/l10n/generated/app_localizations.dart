@@ -2221,6 +2221,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No links yet'**
   String get noLinksYet;
+
+  /// No description provided for @writeAReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a reply...'**
+  String get writeAReply;
+
+  /// No description provided for @pinReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin reply'**
+  String get pinReply;
+
+  /// No description provided for @unpinReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin reply'**
+  String get unpinReply;
+
+  /// No description provided for @failedToPostReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to post reply'**
+  String get failedToPostReply;
+
+  /// No description provided for @failedToPinReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pin reply'**
+  String get failedToPinReply;
+
+  /// No description provided for @failedToUnpinReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to unpin reply'**
+  String get failedToUnpinReply;
 }
 
 class _AppLocalizationsDelegate

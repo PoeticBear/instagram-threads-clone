@@ -423,5 +423,11 @@
   },
   "seeAllMembers": "See all members",
   "noCollectionsYet": "No collections yet",
-  "noLinksYet": "No links yet"
+  "noLinksYet": "No links yet",
+  "writeAReply": "Write a reply...",
+  "pinReply": "Pin reply",
+  "unpinReply": "Unpin reply",
+  "failedToPostReply": "Failed to post reply",
+  "failedToPinReply": "Failed to pin reply",
+  "failedToUnpinReply": "Failed to unpin reply"
 }

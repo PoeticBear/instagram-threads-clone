@@ -1097,4 +1097,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noLinksYet => '暂无链接';
+
+  @override
+  String get writeAReply => '写回复...';
+
+  @override
+  String get pinReply => '置顶回复';
+
+  @override
+  String get unpinReply => '取消置顶回复';
+
+  @override
+  String get failedToPostReply => '回复发送失败';
+
+  @override
+  String get failedToPinReply => '置顶回复失败';
+
+  @override
+  String get failedToUnpinReply => '取消置顶回复失败';
 }

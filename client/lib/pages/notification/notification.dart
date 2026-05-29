@@ -235,9 +235,7 @@ class _NotificationPageState extends State<NotificationPage> {
     } else if (item.fromUserId != null && item.fromUserId!.isNotEmpty) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => ProfilePage(profileId: item.fromUserId!),
-        ),
+        ProfilePage.getRoute(profileId: item.fromUserId!),
       );
     }
   }

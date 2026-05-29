@@ -67,12 +67,14 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
     });
 
     try {
+      print('🔵 _postReply 开始: postId=${widget.postId}, content=$content');
       final postService =
           Provider.of<PostState>(context, listen: false).postService;
       final newReply = await postService.createReply(
         postId: widget.postId,
         content: content,
       );
+      print('🔵 _postReply 成功: replyId=${newReply.id}');
       if (mounted) {
         setState(() {
           _replies.insert(0, newReply);
@@ -81,6 +83,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
         });
       }
     } catch (e) {
+      print('🔵 _postReply 失败: $e');
       if (mounted) {
         final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         setState(() {
@@ -88,7 +91,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to post reply'),
+            content: Text(AppLocalizations.of(context)!.failedToPostReply),
             backgroundColor: appColors.surface,
             duration: Duration(seconds: 2),
           ),
@@ -167,7 +170,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                 size: 22,
               ),
               title: Text(
-                reply.isPinned ? 'Unpin reply' : 'Pin reply',
+                reply.isPinned ? AppLocalizations.of(context)!.unpinReply : AppLocalizations.of(context)!.pinReply,
                 style: TextStyle(
                   color: appColors.textPrimary,
                   fontSize: 16,
@@ -225,7 +228,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(reply.isPinned ? 'Failed to unpin reply' : 'Failed to pin reply'),
+            content: Text(reply.isPinned ? AppLocalizations.of(context)!.failedToUnpinReply : AppLocalizations.of(context)!.failedToPinReply),
             backgroundColor: appColors.surface,
             duration: const Duration(seconds: 2),
           ),
@@ -376,7 +379,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Text(
-              'Replies',
+              AppLocalizations.of(context)!.replies,
               style: TextStyle(
                 color: appColors.textPrimary,
                 fontSize: 16,
@@ -400,7 +403,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                 : _replies.isEmpty
                     ? Center(
                         child: Text(
-                          'No replies yet',
+                          AppLocalizations.of(context)!.noRepliesYet,
                           style: TextStyle(
                             color: appColors.textSecondary,
                             fontSize: 14,
@@ -441,7 +444,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                     controller: _replyController,
                     style: TextStyle(color: appColors.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: 'Write a reply...',
+                      hintText: AppLocalizations.of(context)!.writeAReply,
                       hintStyle: TextStyle(color: appColors.textSecondary),
                       filled: true,
                       fillColor: appColors.surface,

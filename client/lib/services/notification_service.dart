@@ -1,6 +1,5 @@
 import '../network/api_client.dart';
 import '../network/api_exception.dart';
-import 'auth_service.dart';
 
 class NotificationService {
   final ApiClient _apiClient;
@@ -10,18 +9,19 @@ class NotificationService {
   Future<List<NotificationItem>> getNotifications({
     int page = 1,
     int pageSize = 20,
-    String? type,
+    int? type,
   }) async {
     try {
       final response = await _apiClient.get(
         'notification/notifications',
         queryParameters: {
           'page': page.toString(),
-          'page_size': pageSize.toString(),
-          if (type != null) 'type': type,
+          'size': pageSize.toString(),
+          if (type != null) 'notif_type': type.toString(),
         },
       );
-      final list = response['data'] as List? ?? [];
+      final pageData = response['data'];
+      final list = (pageData?['items'] as List?) ?? [];
       return list.map((e) => NotificationItem.fromJson(e)).toList();
     } on ApiException {
       rethrow;
@@ -42,7 +42,7 @@ class NotificationService {
   Future<int> getUnreadCount() async {
     try {
       final response = await _apiClient.get('notification/notifications/unread-count');
-      return response['data']?['count'] ?? 0;
+      return (response['data'] as int?) ?? 0;
     } on ApiException {
       rethrow;
     }
@@ -76,21 +76,36 @@ class NotificationItem {
     required this.createdAt,
   });
 
+  static String _typeIntToString(int? typeInt) {
+    switch (typeInt) {
+      case 1: return 'like';
+      case 2: return 'reply';
+      case 3: return 'follow';
+      case 4: return 'mention';
+      case 5: return 'repost';
+      case 6: return 'quote';
+      default: return 'follow';
+    }
+  }
+
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
+    final sender = json['sender'] as Map<String, dynamic>?;
     return NotificationItem(
-      id: json['id']?.toString() ?? json['notification_id']?.toString() ?? '',
-      type: json['type'] ?? 'follow',
-      title: json['title'] ?? '',
-      body: json['body'] ?? '',
-      fromUserId: json['from_user_id']?.toString(),
-      fromUsername: json['from_username'],
-      fromDisplayName: json['from_display_name'] ?? json['fromDisplayName'],
-      fromProfilePic: json['from_profile_pic'] ?? json['fromProfilePic'],
-      postId: json['post_id']?.toString(),
-      isRead: json['is_read'] ?? json['isRead'] ?? false,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : (json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now()),
+      id: json['id']?.toString() ?? '',
+      type: _typeIntToString(json['type'] as int?),
+      title: json['content'] ?? '',
+      body: json['content'] ?? '',
+      fromUserId: sender?['id']?.toString(),
+      fromUsername: sender?['username'] as String?,
+      fromDisplayName: sender?['display_name'] as String?,
+      fromProfilePic: sender?['avatar'] as String?,
+      postId: json['object_type'] == 'post' || json['object_type'] == 'reply'
+          ? json['object_id']?.toString()
+          : null,
+      isRead: json['is_read'] == true || json['is_read'] == 1,
+      createdAt: json['create_time'] != null
+          ? DateTime.parse(json['create_time'])
+          : DateTime.now(),
     );
   }
 }

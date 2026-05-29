@@ -45,11 +45,10 @@ class NotificationState extends AppStates {
       isBusy = true;
       notifyListeners();
 
-      final typeStr = _filterType?.toString();
       final items = await notificationService.getNotifications(
         page: _currentPage,
         pageSize: 20,
-        type: typeStr,
+        type: _filterType,
       );
 
       if (refresh) {
@@ -76,11 +75,10 @@ class NotificationState extends AppStates {
       notifyListeners();
 
       _currentPage++;
-      final typeStr = _filterType?.toString();
       final items = await notificationService.getNotifications(
         page: _currentPage,
         pageSize: 20,
-        type: typeStr,
+        type: _filterType,
       );
 
       _notifications.addAll(items);

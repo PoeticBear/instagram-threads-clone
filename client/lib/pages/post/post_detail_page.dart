@@ -79,14 +79,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   Future<void> _loadReplies() async {
     try {
+      print('[REPLY_DEBUG] _loadReplies called, postId: ${widget.postId}, page: $_currentPage');
       final replies = await postService.getReplies(widget.postId, page: _currentPage);
+      print('[REPLY_DEBUG] _loadReplies got ${replies.length} replies');
       if (mounted) {
         setState(() {
           _replies = replies;
           _hasMore = replies.length >= 20;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      print('[REPLY_DEBUG] _loadReplies FAILED: $e');
+    }
   }
 
   Future<void> _loadMore() async {

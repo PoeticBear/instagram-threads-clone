@@ -256,14 +256,22 @@ class PostService {
   }) async {
     try {
       final body = <String, dynamic>{
-        'post_id': postId,
+        'post_id': int.tryParse(postId),
         'content': content,
       };
       if (imageUrl != null) body['image_url'] = imageUrl;
 
+      print('📤 createReply 请求体: ${json.encode(body)}');
       final response = await _apiClient.post('post/reply', body: body);
-      return Reply.fromJson(response['data']);
-    } on ApiException {
+      print('✅ createReply 原始响应: ${json.encode(response)}');
+      final reply = Reply.fromJson(response['data']);
+      print('✅ createReply 解析结果: id=${reply.id}, content=${reply.content}, user=${reply.displayName}');
+      return reply;
+    } on ApiException catch (e) {
+      print('❌ createReply API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})');
+      rethrow;
+    } catch (e, stackTrace) {
+      print('❌ createReply 未知异常: $e\n$stackTrace');
       rethrow;
     }
   }
@@ -274,11 +282,40 @@ class PostService {
         'post/reply/list/$postId',
         queryParameters: {
           'page': page.toString(),
-          'page_size': pageSize.toString(),
+          'size': pageSize.toString(),
         },
       );
-      final list = response['data'] as List? ?? [];
-      return list.map((e) => Reply.fromJson(e)).toList();
+      print('[REPLY_DEBUG] getReplies raw response type: ${response.runtimeType}');
+      print('[REPLY_DEBUG] getReplies raw response keys: ${response is Map ? response.keys.toList() : "N/A"}');
+
+      // API returns PageMeta: { "data": { "items": [...], "total": ..., "page": ..., "size": ... } }
+      final data = response['data'];
+      print('[REPLY_DEBUG] response[\'data\'] type: ${data.runtimeType}, value: $data');
+
+      List items;
+      if (data is List) {
+        items = data;
+      } else if (data is Map && data.containsKey('items')) {
+        items = data['items'] as List? ?? [];
+      } else {
+        items = [];
+      }
+      print('[REPLY_DEBUG] parsed items count: ${items.length}');
+      if (items.isNotEmpty) {
+        print('[REPLY_DEBUG] first item raw: ${items.first}');
+      }
+
+      final replies = items.map((e) {
+        try {
+          return Reply.fromJson(e as Map<String, dynamic>);
+        } catch (err) {
+          print('[REPLY_DEBUG] Reply.fromJson FAILED for item: $e');
+          print('[REPLY_DEBUG] Reply.fromJson error: $err');
+          rethrow;
+        }
+      }).toList();
+      print('[REPLY_DEBUG] getReplies success, reply count: ${replies.length}');
+      return replies;
     } on ApiException {
       rethrow;
     }
@@ -889,18 +926,49 @@ class Reply {
   });
 
   factory Reply.fromJson(Map<String, dynamic> json) {
+    // Parse user info from nested "user" object (API spec) or flat fields (legacy)
+    final userObj = json['user'];
+    final int userId;
+    final String username;
+    final String displayName;
+    final String? profilePic;
+    if (userObj is Map<String, dynamic>) {
+      userId = userObj['id'] ?? userObj['user_id'] ?? userObj['userId'] ?? 0;
+      username = userObj['username'] ?? '';
+      displayName = userObj['display_name'] ?? userObj['displayName'] ?? '';
+      profilePic = userObj['avatar'] ?? userObj['profile_pic'] ?? userObj['profilePic'];
+    } else {
+      userId = json['user_id'] ?? json['userId'] ?? 0;
+      username = json['username'] ?? '';
+      displayName = json['display_name'] ?? json['displayName'] ?? '';
+      profilePic = json['profile_pic'] ?? json['profilePic'];
+    }
+
+    // Parse first image from media_list (API spec) or fallback to image_url
+    String? imageUrl;
+    final mediaList = json['media_list'];
+    if (mediaList is List && mediaList.isNotEmpty) {
+      final firstMedia = mediaList.first;
+      if (firstMedia is Map<String, dynamic>) {
+        imageUrl = firstMedia['url'];
+      }
+    }
+    imageUrl ??= json['image_url'] ?? json['imageUrl'];
+
+    // Parse create_time (API spec) or created_at / createdAt
+    final createdAtStr = json['create_time'] ?? json['created_at'] ?? json['createdAt'] ?? json['createTime'];
+    final createdAt = createdAtStr != null ? DateTime.parse(createdAtStr.toString()) : DateTime.now();
+
     return Reply(
       id: json['id']?.toString() ?? json['reply_id']?.toString() ?? '',
       postId: json['post_id']?.toString() ?? '',
-      userId: json['user_id'] ?? json['userId'] ?? 0,
-      username: json['username'] ?? '',
-      displayName: json['display_name'] ?? json['displayName'] ?? '',
-      profilePic: json['profile_pic'] ?? json['profilePic'],
+      userId: userId,
+      username: username,
+      displayName: displayName,
+      profilePic: profilePic,
       content: json['content'] ?? '',
-      imageUrl: json['image_url'] ?? json['imageUrl'],
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : (json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now()),
+      imageUrl: imageUrl,
+      createdAt: createdAt,
       likesCount: json['likes_count'] ?? json['likesCount'] ?? 0,
       isLiked: json['is_liked'] ?? json['isLiked'] ?? false,
       isPinned: json['is_pinned'] ?? json['isPinned'] ?? false,

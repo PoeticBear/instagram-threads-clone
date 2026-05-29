@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
@@ -14,6 +15,7 @@ import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/poll_widget.dart';
+import 'package:threads/pages/post/post_detail_page.dart';
 import 'package:threads/widget/edit_history_sheet.dart';
 import 'package:threads/widget/reply_bottom_sheet.dart';
 
@@ -74,42 +76,40 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               height: 10,
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 GestureDetector(
                   onTap: () => _navigateToProfile(context),
                   child: avatar(profilePic, 35),
                 ),
-                Container(
-                  width: 5,
-                ),
-                GestureDetector(
-                  onTap: () => _navigateToProfile(context),
-                  child: Text(
-                    displayName,
-                    style: TextStyle(
-                      color: appColors.textPrimary,
-                      fontWeight: FontWeight.w700,
+                Container(width: 5),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _navigateToProfile(context),
+                    child: Text(
+                      displayName,
+                      style: TextStyle(
+                        color: appColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-                Container(
-                  width: MediaQuery.of(context).size.width / 4,
                 ),
                 Text(
                   Utility.getdob(widget.postModel.createdAt),
                   style: TextStyle(color: appColors.textMuted),
                 ),
-                Container(
-                  width: 5,
-                ),
+                Container(width: 5),
                 GestureDetector(
                   onTap: () => _showMoreMenu(context),
                   child: Icon(Icons.more_horiz, color: appColors.textPrimary),
                 ),
               ],
             ),
-            Padding(
+            GestureDetector(
+              onTap: () => _navigateToPostDetail(context),
+              child: Padding(
                 padding: EdgeInsets.only(left: 55),
                 child: Text(
                   widget.postModel.bio ?? '',
@@ -117,8 +117,12 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                       color: appColors.textPrimary,
                       fontWeight: FontWeight.w500,
                       fontSize: 18),
-                )),
-            hasPoll
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () => _navigateToPostDetail(context),
+              child: hasPoll
                 ? PollWidget(
                     postId: widget.postModel.id,
                     pollData: widget.postModel.pollData!,
@@ -196,6 +200,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                                       ))),
                         ],
                       ),
+            ),
             Container(
               height: 10,
             ),
@@ -287,9 +292,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   void _navigateToProfile(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ProfilePage(
-          profileId: widget.postModel.user?.userId.toString() ?? '',
+      ProfilePage.getRoute(
+        profileId: widget.postModel.user?.userId.toString() ?? '',
+      ),
+    );
+  }
+
+  void _navigateToPostDetail(BuildContext context) {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => PostDetailPage(
+          postId: widget.postModel.id,
+          postModel: widget.postModel,
         ),
       ),
     );

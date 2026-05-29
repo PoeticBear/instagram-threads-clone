@@ -179,6 +179,18 @@ class ApiClient {
     }
 
     if (statusCode >= 200 && statusCode < 300) {
+      // Check for business-level error codes (e.g. {"code": 101001, "msg": "..."})
+      if (data is Map<String, dynamic>) {
+        final code = data['code'];
+        if (code != null && code != 0 && code != 200) {
+          final message = data['msg'] ?? data['message'] ?? '服务异常';
+          throw ServerException(
+            message: message,
+            statusCode: code is int ? code : int.tryParse(code.toString()),
+            data: data,
+          );
+        }
+      }
       return data;
     }
 

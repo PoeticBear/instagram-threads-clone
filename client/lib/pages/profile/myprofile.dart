@@ -25,24 +25,24 @@ class _ProfilePageState extends State<MyProfilePage>
   @override
   void initState() {
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(_onTabChanged);
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserPosts();
+    });
   }
 
-  void _onTabChanged() {
-    if (_tabController.index == 0 && !_hasLoadedUserPosts) {
-      _hasLoadedUserPosts = true;
-      final authState = Provider.of<AuthState>(context, listen: false);
-      final postState = Provider.of<PostState>(context, listen: false);
-      if (authState.userId != null) {
-        postState.loadUserPosts(int.parse(authState.userId!));
-      }
+  void _loadUserPosts() {
+    if (_hasLoadedUserPosts) return;
+    _hasLoadedUserPosts = true;
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final postState = Provider.of<PostState>(context, listen: false);
+    if (authState.userId != null) {
+      postState.loadUserPosts(int.parse(authState.userId!));
     }
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -239,9 +239,9 @@ class _ProfilePageState extends State<MyProfilePage>
                         onTap: (index) {},
                         controller: _tabController,
                         isScrollable: false,
-                        labelColor: Colors.white,
-                        unselectedLabelColor: Colors.grey,
-                        indicatorColor: Colors.white,
+                        labelColor: appColors.textPrimary,
+                        unselectedLabelColor: appColors.textSecondary,
+                        indicatorColor: appColors.textPrimary,
                         indicatorWeight: 1,
                         tabs: [
                           Padding(

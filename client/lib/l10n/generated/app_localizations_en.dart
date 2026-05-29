@@ -1103,4 +1103,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noLinksYet => 'No links yet';
+
+  @override
+  String get writeAReply => 'Write a reply...';
+
+  @override
+  String get pinReply => 'Pin reply';
+
+  @override
+  String get unpinReply => 'Unpin reply';
+
+  @override
+  String get failedToPostReply => 'Failed to post reply';
+
+  @override
+  String get failedToPinReply => 'Failed to pin reply';
+
+  @override
+  String get failedToUnpinReply => 'Failed to unpin reply';
 }
