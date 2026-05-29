@@ -69,7 +69,7 @@ class UserModel extends Equatable {
       displayName: map['displayName'] ?? map['display_name'],
       profilePic: map['profilePic'] ?? map['profile_pic'],
       createAt: map['createAt'] ?? map['create_at'] ?? map['createdAt'],
-      isPrivate: map['isprivate'] ?? map['is_private'] ?? map['isPrivate'],
+      isPrivate: _parseBool(map['isprivate'] ?? map['is_private'] ?? map['isPrivate']),
       fcmToken: map['fcmToken'] ?? map['fcm_token'],
       followersCount: map['followersCount'] ?? map['followers_count'],
       followingCount: map['followingCount'] ?? map['following_count'],
@@ -78,11 +78,18 @@ class UserModel extends Equatable {
       pronouns: map['pronouns'],
       gender: map['gender'],
       location: map['location'],
-      isVerified: map['is_verified'] ?? map['isVerified'],
+      isVerified: _parseBool(map['is_verified'] ?? map['isVerified']),
       accountType: map['account_type'] ?? map['accountType'],
       postsCount: map['posts_count'] ?? map['postsCount'],
       lastActiveTime: map['last_active_time'] ?? map['lastActiveTime'],
     );
+  }
+
+  static bool? _parseBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is int) return value != 0;
+    return null;
   }
 
   static List<String>? _parseStringList(dynamic list) {
@@ -129,7 +136,7 @@ class UserModel extends Equatable {
       displayName: json['display_name'] ?? json['displayName'],
       bio: json['bio'],
       profilePic: json['profile_pic'] ?? json['profilePic'],
-      isPrivate: json['is_private'] ?? json['isPrivate'],
+      isPrivate: _parseBool(json['is_private'] ?? json['isPrivate']),
       followersCount: json['followers_count'] ?? json['followersCount'],
       followingCount: json['following_count'] ?? json['followingCount'],
       link: json['link'],

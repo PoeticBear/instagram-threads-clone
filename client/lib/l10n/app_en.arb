@@ -285,5 +285,143 @@
   "filterFollows": "Follows",
   "quoteRepost": "Quote this post",
   "quotePlaceholder": "Add a comment...",
-  "noThreadsYetOthers": "No threads yet."
+  "noThreadsYetOthers": "No threads yet.",
+  "nothingToSaveDraft": "Nothing to save as draft",
+  "draftSaveFailed": "Failed to save draft",
+  "draft": "Draft",
+  "replyCount": "{count} replies",
+  "@replyCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "repostCount": "{count} reposts",
+  "@repostCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "failedApproveReply": "Failed to approve reply.",
+  "failedRejectReply": "Failed to reject reply.",
+  "pendingReplies": "Pending Replies",
+  "statFollowing": "following",
+  "statFollowers": "followers",
+  "done": "Done",
+  "name": "Name",
+  "bio": "Bio",
+  "addBio": "Add bio",
+  "linkLabel": "Link",
+  "addLinkField": "Add link",
+  "pronouns": "Pronouns",
+  "addPronouns": "Add pronouns",
+  "locationLabel": "Location",
+  "addLocationField": "Add location",
+  "gender": "Gender",
+  "accountType": "Account Type",
+  "privateAccount": "Private Account",
+  "changeAvatar": "Change avatar",
+  "avatarVisibility": "Your avatar is visible to everyone",
+  "gallery": "Gallery",
+  "cameraLabel": "Camera",
+  "remove": "Remove",
+  "notSet": "Not set",
+  "male": "Male",
+  "female": "Female",
+  "otherGender": "Other",
+  "personal": "Personal",
+  "creator": "Creator",
+  "business": "Business",
+  "maxNameChars": "Max 100 characters",
+  "maxBioChars": "Max 500 characters for bio",
+  "updateFailed": "Update failed, please retry",
+  "requests": "Requests",
+  "groupChat": "Group Chat",
+  "pleaseEnterGroupName": "Please enter a group name",
+  "failedCreateGroup": "Failed to create group",
+  "enterGroupNamePlaceholder": "Enter group name",
+  "searchSelectUsers": "Search and select users to add",
+  "userFallback": "User",
+  "requireApproval": "Require Approval",
+  "requireApprovalDesc": "New members need admin approval to join",
+  "inviteLink": "Invite Link",
+  "inviteLinkDesc": "Allow joining via an invite link",
+  "noInviteLink": "No invite link available",
+  "leave": "Leave",
+  "memberCount": "{count} members",
+  "@memberCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "createdDate": "Created {date}",
+  "@createdDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "messageBtn": "Message",
+  "viewAllMembers": "View All Members",
+  "removeMemberConfirm": "Are you sure you want to remove {name} from this group?",
+  "@removeMemberConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "noMembersFound": "No members found",
+  "noResultsFor": "No results for \"{query}\"",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {"type": "String"}
+    }
+  },
+  "requestedDate": "Requested {date}",
+  "@requestedDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "searchUsersHint": "Search users...",
+  "joined": "Joined",
+  "noCommunitiesFound": "No communities found",
+  "themeDark": "Dark",
+  "themeLight": "Light",
+  "delete": "Delete",
+  "deleteConfirmUndo": "This action cannot be undone.",
+  "deleteNameConfirm": "Delete \"{name}\"?",
+  "@deleteNameConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "failedCreateCollection": "Failed to create collection.",
+  "failedDeleteCollection": "Failed to delete collection.",
+  "newCollection": "New Collection",
+  "savedCount": "{count} saved",
+  "@savedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "failedDeleteWord": "Failed to delete word.",
+  "addHiddenWord": "Add Hidden Word",
+  "keyword": "Keyword",
+  "phrase": "Phrase",
+  "enterWordOrPhrase": "Enter word or phrase",
+  "failedAddWord": "Failed to add word.",
+  "add": "Add",
+  "failedDeleteLink": "Failed to delete link.",
+  "failedAddLink": "Failed to add link.",
+  "failedUpdateLink": "Failed to update link.",
+  "failedRemoveUser": "Failed to remove. Please try again.",
+  "mutedRestrictedBlocked": "Muted / Restricted / Blocked",
+  "noUsersFound": "No users found",
+  "reasonLabel": "Reason: {reason}",
+  "@reasonLabel": {
+    "placeholders": {
+      "reason": {"type": "String"}
+    }
+  },
+  "seeAllMembers": "See all members",
+  "noCollectionsYet": "No collections yet",
+  "noLinksYet": "No links yet"
 }

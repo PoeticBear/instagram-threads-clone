@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/model/community.module.dart';
 import 'package:threads/state/community.state.dart';
 import 'package:threads/theme/app_colors.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 
 class CommunityMembersPage extends StatefulWidget {
   final int communityId;
@@ -86,7 +87,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
           child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         title: Text(
-          'Members',
+          AppLocalizations.of(context)!.members,
           style: TextStyle(
             color: appColors.textPrimary,
             fontSize: 18,
@@ -128,8 +129,8 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                         const SizedBox(height: 12),
                         Text(
                           _searchQuery.isEmpty
-                              ? 'No members found'
-                              : 'No results for "$_searchQuery"',
+                              ? AppLocalizations.of(context)!.noMembersFound
+                              : AppLocalizations.of(context)!.noResultsFor(_searchQuery),
                           style: TextStyle(
                             color: appColors.textMuted,
                             fontSize: 15,
@@ -182,7 +183,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
         cursorColor: appColors.textPrimary,
         decoration: InputDecoration(
           prefixIcon: Icon(Icons.search, size: 20, color: appColors.textMuted),
-          hintText: 'Search members...',
+          hintText: AppLocalizations.of(context)!.searchMembers,
           hintStyle: TextStyle(color: appColors.textMuted),
           filled: true,
           fillColor: appColors.surface,
@@ -246,7 +247,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            'Admin',
+                            AppLocalizations.of(context)!.admin,
                             style: TextStyle(
                               color: appColors.accent,
                               fontSize: 10,
@@ -354,7 +355,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                   leading: const Icon(Icons.star_outline,
                       color: Colors.amber),
                   title: Text(
-                    'Remove Champion',
+                    AppLocalizations.of(context)!.removeChampion,
                     style: TextStyle(color: appColors.textPrimary),
                   ),
                   onTap: () {
@@ -371,7 +372,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                   leading:
                       const Icon(Icons.star, color: Colors.amber),
                   title: Text(
-                    'Set as Champion',
+                    AppLocalizations.of(context)!.setChampion,
                     style: TextStyle(color: appColors.textPrimary),
                   ),
                   onTap: () {

@@ -8,6 +8,7 @@ import 'package:threads/services/post_service.dart';
 import 'package:threads/state/topic.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 
 class TopicDetailPage extends StatefulWidget {
   final int topicId;
@@ -119,7 +120,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         title: Text(
-          widget.topicName ?? 'Topic',
+          widget.topicName ?? AppLocalizations.of(context)!.topic,
           style: TextStyle(
             color: appColors.textPrimary,
             fontSize: 18,
@@ -215,9 +216,9 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           // Stats row
           Row(
             children: [
-              _buildStatItem('$postsCount', ' posts'),
+              _buildStatItem('$postsCount', ' ${AppLocalizations.of(context)!.posts.toLowerCase()}'),
               Container(width: 16),
-              _buildStatItem('$followersCount', ' followers'),
+              _buildStatItem('$followersCount', ' ${AppLocalizations.of(context)!.followers.toLowerCase()}'),
             ],
           ),
           Container(height: 16),
@@ -279,7 +280,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         ),
         alignment: Alignment.center,
         child: Text(
-          isFollowing ? 'Following' : 'Follow',
+          isFollowing ? AppLocalizations.of(context)!.following : AppLocalizations.of(context)!.follow,
           style: TextStyle(
             color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
@@ -339,7 +340,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         tabs: [
           Tab(
             child: Text(
-              'Hot',
+              AppLocalizations.of(context)!.hot,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -348,7 +349,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           ),
           Tab(
             child: Text(
-              'Latest',
+              AppLocalizations.of(context)!.latest,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -371,7 +372,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         height: 200,
         alignment: Alignment.center,
         child: Text(
-          'No posts yet.',
+          AppLocalizations.of(context)!.noCommunityPosts,
           style: TextStyle(
             color: appColors.textHint,
             fontSize: 15,
@@ -411,7 +412,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Related Topics',
+              AppLocalizations.of(context)!.relatedTopics,
               style: TextStyle(
                 color: appColors.textPrimary,
                 fontSize: 16,
@@ -477,7 +478,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
             ),
             Container(height: 4),
             Text(
-              '${topic.postsCount} posts',
+              '${topic.postsCount} ${AppLocalizations.of(context)!.posts.toLowerCase()}',
               style: TextStyle(
                 color: appColors.textSecondary,
                 fontSize: 12,

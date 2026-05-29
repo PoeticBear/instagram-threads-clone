@@ -47,10 +47,10 @@ class Conversation {
       lastMessageContent: json['last_message_content'] ?? json['lastMessageContent'],
       lastMessageTime: json['last_message_time'] ?? json['lastMessageTime'],
       unreadCount: json['unread_count'] ?? json['unreadCount'] ?? 0,
-      isReplied: json['is_replied'] ?? json['isReplied'] ?? false,
-      isVerified: json['is_verified'] ?? json['isVerified'] ?? false,
-      isHidden: json['is_hidden'] ?? json['isHidden'] ?? false,
-      isPinned: json['is_pinned'] ?? json['isPinned'] ?? false,
+      isReplied: _parseBool(json['is_replied'] ?? json['isReplied']) ?? false,
+      isVerified: _parseBool(json['is_verified'] ?? json['isVerified']) ?? false,
+      isHidden: _parseBool(json['is_hidden'] ?? json['isHidden']) ?? false,
+      isPinned: _parseBool(json['is_pinned'] ?? json['isPinned']) ?? false,
     );
   }
 
@@ -70,6 +70,12 @@ class Conversation {
       'is_hidden': isHidden,
       'is_pinned': isPinned,
     };
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value != 0;
+    return false;
   }
 }
 

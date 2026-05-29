@@ -186,7 +186,7 @@ class _ComposePostState extends State<ComposePost> {
     if (content.isEmpty && _imageFiles.isEmpty && !_showPollEditor) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Nothing to save as draft'),
+          content: Text(AppLocalizations.of(context)!.nothingToSaveDraft),
           backgroundColor: appColors.surface,
           duration: Duration(seconds: 1),
         ),
@@ -203,7 +203,7 @@ class _ComposePostState extends State<ComposePost> {
     if (saved != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Draft saved'),
+          content: Text(AppLocalizations.of(context)!.draftSaved),
           backgroundColor: appColors.repost,
           duration: Duration(seconds: 1),
         ),
@@ -211,7 +211,7 @@ class _ComposePostState extends State<ComposePost> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save draft'),
+          content: Text(AppLocalizations.of(context)!.draftSaveFailed),
           backgroundColor: appColors.destructive,
         ),
       );
@@ -792,7 +792,7 @@ class _ComposePostState extends State<ComposePost> {
                 child: Padding(
                   padding: EdgeInsets.only(right: 12),
                   child: Text(
-                    'Draft',
+                    AppLocalizations.of(context)!.draft,
                     style: TextStyle(
                       color: appColors.textSecondary,
                       fontSize: 14,

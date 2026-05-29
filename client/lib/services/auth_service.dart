@@ -293,6 +293,12 @@ class UserInfo {
         ? isPrivateValue
         : (isPrivateValue is int ? isPrivateValue != 0 : false);
 
+    // Handle is_verified being returned as int (0/1) instead of bool
+    final isVerifiedValue = json['is_verified'] ?? json['isVerified'];
+    final isVerified = isVerifiedValue is bool
+        ? isVerifiedValue
+        : (isVerifiedValue is int ? isVerifiedValue != 0 : false);
+
     return UserInfo(
       userId: json['user_id'] ?? json['id'] ?? 0,
       username: json['username'] ?? '',
@@ -306,7 +312,7 @@ class UserInfo {
       pronouns: json['pronouns'],
       gender: json['gender'],
       location: json['location'],
-      isVerified: json['is_verified'] ?? json['isVerified'],
+      isVerified: isVerified,
       accountType: json['account_type'] ?? json['accountType'],
       postsCount: json['posts_count'] ?? json['postsCount'],
     );

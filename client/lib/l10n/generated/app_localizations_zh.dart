@@ -813,4 +813,288 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noThreadsYetOthers => '暂无帖子';
+
+  @override
+  String get nothingToSaveDraft => '没有可保存的草稿';
+
+  @override
+  String get draftSaveFailed => '草稿保存失败';
+
+  @override
+  String get draft => '草稿';
+
+  @override
+  String replyCount(int count) {
+    return '$count 条回复';
+  }
+
+  @override
+  String repostCount(int count) {
+    return '$count 次转发';
+  }
+
+  @override
+  String get failedApproveReply => '批准回复失败。';
+
+  @override
+  String get failedRejectReply => '拒绝回复失败。';
+
+  @override
+  String get pendingReplies => '待审核回复';
+
+  @override
+  String get statFollowing => '关注';
+
+  @override
+  String get statFollowers => '粉丝';
+
+  @override
+  String get done => '完成';
+
+  @override
+  String get name => '姓名';
+
+  @override
+  String get bio => '简介';
+
+  @override
+  String get addBio => '添加简介';
+
+  @override
+  String get linkLabel => '链接';
+
+  @override
+  String get addLinkField => '添加链接';
+
+  @override
+  String get pronouns => '代词';
+
+  @override
+  String get addPronouns => '添加代词';
+
+  @override
+  String get locationLabel => '位置';
+
+  @override
+  String get addLocationField => '添加位置';
+
+  @override
+  String get gender => '性别';
+
+  @override
+  String get accountType => '账号类型';
+
+  @override
+  String get privateAccount => '私密账号';
+
+  @override
+  String get changeAvatar => '更换头像';
+
+  @override
+  String get avatarVisibility => '你的头像对所有人可见';
+
+  @override
+  String get gallery => '相册';
+
+  @override
+  String get cameraLabel => '拍照';
+
+  @override
+  String get remove => '移除';
+
+  @override
+  String get notSet => '未设置';
+
+  @override
+  String get male => '男';
+
+  @override
+  String get female => '女';
+
+  @override
+  String get otherGender => '其他';
+
+  @override
+  String get personal => '个人';
+
+  @override
+  String get creator => '创作者';
+
+  @override
+  String get business => '商家';
+
+  @override
+  String get maxNameChars => '最多 100 个字符';
+
+  @override
+  String get maxBioChars => '简介最多 500 个字符';
+
+  @override
+  String get updateFailed => '更新失败，请重试';
+
+  @override
+  String get requests => '请求';
+
+  @override
+  String get groupChat => '群聊';
+
+  @override
+  String get pleaseEnterGroupName => '请输入群聊名称';
+
+  @override
+  String get failedCreateGroup => '创建群聊失败';
+
+  @override
+  String get enterGroupNamePlaceholder => '输入群聊名称';
+
+  @override
+  String get searchSelectUsers => '搜索并选择用户添加';
+
+  @override
+  String get userFallback => '用户';
+
+  @override
+  String get requireApproval => '需要审批';
+
+  @override
+  String get requireApprovalDesc => '新成员需要管理员审批才能加入';
+
+  @override
+  String get inviteLink => '邀请链接';
+
+  @override
+  String get inviteLinkDesc => '允许通过邀请链接加入';
+
+  @override
+  String get noInviteLink => '暂无邀请链接';
+
+  @override
+  String get leave => '离开';
+
+  @override
+  String memberCount(int count) {
+    return '$count 名成员';
+  }
+
+  @override
+  String createdDate(String date) {
+    return '创建于 $date';
+  }
+
+  @override
+  String get messageBtn => '发消息';
+
+  @override
+  String get viewAllMembers => '查看全部成员';
+
+  @override
+  String removeMemberConfirm(String name) {
+    return '确定要将 $name 移出本群吗？';
+  }
+
+  @override
+  String get noMembersFound => '未找到成员';
+
+  @override
+  String noResultsFor(String query) {
+    return '未找到 \"$query\" 的结果';
+  }
+
+  @override
+  String requestedDate(String date) {
+    return '申请于 $date';
+  }
+
+  @override
+  String get searchUsersHint => '搜索用户...';
+
+  @override
+  String get joined => '已加入';
+
+  @override
+  String get noCommunitiesFound => '未找到社区';
+
+  @override
+  String get themeDark => '深色';
+
+  @override
+  String get themeLight => '浅色';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get deleteConfirmUndo => '此操作无法撤销';
+
+  @override
+  String deleteNameConfirm(String name) {
+    return '删除 \"$name\"？';
+  }
+
+  @override
+  String get failedCreateCollection => '创建收藏夹失败';
+
+  @override
+  String get failedDeleteCollection => '删除收藏夹失败';
+
+  @override
+  String get newCollection => '新建收藏夹';
+
+  @override
+  String savedCount(int count) {
+    return '已保存 $count 条';
+  }
+
+  @override
+  String get failedDeleteWord => '删除词语失败';
+
+  @override
+  String get addHiddenWord => '添加隐藏词';
+
+  @override
+  String get keyword => '关键词';
+
+  @override
+  String get phrase => '短语';
+
+  @override
+  String get enterWordOrPhrase => '请输入词语';
+
+  @override
+  String get failedAddWord => '添加词语失败';
+
+  @override
+  String get add => '添加';
+
+  @override
+  String get failedDeleteLink => '删除链接失败';
+
+  @override
+  String get failedAddLink => '添加链接失败';
+
+  @override
+  String get failedUpdateLink => '更新链接失败';
+
+  @override
+  String get failedRemoveUser => '移除失败，请重试';
+
+  @override
+  String get mutedRestrictedBlocked => '已静音 / 已限制 / 已屏蔽';
+
+  @override
+  String get noUsersFound => '未找到用户';
+
+  @override
+  String reasonLabel(String reason) {
+    return '原因：$reason';
+  }
+
+  @override
+  String get seeAllMembers => '查看所有成员';
+
+  @override
+  String get noCollectionsYet => '暂无收藏夹';
+
+  @override
+  String get noLinksYet => '暂无链接';
 }

@@ -52,7 +52,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to create collection.'),
+            content: Text(AppLocalizations.of(context)!.failedCreateCollection),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -71,7 +71,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to delete collection.'),
+            content: Text(AppLocalizations.of(context)!.failedDeleteCollection),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -86,14 +86,14 @@ class _CollectionsPageState extends State<CollectionsPage> {
       context: context,
       builder: (dialogContext) => CupertinoAlertDialog(
         title: Text(
-          'New Collection',
+          AppLocalizations.of(context)!.newCollection,
           style: TextStyle(color: appColors.textPrimary),
         ),
         content: Padding(
           padding: const EdgeInsets.only(top: 12),
           child: CupertinoTextField(
             controller: controller,
-            placeholder: 'Collection name',
+            placeholder: AppLocalizations.of(context)!.collectionName,
             placeholderStyle: TextStyle(color: appColors.textMuted),
             style: TextStyle(color: appColors.textPrimary),
             decoration: BoxDecoration(
@@ -107,7 +107,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
           CupertinoDialogAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           CupertinoDialogAction(
             isDefaultAction: true,
@@ -118,7 +118,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
                 _createCollection(name);
               }
             },
-            child: const Text('Create'),
+            child: Text(AppLocalizations.of(context)!.create),
           ),
         ],
       ),
@@ -131,13 +131,13 @@ class _CollectionsPageState extends State<CollectionsPage> {
       context: context,
       builder: (dialogContext) => CupertinoAlertDialog(
         title: Text(
-          'Delete "${collection.name}"?',
+          AppLocalizations.of(context)!.deleteNameConfirm(collection.name),
           style: TextStyle(color: appColors.textPrimary),
         ),
         content: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            'This action cannot be undone.',
+            AppLocalizations.of(context)!.deleteConfirmUndo,
             style: TextStyle(color: appColors.textMuted),
           ),
         ),
@@ -145,7 +145,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
           CupertinoDialogAction(
             isDestructiveAction: false,
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
@@ -153,7 +153,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
               Navigator.pop(dialogContext);
               _deleteCollection(collection);
             },
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -174,7 +174,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Collections',
+          l10n.collections,
           style: TextStyle(
             color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
@@ -193,7 +193,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
           : _collections.isEmpty
               ? Center(
                   child: Text(
-                    'No collections yet',
+                    l10n.noCollectionsYet,
                     style: TextStyle(
                       color: appColors.textMuted,
                       fontSize: 16,
@@ -287,7 +287,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
                               border: Border.all(color: appColors.dividerSecondary),
                             ),
                             child: Text(
-                              'Default',
+                              AppLocalizations.of(context)!.defaultCollection,
                               style: TextStyle(
                                 color: appColors.textMuted,
                                 fontSize: 10,
@@ -300,7 +300,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${collection.saveCount} saved',
+                      AppLocalizations.of(context)!.savedCount(collection.saveCount),
                       style: TextStyle(
                         color: appColors.textMuted,
                         fontSize: 13,

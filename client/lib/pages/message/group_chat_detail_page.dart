@@ -7,6 +7,7 @@ import 'package:threads/pages/message/chat_detail_page.dart';
 import 'package:threads/pages/message/group_members_page.dart';
 import 'package:threads/pages/message/join_requests_page.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class GroupChatDetailPage extends StatefulWidget {
@@ -65,7 +66,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Edit Group Name',
+                AppLocalizations.of(context)!.editGroupName,
                 style: TextStyle(
                   color: appColors.textPrimary,
                   fontSize: 18,
@@ -81,7 +82,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                 decoration: InputDecoration(
                   counterStyle:
                       TextStyle(color: appColors.textMuted, fontSize: 12),
-                  hintText: 'Group name',
+                  hintText: AppLocalizations.of(context)!.groupName,
                   hintStyle: TextStyle(color: appColors.textMuted),
                   filled: true,
                   fillColor: appColors.surface,
@@ -121,7 +122,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                     ),
                   ),
                   child: Text(
-                    'Save',
+                    AppLocalizations.of(context)!.save,
                     style: TextStyle(
                       color: appColors.textPrimary,
                       fontSize: 16,
@@ -140,15 +141,15 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
   void _copyInviteLink(String? link) {
     if (link == null || link.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No invite link available'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.noInviteLink),
         ),
       );
       return;
     }
     Clipboard.setData(ClipboardData(text: link));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Invite link copied')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.linkCopiedToClipboard)),
     );
   }
 
@@ -159,18 +160,18 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
       builder: (context) => AlertDialog(
         backgroundColor: appColors.surfaceSecondary,
         title: Text(
-          'Leave Group',
+          AppLocalizations.of(context)!.leaveGroup,
           style: TextStyle(color: appColors.textPrimary),
         ),
         content: Text(
-          'Are you sure you want to leave this group?',
+          AppLocalizations.of(context)!.leaveGroupConfirm,
           style: TextStyle(color: appColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context)!.cancel,
               style: TextStyle(color: appColors.textSecondary),
             ),
           ),
@@ -185,7 +186,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               }
             },
             child: Text(
-              'Leave',
+              AppLocalizations.of(context)!.leave,
               style: TextStyle(color: appColors.destructive),
             ),
           ),
@@ -255,7 +256,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
-        'Group Info',
+        AppLocalizations.of(context)!.groupInfo,
         style: TextStyle(
           color: appColors.textPrimary,
           fontSize: 18,
@@ -317,7 +318,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '${group.membersCount} members',
+                      AppLocalizations.of(context)!.memberCount(group.membersCount),
                       style: TextStyle(
                           color: appColors.textSecondary, fontSize: 14),
                     ),
@@ -328,7 +329,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                             color: appColors.textSecondary, fontSize: 14),
                       ),
                       Text(
-                        'Created ${_formatDate(group.createTime)}',
+                        AppLocalizations.of(context)!.createdDate(_formatDate(group.createTime)),
                         style: TextStyle(
                             color: appColors.textSecondary, fontSize: 14),
                       ),
@@ -343,8 +344,8 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                 const SizedBox(height: 8),
                 // Settings switches
                 _buildSwitchTile(
-                  title: 'Require Approval',
-                  subtitle: 'New members need admin approval to join',
+                  title: AppLocalizations.of(context)!.requireApproval,
+                  subtitle: AppLocalizations.of(context)!.requireApprovalDesc,
                   value: group.needApprove,
                   onChanged: (v) {
                     state.updateGroupChatSettings(
@@ -354,8 +355,8 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                   },
                 ),
                 _buildSwitchTile(
-                  title: 'Invite Link',
-                  subtitle: 'Allow joining via an invite link',
+                  title: AppLocalizations.of(context)!.inviteLink,
+                  subtitle: AppLocalizations.of(context)!.inviteLinkDesc,
                   value: group.inviteLinkEnabled,
                   onChanged: (v) {
                     state.updateGroupChatSettings(
@@ -388,7 +389,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      'Leave Group',
+                      AppLocalizations.of(context)!.leaveGroup,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: appColors.destructive,
@@ -481,7 +482,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Members (${members.length})',
+                  '${AppLocalizations.of(context)!.members} (${members.length})',
                   style: TextStyle(
                     color: appColors.textPrimary,
                     fontSize: 15,
@@ -570,7 +571,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                     size: 18, color: appColors.textPrimary),
                 const SizedBox(width: 8),
                 Text(
-                  'Message',
+                  AppLocalizations.of(context)!.messageBtn,
                   style: TextStyle(
                     color: appColors.textPrimary,
                     fontSize: 15,
@@ -600,7 +601,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                   Icon(Icons.link, size: 18, color: appColors.textSecondary),
                   const SizedBox(width: 8),
                   Text(
-                    'Copy Invite Link',
+                    AppLocalizations.of(context)!.copyInviteLink,
                     style: TextStyle(
                       color: appColors.textSecondary,
                       fontSize: 15,
@@ -638,7 +639,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                     size: 18, color: appColors.textSecondary),
                 const SizedBox(width: 8),
                 Text(
-                  'View All Members',
+                  AppLocalizations.of(context)!.viewAllMembers,
                   style: TextStyle(
                     color: appColors.textSecondary,
                     fontSize: 15,
@@ -677,7 +678,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                       size: 18, color: appColors.textSecondary),
                   const SizedBox(width: 8),
                   Text(
-                    'Join Requests',
+                    AppLocalizations.of(context)!.joinRequests,
                     style: TextStyle(
                       color: appColors.textSecondary,
                       fontSize: 15,

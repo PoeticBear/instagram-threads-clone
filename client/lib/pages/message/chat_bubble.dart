@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/model/message.module.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -44,7 +45,7 @@ class ChatBubble extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Quoted message',
+                  AppLocalizations.of(context)!.quotedMessage,
                   style: TextStyle(
                     color: appColors.textSecondary,
                     fontSize: 12,
@@ -101,7 +102,7 @@ class ChatBubble extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // Main content
-        _buildMediaContent(appColors),
+        _buildMediaContent(context, appColors),
         // Timestamp and status row
         const SizedBox(height: 4),
         Row(
@@ -124,7 +125,7 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildMediaContent(AppColors appColors) {
+  Widget _buildMediaContent(BuildContext context, AppColors appColors) {
     switch (message.mediaType) {
       case 1:
         // Image message
@@ -168,7 +169,7 @@ class ChatBubble extends StatelessWidget {
             Icon(Icons.videocam, color: appColors.textMuted, size: 20),
             const SizedBox(width: 6),
             Text(
-              'Video message',
+              AppLocalizations.of(context)!.videoMessage,
               style: TextStyle(color: appColors.textPrimary, fontSize: 14),
             ),
           ],
@@ -181,7 +182,7 @@ class ChatBubble extends StatelessWidget {
             Icon(Icons.mic, color: appColors.textMuted, size: 20),
             const SizedBox(width: 6),
             Text(
-              'Voice message',
+              AppLocalizations.of(context)!.voiceMessage,
               style: TextStyle(color: appColors.textPrimary, fontSize: 14),
             ),
           ],
@@ -194,7 +195,7 @@ class ChatBubble extends StatelessWidget {
             Icon(Icons.insert_drive_file, color: appColors.textMuted, size: 20),
             const SizedBox(width: 6),
             Text(
-              'File',
+              AppLocalizations.of(context)!.fileMessage,
               style: TextStyle(color: appColors.textPrimary, fontSize: 14),
             ),
           ],

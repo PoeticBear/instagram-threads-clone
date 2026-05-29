@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class CreateGroupPage extends StatefulWidget {
@@ -29,7 +30,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please enter a group name'),
+          content: Text(AppLocalizations.of(context)!.pleaseEnterGroupName),
           backgroundColor: appColors.destructive,
         ),
       );
@@ -50,7 +51,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to create group'),
+            content: Text(AppLocalizations.of(context)!.failedCreateGroup),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -72,7 +73,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
-        'Create Group',
+        AppLocalizations.of(context)!.createGroup,
         style: TextStyle(
           color: appColors.textPrimary,
           fontSize: 18,
@@ -113,7 +114,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Group Name',
+          AppLocalizations.of(context)!.groupName,
           style: TextStyle(
             color: appColors.textPrimary,
             fontSize: 14,
@@ -128,7 +129,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           cursorColor: appColors.textPrimary,
           decoration: InputDecoration(
             counterStyle: TextStyle(color: appColors.textMuted, fontSize: 12),
-            hintText: 'Enter group name',
+            hintText: AppLocalizations.of(context)!.enterGroupNamePlaceholder,
             hintStyle: TextStyle(color: appColors.textMuted),
             filled: true,
             fillColor: appColors.surface,
@@ -207,7 +208,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       size: 40, color: appColors.surface),
                   const SizedBox(height: 8),
                   Text(
-                    'Search and select users to add',
+                    AppLocalizations.of(context)!.searchSelectUsers,
                     style: TextStyle(color: appColors.textMuted, fontSize: 14),
                   ),
                 ],
@@ -228,7 +229,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               final displayName = user['displayName'] as String? ??
                   user['display_name'] as String? ??
                   user['username'] as String? ??
-                  'User';
+                  AppLocalizations.of(context)!.userFallback;
 
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
@@ -300,7 +301,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 ),
               )
             : Text(
-                'Create',
+                AppLocalizations.of(context)!.create,
                 style: TextStyle(
                   color: appColors.textPrimary,
                   fontSize: 16,
@@ -333,14 +334,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             ),
             const SizedBox(height: 8),
             _buildSwitchTile(
-              title: 'Require Approval',
-              subtitle: 'New members need admin approval to join',
+              title: AppLocalizations.of(context)!.requireApproval,
+              subtitle: AppLocalizations.of(context)!.requireApprovalDesc,
               value: _needApprove,
               onChanged: (v) => setState(() => _needApprove = v),
             ),
             _buildSwitchTile(
-              title: 'Invite Link',
-              subtitle: 'Allow joining via an invite link',
+              title: AppLocalizations.of(context)!.inviteLink,
+              subtitle: AppLocalizations.of(context)!.inviteLinkDesc,
               value: _inviteLinkEnabled,
               onChanged: (v) => setState(() => _inviteLinkEnabled = v),
             ),
@@ -350,7 +351,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Members',
+              AppLocalizations.of(context)!.members,
               style: TextStyle(
                 color: appColors.textPrimary,
                 fontSize: 14,

@@ -190,12 +190,12 @@ class _ProfilePageState extends State<ProfilePage>
                           children: [
                             _buildStatItem(
                               '${state.followStats.followingCount}',
-                              ' following',
+                              AppLocalizations.of(context)!.statFollowing,
                             ),
                             Container(width: 16),
                             _buildStatItem(
                               '${state.followStats.followersCount}',
-                              ' followers',
+                              AppLocalizations.of(context)!.statFollowers,
                             ),
                           ],
                         ),
@@ -206,7 +206,7 @@ class _ProfilePageState extends State<ProfilePage>
                           children: [
                             if (state.isMyProfile) ...[
                               _buildActionButton(
-                                label: 'Edit profile',
+                                label: AppLocalizations.of(context)!.editProfile,
                                 onTap: () {
                                   Navigator.push(
                                       context,
@@ -216,10 +216,10 @@ class _ProfilePageState extends State<ProfilePage>
                                 },
                               ),
                               Container(width: 10),
-                              _buildActionButton(label: 'Share profile'),
+                              _buildActionButton(label: AppLocalizations.of(context)!.shareProfile),
                             ] else ...[
                               _buildActionButton(
-                                label: state.isFollowing ? 'Following' : 'Follow',
+                                label: state.isFollowing ? AppLocalizations.of(context)!.following : AppLocalizations.of(context)!.follow,
                                 isHighlighted: !state.isFollowing,
                                 onTap: () {
                                   state.followUser(
@@ -227,7 +227,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 },
                               ),
                               Container(width: 10),
-                              _buildActionButton(label: 'Share profile'),
+                              _buildActionButton(label: AppLocalizations.of(context)!.shareProfile),
                             ],
                           ],
                         ),
@@ -248,7 +248,7 @@ class _ProfilePageState extends State<ProfilePage>
                                   padding: EdgeInsets.only(left: 20),
                                   child: Tab(
                                       child: Text(
-                                    'Threads',
+                                    AppLocalizations.of(context)!.tabThreads,
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
@@ -258,7 +258,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 padding: EdgeInsets.only(right: 0),
                                 child: Tab(
                                     child: Text(
-                                  'Replies',
+                                  AppLocalizations.of(context)!.tabReplies,
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,

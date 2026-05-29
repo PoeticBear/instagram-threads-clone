@@ -64,7 +64,7 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
         final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to approve reply.'),
+            content: Text(AppLocalizations.of(context)!.failedApproveReply),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -88,7 +88,7 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
         final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to reject reply.'),
+            content: Text(AppLocalizations.of(context)!.failedRejectReply),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -110,7 +110,7 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Pending Replies',
+          AppLocalizations.of(context)!.pendingReplies,
           style: TextStyle(
             color: appColors.textPrimary,
             fontWeight: FontWeight.w500,

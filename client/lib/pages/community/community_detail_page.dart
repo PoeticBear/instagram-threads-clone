@@ -8,6 +8,7 @@ import 'package:threads/model/user.module.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/state/community.state.dart';
 import 'package:threads/widget/feedpost.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/pages/community/community_members_page.dart';
 import 'package:threads/theme/app_colors.dart';
 
@@ -240,9 +241,9 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
           // Stats row
           Row(
             children: [
-              _buildStatItem('${detail.membersCount}', ' members', appColors),
+              _buildStatItem('${detail.membersCount}', ' ${AppLocalizations.of(context)!.members.toLowerCase()}', appColors),
               const SizedBox(width: 16),
-              _buildStatItem('${detail.postsCount}', ' posts', appColors),
+              _buildStatItem('${detail.postsCount}', ' ${AppLocalizations.of(context)!.posts.toLowerCase()}', appColors),
             ],
           ),
           const SizedBox(height: 16),
@@ -299,7 +300,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         ),
         alignment: Alignment.center,
         child: Text(
-          isJoined ? 'Joined' : 'Join Community',
+          isJoined ? AppLocalizations.of(context)!.joined : AppLocalizations.of(context)!.joinCommunity,
           style: TextStyle(
             color: appColors.textPrimary,
             fontWeight: FontWeight.w600,
@@ -328,7 +329,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         tabs: [
           Tab(
             child: Text(
-              'Posts',
+              AppLocalizations.of(context)!.posts,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -337,7 +338,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
           ),
           Tab(
             child: Text(
-              'Members',
+              AppLocalizations.of(context)!.members,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -374,7 +375,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         height: 200,
         alignment: Alignment.center,
         child: Text(
-          'No posts yet.',
+          AppLocalizations.of(context)!.noCommunityPosts,
           style: TextStyle(
             color: appColors.textHint,
             fontSize: 15,
@@ -413,7 +414,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         height: 200,
         alignment: Alignment.center,
         child: Text(
-          'No members yet.',
+          AppLocalizations.of(context)!.noCommunityMembers,
           style: TextStyle(
             color: appColors.textHint,
             fontSize: 15,
@@ -440,7 +441,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  'See all members',
+                  AppLocalizations.of(context)!.seeAllMembers,
                   style: TextStyle(
                     color: appColors.accent,
                     fontSize: 14,
@@ -520,7 +521,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            'Admin',
+                            AppLocalizations.of(context)!.admin,
                             style: TextStyle(
                               color: appColors.accent,
                               fontSize: 10,
@@ -607,7 +608,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                 leading: Icon(Icons.people_outline,
                     color: appColors.textPrimary),
                 title: Text(
-                  'View all members',
+                  AppLocalizations.of(context)!.viewAllMembers,
                   style: TextStyle(color: appColors.textPrimary),
                 ),
                 onTap: () {
@@ -681,7 +682,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                   leading: const Icon(Icons.star_outline,
                       color: Colors.amber),
                   title: Text(
-                    'Remove Champion',
+                    AppLocalizations.of(context)!.removeChampion,
                     style: TextStyle(color: appColors.textPrimary),
                   ),
                   onTap: () {
@@ -698,7 +699,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                   leading:
                       const Icon(Icons.star, color: Colors.amber),
                   title: Text(
-                    'Set as Champion',
+                    AppLocalizations.of(context)!.setChampion,
                     style: TextStyle(color: appColors.textPrimary),
                   ),
                   onTap: () {

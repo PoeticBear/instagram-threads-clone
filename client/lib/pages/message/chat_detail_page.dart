@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/model/message.module.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
 
 import 'chat_bubble.dart';
@@ -204,7 +205,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   PreferredSizeWidget _buildAppBar() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final displayName = widget.isGroupChat
-        ? (widget.peerDisplayName ?? widget.peerUsername ?? 'Group Chat')
+        ? (widget.peerDisplayName ?? widget.peerUsername ?? AppLocalizations.of(context)!.groupChat)
         : (widget.peerDisplayName?.isNotEmpty == true
             ? widget.peerDisplayName!
             : widget.peerUsername ?? '');
@@ -290,7 +291,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         if (state.currentMessages.isEmpty) {
           return Center(
             child: Text(
-              'No messages yet',
+              AppLocalizations.of(context)!.noMessagesYet,
               style: TextStyle(
                 color: appColors.textSecondary,
                 fontSize: 14,
@@ -355,7 +356,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               focusNode: _inputFocusNode,
               style: TextStyle(color: appColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'Message...',
+                hintText: AppLocalizations.of(context)!.messagePlaceholder,
                 hintStyle: TextStyle(color: appColors.textMuted),
                 filled: true,
                 fillColor: appColors.surface,

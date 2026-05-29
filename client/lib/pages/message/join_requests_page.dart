@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class JoinRequestsPage extends StatefulWidget {
@@ -36,7 +37,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
-        'Join Requests',
+        AppLocalizations.of(context)!.joinRequests,
         style: TextStyle(
           color: appColors.textPrimary,
           fontSize: 18,
@@ -117,7 +118,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                   ),
                 if (createTime != null && createTime.isNotEmpty)
                   Text(
-                    'Requested ${_formatDate(createTime)}',
+                    AppLocalizations.of(context)!.requestedDate(_formatDate(createTime)),
                     style: TextStyle(
                       color: appColors.textSecondary,
                       fontSize: 11,
@@ -147,7 +148,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Approve',
+                AppLocalizations.of(context)!.approve,
                 style: TextStyle(
                   color: appColors.textPrimary,
                   fontSize: 13,
@@ -177,7 +178,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Decline',
+                AppLocalizations.of(context)!.decline,
                 style: TextStyle(
                   color: appColors.textSecondary,
                   fontSize: 13,
@@ -219,7 +220,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                       size: 48, color: appColors.surface),
                   const SizedBox(height: 12),
                   Text(
-                    'No pending requests',
+                    AppLocalizations.of(context)!.noPendingRequests,
                     style: TextStyle(
                       color: appColors.textSecondary,
                       fontSize: 16,

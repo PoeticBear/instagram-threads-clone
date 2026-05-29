@@ -56,7 +56,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to delete word.'),
+            content: Text(AppLocalizations.of(context)!.failedDeleteWord),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -76,7 +76,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
           builder: (dialogContext, setDialogState) {
             return CupertinoAlertDialog(
               title: Text(
-                'Add Hidden Word',
+                AppLocalizations.of(context)!.addHiddenWord,
                 style: TextStyle(color: appColors.textPrimary),
               ),
               content: Padding(
@@ -101,7 +101,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                           1: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             child: Text(
-                              'Keyword',
+                              AppLocalizations.of(context)!.keyword,
                               style: TextStyle(
                                 color: selectedWordType == 1
                                     ? appColors.textPrimary
@@ -113,7 +113,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                           2: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             child: Text(
-                              'Phrase',
+                              AppLocalizations.of(context)!.phrase,
                               style: TextStyle(
                                 color: selectedWordType == 2
                                     ? appColors.textPrimary
@@ -125,7 +125,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                           3: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             child: Text(
-                              'Emoji',
+                              AppLocalizations.of(context)!.emoji,
                               style: TextStyle(
                                 color: selectedWordType == 3
                                     ? appColors.textPrimary
@@ -140,7 +140,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                     const SizedBox(height: 12),
                     CupertinoTextField(
                       controller: contentController,
-                      placeholder: 'Enter word or phrase',
+                      placeholder: AppLocalizations.of(context)!.enterWordOrPhrase,
                       placeholderStyle: TextStyle(color: appColors.textMuted),
                       style: TextStyle(color: appColors.textPrimary),
                       decoration: BoxDecoration(
@@ -156,7 +156,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                 CupertinoDialogAction(
                   isDestructiveAction: true,
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                 ),
                 CupertinoDialogAction(
                   isDefaultAction: true,
@@ -174,7 +174,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: const Text('Failed to add word.'),
+                              content: Text(AppLocalizations.of(context)!.failedAddWord),
                               backgroundColor: appColors.destructive,
                             ),
                           );
@@ -182,7 +182,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                       }
                     }
                   },
-                  child: const Text('Add'),
+                  child: Text(AppLocalizations.of(context)!.add),
                 ),
               ],
             );
@@ -208,7 +208,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Hidden Words',
+          l10n.hiddenWords,
           style: TextStyle(
             color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
@@ -243,7 +243,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                   1: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Text(
-                      'Keywords',
+                      l10n.keywords,
                       style: TextStyle(
                         color: _selectedType == 1 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
@@ -254,7 +254,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                   2: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Text(
-                      'Phrases',
+                      l10n.phrases,
                       style: TextStyle(
                         color: _selectedType == 2 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
@@ -265,7 +265,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                   3: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Text(
-                      'Emoji',
+                      l10n.emoji,
                       style: TextStyle(
                         color: _selectedType == 3 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
@@ -289,7 +289,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                 : filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'No hidden words',
+                          l10n.noHiddenWords,
                           style: TextStyle(
                             color: appColors.textMuted,
                             fontSize: 16,

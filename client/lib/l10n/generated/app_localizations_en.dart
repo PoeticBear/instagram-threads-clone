@@ -819,4 +819,288 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noThreadsYetOthers => 'No threads yet.';
+
+  @override
+  String get nothingToSaveDraft => 'Nothing to save as draft';
+
+  @override
+  String get draftSaveFailed => 'Failed to save draft';
+
+  @override
+  String get draft => 'Draft';
+
+  @override
+  String replyCount(int count) {
+    return '$count replies';
+  }
+
+  @override
+  String repostCount(int count) {
+    return '$count reposts';
+  }
+
+  @override
+  String get failedApproveReply => 'Failed to approve reply.';
+
+  @override
+  String get failedRejectReply => 'Failed to reject reply.';
+
+  @override
+  String get pendingReplies => 'Pending Replies';
+
+  @override
+  String get statFollowing => 'following';
+
+  @override
+  String get statFollowers => 'followers';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get bio => 'Bio';
+
+  @override
+  String get addBio => 'Add bio';
+
+  @override
+  String get linkLabel => 'Link';
+
+  @override
+  String get addLinkField => 'Add link';
+
+  @override
+  String get pronouns => 'Pronouns';
+
+  @override
+  String get addPronouns => 'Add pronouns';
+
+  @override
+  String get locationLabel => 'Location';
+
+  @override
+  String get addLocationField => 'Add location';
+
+  @override
+  String get gender => 'Gender';
+
+  @override
+  String get accountType => 'Account Type';
+
+  @override
+  String get privateAccount => 'Private Account';
+
+  @override
+  String get changeAvatar => 'Change avatar';
+
+  @override
+  String get avatarVisibility => 'Your avatar is visible to everyone';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get cameraLabel => 'Camera';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get notSet => 'Not set';
+
+  @override
+  String get male => 'Male';
+
+  @override
+  String get female => 'Female';
+
+  @override
+  String get otherGender => 'Other';
+
+  @override
+  String get personal => 'Personal';
+
+  @override
+  String get creator => 'Creator';
+
+  @override
+  String get business => 'Business';
+
+  @override
+  String get maxNameChars => 'Max 100 characters';
+
+  @override
+  String get maxBioChars => 'Max 500 characters for bio';
+
+  @override
+  String get updateFailed => 'Update failed, please retry';
+
+  @override
+  String get requests => 'Requests';
+
+  @override
+  String get groupChat => 'Group Chat';
+
+  @override
+  String get pleaseEnterGroupName => 'Please enter a group name';
+
+  @override
+  String get failedCreateGroup => 'Failed to create group';
+
+  @override
+  String get enterGroupNamePlaceholder => 'Enter group name';
+
+  @override
+  String get searchSelectUsers => 'Search and select users to add';
+
+  @override
+  String get userFallback => 'User';
+
+  @override
+  String get requireApproval => 'Require Approval';
+
+  @override
+  String get requireApprovalDesc => 'New members need admin approval to join';
+
+  @override
+  String get inviteLink => 'Invite Link';
+
+  @override
+  String get inviteLinkDesc => 'Allow joining via an invite link';
+
+  @override
+  String get noInviteLink => 'No invite link available';
+
+  @override
+  String get leave => 'Leave';
+
+  @override
+  String memberCount(int count) {
+    return '$count members';
+  }
+
+  @override
+  String createdDate(String date) {
+    return 'Created $date';
+  }
+
+  @override
+  String get messageBtn => 'Message';
+
+  @override
+  String get viewAllMembers => 'View All Members';
+
+  @override
+  String removeMemberConfirm(String name) {
+    return 'Are you sure you want to remove $name from this group?';
+  }
+
+  @override
+  String get noMembersFound => 'No members found';
+
+  @override
+  String noResultsFor(String query) {
+    return 'No results for \"$query\"';
+  }
+
+  @override
+  String requestedDate(String date) {
+    return 'Requested $date';
+  }
+
+  @override
+  String get searchUsersHint => 'Search users...';
+
+  @override
+  String get joined => 'Joined';
+
+  @override
+  String get noCommunitiesFound => 'No communities found';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get deleteConfirmUndo => 'This action cannot be undone.';
+
+  @override
+  String deleteNameConfirm(String name) {
+    return 'Delete \"$name\"?';
+  }
+
+  @override
+  String get failedCreateCollection => 'Failed to create collection.';
+
+  @override
+  String get failedDeleteCollection => 'Failed to delete collection.';
+
+  @override
+  String get newCollection => 'New Collection';
+
+  @override
+  String savedCount(int count) {
+    return '$count saved';
+  }
+
+  @override
+  String get failedDeleteWord => 'Failed to delete word.';
+
+  @override
+  String get addHiddenWord => 'Add Hidden Word';
+
+  @override
+  String get keyword => 'Keyword';
+
+  @override
+  String get phrase => 'Phrase';
+
+  @override
+  String get enterWordOrPhrase => 'Enter word or phrase';
+
+  @override
+  String get failedAddWord => 'Failed to add word.';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get failedDeleteLink => 'Failed to delete link.';
+
+  @override
+  String get failedAddLink => 'Failed to add link.';
+
+  @override
+  String get failedUpdateLink => 'Failed to update link.';
+
+  @override
+  String get failedRemoveUser => 'Failed to remove. Please try again.';
+
+  @override
+  String get mutedRestrictedBlocked => 'Muted / Restricted / Blocked';
+
+  @override
+  String get noUsersFound => 'No users found';
+
+  @override
+  String reasonLabel(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
+  String get seeAllMembers => 'See all members';
+
+  @override
+  String get noCollectionsYet => 'No collections yet';
+
+  @override
+  String get noLinksYet => 'No links yet';
 }

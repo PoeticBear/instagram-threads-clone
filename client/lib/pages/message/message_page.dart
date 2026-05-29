@@ -5,6 +5,7 @@ import 'package:threads/model/message.module.dart';
 import 'package:threads/pages/message/chat_detail_page.dart';
 import 'package:threads/pages/message/message_list_tile.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class MessagePage extends StatefulWidget {
@@ -82,7 +83,7 @@ class _MessagePageState extends State<MessagePage>
         backgroundColor: appColors.background,
         centerTitle: false,
         title: Text(
-          'Messages',
+          AppLocalizations.of(context)!.messages,
           style: TextStyle(
             color: appColors.textPrimary,
             fontSize: 28,
@@ -110,9 +111,9 @@ class _MessagePageState extends State<MessagePage>
               const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           unselectedLabelStyle:
               const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Requests'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context)!.filterAll),
+            Tab(text: AppLocalizations.of(context)!.requests),
           ],
         ),
       ),
@@ -146,9 +147,9 @@ class _MessagePageState extends State<MessagePage>
           children: [
             Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey[700]),
             const SizedBox(height: 12),
-            const Text(
-              'No conversations yet',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
+            Text(
+              AppLocalizations.of(context)!.noConversations,
+              style: const TextStyle(color: Colors.grey, fontSize: 16),
             ),
           ],
         ),
@@ -212,9 +213,9 @@ class _MessagePageState extends State<MessagePage>
           children: [
             Icon(Icons.person_add_outlined, size: 48, color: Colors.grey[700]),
             const SizedBox(height: 12),
-            const Text(
-              'No message requests',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
+            Text(
+              AppLocalizations.of(context)!.noMessageRequests,
+              style: const TextStyle(color: Colors.grey, fontSize: 16),
             ),
           ],
         ),
@@ -352,9 +353,9 @@ class _NewMessageBottomSheetState extends State<_NewMessageBottomSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'New Message',
-                  style: TextStyle(
+                Text(
+                  AppLocalizations.of(context)!.newMessage,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -363,7 +364,7 @@ class _NewMessageBottomSheetState extends State<_NewMessageBottomSheet> {
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Text(
-                    'Cancel',
+                    AppLocalizations.of(context)!.cancel,
                     style: TextStyle(
                       color: Colors.grey[400],
                       fontSize: 16,
@@ -384,7 +385,7 @@ class _NewMessageBottomSheetState extends State<_NewMessageBottomSheet> {
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
-                hintText: 'Search users...',
+                hintText: AppLocalizations.of(context)!.searchUsersHint,
                 hintStyle: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[500],
@@ -433,7 +434,7 @@ class _NewMessageBottomSheetState extends State<_NewMessageBottomSheet> {
                 size: 48, color: Colors.grey[700]),
             const SizedBox(height: 12),
             Text(
-              'Search for a user to start chatting',
+              AppLocalizations.of(context)!.searchForUser,
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 16,
@@ -452,7 +453,7 @@ class _NewMessageBottomSheetState extends State<_NewMessageBottomSheet> {
             Icon(Icons.person_off_outlined, size: 48, color: Colors.grey[700]),
             const SizedBox(height: 12),
             Text(
-              'No users found',
+              AppLocalizations.of(context)!.noResultsFound,
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 16,

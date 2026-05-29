@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/model/message.module.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class MessageListTile extends StatelessWidget {
@@ -64,7 +65,7 @@ class MessageListTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    lastMessage.isNotEmpty ? lastMessage : 'No messages yet',
+                    lastMessage.isNotEmpty ? lastMessage : AppLocalizations.of(context)!.noMessagesYet,
                     style: TextStyle(
                       color: appColors.textSecondary,
                       fontSize: 14,
@@ -82,7 +83,7 @@ class MessageListTile extends StatelessWidget {
               children: [
                 if (conversation.lastMessageTime != null)
                   Text(
-                    _formatTime(conversation.lastMessageTime!),
+                    _formatTime(conversation.lastMessageTime!, AppLocalizations.of(context)!),
                     style: TextStyle(
                       color: appColors.textMuted,
                       fontSize: 12,
@@ -148,16 +149,16 @@ class MessageListTile extends StatelessWidget {
     );
   }
 
-  String _formatTime(String timeStr) {
+  String _formatTime(String timeStr, AppLocalizations l10n) {
     try {
       final dt = DateTime.parse(timeStr);
       final now = DateTime.now();
       final diff = now.difference(dt);
 
-      if (diff.inMinutes < 1) return 'now';
-      if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-      if (diff.inHours < 24) return '${diff.inHours}h';
-      if (diff.inDays < 7) return '${diff.inDays}d';
+      if (diff.inMinutes < 1) return l10n.justNow;
+      if (diff.inMinutes < 60) return l10n.minutesAgo(diff.inMinutes);
+      if (diff.inHours < 24) return l10n.hoursAgo(diff.inHours);
+      if (diff.inDays < 7) return l10n.daysAgo(diff.inDays);
       return '${dt.month}/${dt.day}';
     } catch (_) {
       return '';

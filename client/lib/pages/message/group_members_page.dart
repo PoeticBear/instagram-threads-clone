@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/model/message.module.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class GroupMembersPage extends StatefulWidget {
@@ -44,18 +45,18 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
       builder: (context) => AlertDialog(
         backgroundColor: appColors.surfaceSecondary,
         title: Text(
-          'Remove Member',
+          AppLocalizations.of(context)!.removeMember,
           style: TextStyle(color: appColors.textPrimary),
         ),
         content: Text(
-          'Are you sure you want to remove ${member.displayName.isNotEmpty ? member.displayName : member.username} from this group?',
+          AppLocalizations.of(context)!.removeMemberConfirm(member.displayName.isNotEmpty ? member.displayName : member.username),
           style: TextStyle(color: appColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context)!.cancel,
               style: TextStyle(color: appColors.textSecondary),
             ),
           ),
@@ -70,7 +71,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
               );
             },
             child: Text(
-              'Remove',
+              AppLocalizations.of(context)!.remove,
               style: TextStyle(color: appColors.destructive),
             ),
           ),
@@ -89,7 +90,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
-        'Members',
+        AppLocalizations.of(context)!.members,
         style: TextStyle(
           color: appColors.textPrimary,
           fontSize: 18,
@@ -110,7 +111,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         cursorColor: appColors.textPrimary,
         decoration: InputDecoration(
           prefixIcon: Icon(Icons.search, size: 20, color: appColors.textMuted),
-          hintText: 'Search members...',
+          hintText: AppLocalizations.of(context)!.searchMembers,
           hintStyle: TextStyle(color: appColors.textMuted),
           filled: true,
           fillColor: appColors.surface,
@@ -196,7 +197,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Admin',
+                          AppLocalizations.of(context)!.admin,
                           style: TextStyle(
                             color: appColors.accent,
                             fontSize: 10,
@@ -233,7 +234,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Remove',
+                  AppLocalizations.of(context)!.remove,
                   style: TextStyle(
                     color: appColors.destructive,
                     fontSize: 13,
@@ -295,8 +296,8 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                         const SizedBox(height: 12),
                         Text(
                           _searchQuery.isEmpty
-                              ? 'No members found'
-                              : 'No results for "$_searchQuery"',
+                              ? AppLocalizations.of(context)!.noMembersFound
+                              : AppLocalizations.of(context)!.noResultsFor(_searchQuery),
                           style: TextStyle(
                             color: appColors.textMuted,
                             fontSize: 15,

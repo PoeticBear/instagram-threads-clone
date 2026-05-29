@@ -255,9 +255,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
               SizedBox(width: 4),
               Text('${post.likesCount ?? 0}', style: TextStyle(color: appColors.textMuted, fontSize: 13)),
               SizedBox(width: 16),
-              Text('${post.repliesCount ?? 0} replies', style: TextStyle(color: appColors.textMuted, fontSize: 13)),
+              Text(AppLocalizations.of(context)!.replyCount(post.repliesCount ?? 0), style: TextStyle(color: appColors.textMuted, fontSize: 13)),
               SizedBox(width: 16),
-              Text('${post.repostsCount ?? 0} reposts', style: TextStyle(color: appColors.textMuted, fontSize: 13)),
+              Text(AppLocalizations.of(context)!.repostCount(post.repostsCount ?? 0), style: TextStyle(color: appColors.textMuted, fontSize: 13)),
             ],
           ),
         ],
@@ -358,11 +358,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   String _formatTime(DateTime dt) {
+    final l10n = AppLocalizations.of(context)!;
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}d';
+    if (diff.inMinutes < 1) return l10n.justNow;
+    if (diff.inMinutes < 60) return l10n.minutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.hoursAgo(diff.inHours);
+    if (diff.inDays < 7) return l10n.daysAgo(diff.inDays);
     return '${dt.month}/${dt.day}';
   }
 }

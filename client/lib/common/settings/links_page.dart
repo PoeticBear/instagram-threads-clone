@@ -52,7 +52,7 @@ class _LinksPageState extends State<LinksPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to delete link.'),
+            content: Text(AppLocalizations.of(context)!.failedDeleteLink),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -64,7 +64,7 @@ class _LinksPageState extends State<LinksPage> {
     final titleController = TextEditingController();
     final urlController = TextEditingController();
     _showLinkDialog(
-      title: 'Add Link',
+      title: AppLocalizations.of(context)!.addLink,
       titleController: titleController,
       urlController: urlController,
       onConfirm: () async {
@@ -80,7 +80,7 @@ class _LinksPageState extends State<LinksPage> {
               final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Failed to add link.'),
+                  content: Text(AppLocalizations.of(context)!.failedAddLink),
                   backgroundColor: appColors.destructive,
                 ),
               );
@@ -95,7 +95,7 @@ class _LinksPageState extends State<LinksPage> {
     final titleController = TextEditingController(text: link.title);
     final urlController = TextEditingController(text: link.url);
     _showLinkDialog(
-      title: 'Edit Link',
+      title: AppLocalizations.of(context)!.editLink,
       titleController: titleController,
       urlController: urlController,
       onConfirm: () async {
@@ -115,7 +115,7 @@ class _LinksPageState extends State<LinksPage> {
               final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Failed to update link.'),
+                  content: Text(AppLocalizations.of(context)!.failedUpdateLink),
                   backgroundColor: appColors.destructive,
                 ),
               );
@@ -147,7 +147,7 @@ class _LinksPageState extends State<LinksPage> {
             children: [
               CupertinoTextField(
                 controller: titleController,
-                placeholder: 'Title',
+                placeholder: AppLocalizations.of(context)!.linkTitle,
                 placeholderStyle: TextStyle(color: appColors.textMuted),
                 style: TextStyle(color: appColors.textPrimary),
                 decoration: BoxDecoration(
@@ -159,7 +159,7 @@ class _LinksPageState extends State<LinksPage> {
               const SizedBox(height: 8),
               CupertinoTextField(
                 controller: urlController,
-                placeholder: 'URL',
+                placeholder: AppLocalizations.of(context)!.linkUrl,
                 placeholderStyle: TextStyle(color: appColors.textMuted),
                 style: TextStyle(color: appColors.textPrimary),
                 decoration: BoxDecoration(
@@ -176,12 +176,12 @@ class _LinksPageState extends State<LinksPage> {
           CupertinoDialogAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: onConfirm,
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
       ),
@@ -194,20 +194,20 @@ class _LinksPageState extends State<LinksPage> {
       context: context,
       builder: (dialogContext) => CupertinoAlertDialog(
         title: Text(
-          'Delete "${link.title}"?',
+          AppLocalizations.of(context)!.deleteNameConfirm(link.title),
           style: TextStyle(color: appColors.textPrimary),
         ),
         content: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            'This action cannot be undone.',
+            AppLocalizations.of(context)!.deleteConfirmUndo,
             style: TextStyle(color: appColors.textMuted),
           ),
         ),
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
@@ -215,7 +215,7 @@ class _LinksPageState extends State<LinksPage> {
               Navigator.pop(dialogContext);
               _deleteLink(link);
             },
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -236,7 +236,7 @@ class _LinksPageState extends State<LinksPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Links',
+          l10n.links,
           style: TextStyle(
             color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
@@ -255,7 +255,7 @@ class _LinksPageState extends State<LinksPage> {
           : _links.isEmpty
               ? Center(
                   child: Text(
-                    'No links yet',
+                    l10n.noLinksYet,
                     style: TextStyle(
                       color: appColors.textMuted,
                       fontSize: 16,

@@ -42,16 +42,16 @@ class _RelationControlPageState extends State<RelationControlPage> {
     }
   }
 
-  String _actionLabel() {
+  String _actionLabel(AppLocalizations l10n) {
     switch (_selectedType) {
       case 1:
-        return 'Unmute';
+        return l10n.unmute;
       case 2:
-        return 'Unrestrict';
+        return l10n.unrestrict;
       case 3:
-        return 'Unblock';
+        return l10n.unblock;
       default:
-        return 'Remove';
+        return l10n.remove;
     }
   }
 
@@ -64,7 +64,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to remove. Please try again.'),
+            content: Text(AppLocalizations.of(context)!.failedRemoveUser),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -86,7 +86,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Muted / Restricted / Blocked',
+          l10n.mutedRestrictedBlocked,
           style: TextStyle(
             color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
@@ -116,7 +116,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                   1: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Text(
-                      'Muted',
+                      l10n.mutedUsers,
                       style: TextStyle(
                         color: _selectedType == 1 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
@@ -127,7 +127,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                   2: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Text(
-                      'Restricted',
+                      l10n.restrictedUsers,
                       style: TextStyle(
                         color: _selectedType == 2 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
@@ -138,7 +138,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                   3: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Text(
-                      'Blocked',
+                      l10n.blockedUsers,
                       style: TextStyle(
                         color: _selectedType == 3 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
@@ -162,7 +162,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                 : _users.isEmpty
                     ? Center(
                         child: Text(
-                          'No users found',
+                          l10n.noUsersFound,
                           style: TextStyle(
                             color: appColors.textMuted,
                             fontSize: 16,
@@ -197,6 +197,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
 
   Widget _buildUserTile(RelationControlledUser user) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
@@ -246,7 +247,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
-                      'Reason: ${user.reason}',
+                      l10n.reasonLabel(user.reason!),
                       style: TextStyle(
                         color: appColors.textHint,
                         fontSize: 13,
@@ -278,7 +279,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                 border: Border.all(color: appColors.dividerSecondary),
               ),
               child: Text(
-                _actionLabel(),
+                _actionLabel(AppLocalizations.of(context)!),
                 style: TextStyle(
                   color: appColors.textPrimary,
                   fontSize: 13,

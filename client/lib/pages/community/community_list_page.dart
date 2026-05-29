@@ -6,6 +6,7 @@ import 'package:threads/model/community.module.dart';
 import 'package:threads/state/community.state.dart';
 import 'package:threads/pages/community/community_detail_page.dart';
 import 'package:threads/theme/app_colors.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 
 class CommunityListPage extends StatefulWidget {
   const CommunityListPage({Key? key}) : super(key: key);
@@ -75,7 +76,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
           child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         title: Text(
-          'Communities',
+          AppLocalizations.of(context)!.communities,
           style: TextStyle(
             color: appColors.textPrimary,
             fontSize: 22,
@@ -100,7 +101,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
                       size: 48, color: appColors.surface),
                   const SizedBox(height: 12),
                   Text(
-                    'No communities found',
+                    AppLocalizations.of(context)!.noCommunitiesFound,
                     style: TextStyle(
                       color: appColors.textMuted,
                       fontSize: 16,
@@ -194,7 +195,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            'Joined',
+                            AppLocalizations.of(context)!.joined,
                             style: TextStyle(
                               color: appColors.accent,
                               fontSize: 10,
@@ -232,7 +233,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
                         ),
                       ),
                       Text(
-                        ' members',
+                        ' ${AppLocalizations.of(context)!.members.toLowerCase()}',
                         style: TextStyle(
                           color: appColors.textMuted,
                           fontSize: 13,
@@ -248,7 +249,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
                         ),
                       ),
                       Text(
-                        ' posts',
+                        ' ${AppLocalizations.of(context)!.posts.toLowerCase()}',
                         style: TextStyle(
                           color: appColors.textMuted,
                           fontSize: 13,

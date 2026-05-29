@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/theme/app_colors.dart';
 
@@ -62,20 +63,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
-  String _genderLabel(int value) {
+  String _genderLabel(int value, AppLocalizations l10n) {
     switch (value) {
-      case 2: return 'Male';
-      case 3: return 'Female';
-      case 4: return 'Other';
-      default: return 'Not set';
+      case 2: return l10n.male;
+      case 3: return l10n.female;
+      case 4: return l10n.otherGender;
+      default: return l10n.notSet;
     }
   }
 
-  String _accountTypeLabel(int value) {
+  String _accountTypeLabel(int value, AppLocalizations l10n) {
     switch (value) {
-      case 2: return 'Creator';
-      case 3: return 'Business';
-      default: return 'Personal';
+      case 2: return l10n.creator;
+      case 3: return l10n.business;
+      default: return l10n.personal;
     }
   }
 
@@ -112,13 +113,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       onTap: () {
                                         Navigator.pop(context);
                                       },
-                                      child: Text("Cancel",
+                                      child: Text(AppLocalizations.of(context)!.cancel,
                                           style: TextStyle(
                                               color: appColors.textPrimary,
                                               fontSize: 20,
                                               fontWeight: FontWeight.w400)))),
                               Text(
-                                "Edit profile   ",
+                                AppLocalizations.of(context)!.editProfile,
                                 style: TextStyle(
                                     color: appColors.textPrimary,
                                     fontSize: 18,
@@ -128,7 +129,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 padding: EdgeInsets.only(right: 15),
                                 child: GestureDetector(
                                     onTap: _submitButton,
-                                    child: Text("Done",
+                                    child: Text(AppLocalizations.of(context)!.done,
                                         style: TextStyle(
                                             color: appColors.accent,
                                             fontSize: 20,
@@ -169,7 +170,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Container(height: 10),
-                                      Text("Name", style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
+                                      Text(AppLocalizations.of(context)!.name, style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
                                       CupertinoTextField(
                                         controller: _displayName,
                                         prefix: Icon(Icons.lock_outline_rounded, size: 15, color: appColors.textPrimary),
@@ -191,43 +192,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             ),
                             // Bio
                             _fieldSection(
-                              label: "Bio",
+                              label: AppLocalizations.of(context)!.bio,
                               controller: _bio,
-                              placeholder: 'Add bio',
+                              placeholder: AppLocalizations.of(context)!.addBio,
                             ),
                             // Link
                             _fieldSection(
-                              label: "Link",
+                              label: AppLocalizations.of(context)!.linkLabel,
                               controller: _link,
-                              placeholder: 'Add link',
+                              placeholder: AppLocalizations.of(context)!.addLinkField,
                             ),
                             // Pronouns
                             _fieldSection(
-                              label: "Pronouns",
+                              label: AppLocalizations.of(context)!.pronouns,
                               controller: _pronouns,
-                              placeholder: 'Add pronouns',
+                              placeholder: AppLocalizations.of(context)!.addPronouns,
                             ),
                             // Location
                             _fieldSection(
-                              label: "Location",
+                              label: AppLocalizations.of(context)!.locationLabel,
                               controller: _location,
-                              placeholder: 'Add location',
+                              placeholder: AppLocalizations.of(context)!.addLocationField,
                             ),
                             // Gender selector
                             _selectorSection(
-                              label: "Gender",
-                              value: _genderLabel(_selectedGender),
+                              label: AppLocalizations.of(context)!.gender,
+                              value: _genderLabel(_selectedGender, AppLocalizations.of(context)!),
                               onTap: _showGenderPicker,
                             ),
                             // Account Type selector
                             _selectorSection(
-                              label: "Account Type",
-                              value: _accountTypeLabel(_accountType),
+                              label: AppLocalizations.of(context)!.accountType,
+                              value: _accountTypeLabel(_accountType, AppLocalizations.of(context)!),
                               onTap: _showAccountTypePicker,
                             ),
                             // Private Account toggle
                             _toggleSection(
-                              label: "Private Account",
+                              label: AppLocalizations.of(context)!.privateAccount,
                               value: _isPrivate,
                               onChanged: (val) {
                                 setState(() { _isPrivate = val; });
@@ -337,11 +338,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
           builder: (BuildContext context) => CupertinoTheme(
             data: CupertinoThemeData(brightness: Theme.of(context).brightness),
             child: CupertinoActionSheet(
-              title: Text('Change avatar'),
-              message: Text('Your avatar is visible to everyone'),
+              title: Text(AppLocalizations.of(context)!.changeAvatar),
+              message: Text(AppLocalizations.of(context)!.avatarVisibility),
               actions: <Widget>[
                 CupertinoActionSheetAction(
-                  child: Text('Gallery'),
+                  child: Text(AppLocalizations.of(context)!.gallery),
                   onPressed: () {
                     getImage(context, ImageSource.gallery, (file) {
                       setState(() { _image = file; });
@@ -350,7 +351,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   },
                 ),
                 CupertinoActionSheetAction(
-                  child: Text('Camera'),
+                  child: Text(AppLocalizations.of(context)!.cameraLabel),
                   onPressed: () {
                     getImage(context, ImageSource.camera, (file) {
                       setState(() { _image = file; });
@@ -359,14 +360,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   },
                 ),
                 CupertinoActionSheetAction(
-                  child: Text('Remove', style: TextStyle(color: appColors.destructive)),
+                  child: Text(AppLocalizations.of(context)!.remove, style: TextStyle(color: appColors.destructive)),
                   onPressed: () {
                     Navigator.pop(context);
                   },
                 ),
               ],
               cancelButton: CupertinoActionSheetAction(
-                child: Text('Cancel'),
+                child: Text(AppLocalizations.of(context)!.cancel),
                 onPressed: () { Navigator.pop(context); },
               ),
             ),
@@ -397,27 +398,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
       builder: (BuildContext context) => CupertinoTheme(
         data: CupertinoThemeData(brightness: Theme.of(context).brightness),
         child: CupertinoActionSheet(
-          title: Text('Gender'),
+          title: Text(AppLocalizations.of(context)!.gender),
           actions: [
             CupertinoActionSheetAction(
-              child: Text('Not set', style: _selectedGender == 1 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              child: Text(AppLocalizations.of(context)!.notSet, style: _selectedGender == 1 ? TextStyle(fontWeight: FontWeight.bold) : null),
               onPressed: () { setState(() { _selectedGender = 1; }); Navigator.pop(context); },
             ),
             CupertinoActionSheetAction(
-              child: Text('Male', style: _selectedGender == 2 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              child: Text(AppLocalizations.of(context)!.male, style: _selectedGender == 2 ? TextStyle(fontWeight: FontWeight.bold) : null),
               onPressed: () { setState(() { _selectedGender = 2; }); Navigator.pop(context); },
             ),
             CupertinoActionSheetAction(
-              child: Text('Female', style: _selectedGender == 3 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              child: Text(AppLocalizations.of(context)!.female, style: _selectedGender == 3 ? TextStyle(fontWeight: FontWeight.bold) : null),
               onPressed: () { setState(() { _selectedGender = 3; }); Navigator.pop(context); },
             ),
             CupertinoActionSheetAction(
-              child: Text('Other', style: _selectedGender == 4 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              child: Text(AppLocalizations.of(context)!.otherGender, style: _selectedGender == 4 ? TextStyle(fontWeight: FontWeight.bold) : null),
               onPressed: () { setState(() { _selectedGender = 4; }); Navigator.pop(context); },
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
-            child: Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
             onPressed: () { Navigator.pop(context); },
           ),
         ),
@@ -431,23 +432,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
       builder: (BuildContext context) => CupertinoTheme(
         data: CupertinoThemeData(brightness: Theme.of(context).brightness),
         child: CupertinoActionSheet(
-          title: Text('Account Type'),
+          title: Text(AppLocalizations.of(context)!.accountType),
           actions: [
             CupertinoActionSheetAction(
-              child: Text('Personal', style: _accountType == 1 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              child: Text(AppLocalizations.of(context)!.personal, style: _accountType == 1 ? TextStyle(fontWeight: FontWeight.bold) : null),
               onPressed: () { setState(() { _accountType = 1; }); Navigator.pop(context); },
             ),
             CupertinoActionSheetAction(
-              child: Text('Creator', style: _accountType == 2 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              child: Text(AppLocalizations.of(context)!.creator, style: _accountType == 2 ? TextStyle(fontWeight: FontWeight.bold) : null),
               onPressed: () { setState(() { _accountType = 2; }); Navigator.pop(context); },
             ),
             CupertinoActionSheetAction(
-              child: Text('Business', style: _accountType == 3 ? TextStyle(fontWeight: FontWeight.bold) : null),
+              child: Text(AppLocalizations.of(context)!.business, style: _accountType == 3 ? TextStyle(fontWeight: FontWeight.bold) : null),
               onPressed: () { setState(() { _accountType = 3; }); Navigator.pop(context); },
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
-            child: Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
             onPressed: () { Navigator.pop(context); },
           ),
         ),
@@ -458,13 +459,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> _submitButton() async {
     if (_displayName.text.length > 100) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Max 100 characters'),
+        content: Text(AppLocalizations.of(context)!.maxNameChars),
       ));
       return;
     }
     if (_bio.text.length > 500) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Max 500 characters for bio'),
+        content: Text(AppLocalizations.of(context)!.maxBioChars),
       ));
       return;
     }
@@ -485,7 +486,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Update failed, please retry'),
+          content: Text(AppLocalizations.of(context)!.updateFailed),
         ));
       }
     }

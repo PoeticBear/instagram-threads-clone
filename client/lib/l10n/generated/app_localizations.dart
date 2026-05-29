@@ -1693,6 +1693,534 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No threads yet.'**
   String get noThreadsYetOthers;
+
+  /// No description provided for @nothingToSaveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to save as draft'**
+  String get nothingToSaveDraft;
+
+  /// No description provided for @draftSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save draft'**
+  String get draftSaveFailed;
+
+  /// No description provided for @draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get draft;
+
+  /// No description provided for @replyCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} replies'**
+  String replyCount(int count);
+
+  /// No description provided for @repostCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} reposts'**
+  String repostCount(int count);
+
+  /// No description provided for @failedApproveReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to approve reply.'**
+  String get failedApproveReply;
+
+  /// No description provided for @failedRejectReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reject reply.'**
+  String get failedRejectReply;
+
+  /// No description provided for @pendingReplies.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Replies'**
+  String get pendingReplies;
+
+  /// No description provided for @statFollowing.
+  ///
+  /// In en, this message translates to:
+  /// **'following'**
+  String get statFollowing;
+
+  /// No description provided for @statFollowers.
+  ///
+  /// In en, this message translates to:
+  /// **'followers'**
+  String get statFollowers;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
+
+  /// No description provided for @bio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get bio;
+
+  /// No description provided for @addBio.
+  ///
+  /// In en, this message translates to:
+  /// **'Add bio'**
+  String get addBio;
+
+  /// No description provided for @linkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get linkLabel;
+
+  /// No description provided for @addLinkField.
+  ///
+  /// In en, this message translates to:
+  /// **'Add link'**
+  String get addLinkField;
+
+  /// No description provided for @pronouns.
+  ///
+  /// In en, this message translates to:
+  /// **'Pronouns'**
+  String get pronouns;
+
+  /// No description provided for @addPronouns.
+  ///
+  /// In en, this message translates to:
+  /// **'Add pronouns'**
+  String get addPronouns;
+
+  /// No description provided for @locationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get locationLabel;
+
+  /// No description provided for @addLocationField.
+  ///
+  /// In en, this message translates to:
+  /// **'Add location'**
+  String get addLocationField;
+
+  /// No description provided for @gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get gender;
+
+  /// No description provided for @accountType.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Type'**
+  String get accountType;
+
+  /// No description provided for @privateAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Account'**
+  String get privateAccount;
+
+  /// No description provided for @changeAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Change avatar'**
+  String get changeAvatar;
+
+  /// No description provided for @avatarVisibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Your avatar is visible to everyone'**
+  String get avatarVisibility;
+
+  /// No description provided for @gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get gallery;
+
+  /// No description provided for @cameraLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get cameraLabel;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSet;
+
+  /// No description provided for @male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get male;
+
+  /// No description provided for @female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get female;
+
+  /// No description provided for @otherGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherGender;
+
+  /// No description provided for @personal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get personal;
+
+  /// No description provided for @creator.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get creator;
+
+  /// No description provided for @business.
+  ///
+  /// In en, this message translates to:
+  /// **'Business'**
+  String get business;
+
+  /// No description provided for @maxNameChars.
+  ///
+  /// In en, this message translates to:
+  /// **'Max 100 characters'**
+  String get maxNameChars;
+
+  /// No description provided for @maxBioChars.
+  ///
+  /// In en, this message translates to:
+  /// **'Max 500 characters for bio'**
+  String get maxBioChars;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed, please retry'**
+  String get updateFailed;
+
+  /// No description provided for @requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get requests;
+
+  /// No description provided for @groupChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Chat'**
+  String get groupChat;
+
+  /// No description provided for @pleaseEnterGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a group name'**
+  String get pleaseEnterGroupName;
+
+  /// No description provided for @failedCreateGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create group'**
+  String get failedCreateGroup;
+
+  /// No description provided for @enterGroupNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter group name'**
+  String get enterGroupNamePlaceholder;
+
+  /// No description provided for @searchSelectUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search and select users to add'**
+  String get searchSelectUsers;
+
+  /// No description provided for @userFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get userFallback;
+
+  /// No description provided for @requireApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Require Approval'**
+  String get requireApproval;
+
+  /// No description provided for @requireApprovalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'New members need admin approval to join'**
+  String get requireApprovalDesc;
+
+  /// No description provided for @inviteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite Link'**
+  String get inviteLink;
+
+  /// No description provided for @inviteLinkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow joining via an invite link'**
+  String get inviteLinkDesc;
+
+  /// No description provided for @noInviteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'No invite link available'**
+  String get noInviteLink;
+
+  /// No description provided for @leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leave;
+
+  /// No description provided for @memberCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} members'**
+  String memberCount(int count);
+
+  /// No description provided for @createdDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {date}'**
+  String createdDate(String date);
+
+  /// No description provided for @messageBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get messageBtn;
+
+  /// No description provided for @viewAllMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'View All Members'**
+  String get viewAllMembers;
+
+  /// No description provided for @removeMemberConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove {name} from this group?'**
+  String removeMemberConfirm(String name);
+
+  /// No description provided for @noMembersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No members found'**
+  String get noMembersFound;
+
+  /// No description provided for @noResultsFor.
+  ///
+  /// In en, this message translates to:
+  /// **'No results for \"{query}\"'**
+  String noResultsFor(String query);
+
+  /// No description provided for @requestedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested {date}'**
+  String requestedDate(String date);
+
+  /// No description provided for @searchUsersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search users...'**
+  String get searchUsersHint;
+
+  /// No description provided for @joined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get joined;
+
+  /// No description provided for @noCommunitiesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No communities found'**
+  String get noCommunitiesFound;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteConfirmUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get deleteConfirmUndo;
+
+  /// No description provided for @deleteNameConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"?'**
+  String deleteNameConfirm(String name);
+
+  /// No description provided for @failedCreateCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create collection.'**
+  String get failedCreateCollection;
+
+  /// No description provided for @failedDeleteCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete collection.'**
+  String get failedDeleteCollection;
+
+  /// No description provided for @newCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'New Collection'**
+  String get newCollection;
+
+  /// No description provided for @savedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} saved'**
+  String savedCount(int count);
+
+  /// No description provided for @failedDeleteWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete word.'**
+  String get failedDeleteWord;
+
+  /// No description provided for @addHiddenWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Hidden Word'**
+  String get addHiddenWord;
+
+  /// No description provided for @keyword.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyword'**
+  String get keyword;
+
+  /// No description provided for @phrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Phrase'**
+  String get phrase;
+
+  /// No description provided for @enterWordOrPhrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter word or phrase'**
+  String get enterWordOrPhrase;
+
+  /// No description provided for @failedAddWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add word.'**
+  String get failedAddWord;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @failedDeleteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete link.'**
+  String get failedDeleteLink;
+
+  /// No description provided for @failedAddLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add link.'**
+  String get failedAddLink;
+
+  /// No description provided for @failedUpdateLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update link.'**
+  String get failedUpdateLink;
+
+  /// No description provided for @failedRemoveUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove. Please try again.'**
+  String get failedRemoveUser;
+
+  /// No description provided for @mutedRestrictedBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted / Restricted / Blocked'**
+  String get mutedRestrictedBlocked;
+
+  /// No description provided for @noUsersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get noUsersFound;
+
+  /// No description provided for @reasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason: {reason}'**
+  String reasonLabel(String reason);
+
+  /// No description provided for @seeAllMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'See all members'**
+  String get seeAllMembers;
+
+  /// No description provided for @noCollectionsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No collections yet'**
+  String get noCollectionsYet;
+
+  /// No description provided for @noLinksYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No links yet'**
+  String get noLinksYet;
 }
 
 class _AppLocalizationsDelegate

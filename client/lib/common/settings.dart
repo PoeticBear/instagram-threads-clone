@@ -202,7 +202,7 @@ class _SettingsPageState extends State<SettingsPage> {
             // Communities
             _buildMenuRow(
               icon: Icons.groups_outlined,
-              title: 'Communities',
+              title: l10n.communities,
               showArrow: true,
               onTap: () {
                 Navigator.push(
@@ -306,7 +306,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          themeProvider.themeMode == ThemeMode.dark ? 'Dark' : 'Light',
+                          themeProvider.themeMode == ThemeMode.dark ? l10n.themeDark : l10n.themeLight,
                           style: TextStyle(
                             color: appColors.textPrimary,
                             fontSize: 14,

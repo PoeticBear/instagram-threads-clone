@@ -285,5 +285,143 @@
   "filterFollows": "关注",
   "quoteRepost": "引用此帖子",
   "quotePlaceholder": "添加评论...",
-  "noThreadsYetOthers": "暂无帖子"
+  "noThreadsYetOthers": "暂无帖子",
+  "nothingToSaveDraft": "没有可保存的草稿",
+  "draftSaveFailed": "草稿保存失败",
+  "draft": "草稿",
+  "replyCount": "{count} 条回复",
+  "@replyCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "repostCount": "{count} 次转发",
+  "@repostCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "failedApproveReply": "批准回复失败。",
+  "failedRejectReply": "拒绝回复失败。",
+  "pendingReplies": "待审核回复",
+  "statFollowing": "关注",
+  "statFollowers": "粉丝",
+  "done": "完成",
+  "name": "姓名",
+  "bio": "简介",
+  "addBio": "添加简介",
+  "linkLabel": "链接",
+  "addLinkField": "添加链接",
+  "pronouns": "代词",
+  "addPronouns": "添加代词",
+  "locationLabel": "位置",
+  "addLocationField": "添加位置",
+  "gender": "性别",
+  "accountType": "账号类型",
+  "privateAccount": "私密账号",
+  "changeAvatar": "更换头像",
+  "avatarVisibility": "你的头像对所有人可见",
+  "gallery": "相册",
+  "cameraLabel": "拍照",
+  "remove": "移除",
+  "notSet": "未设置",
+  "male": "男",
+  "female": "女",
+  "otherGender": "其他",
+  "personal": "个人",
+  "creator": "创作者",
+  "business": "商家",
+  "maxNameChars": "最多 100 个字符",
+  "maxBioChars": "简介最多 500 个字符",
+  "updateFailed": "更新失败，请重试",
+  "requests": "请求",
+  "groupChat": "群聊",
+  "pleaseEnterGroupName": "请输入群聊名称",
+  "failedCreateGroup": "创建群聊失败",
+  "enterGroupNamePlaceholder": "输入群聊名称",
+  "searchSelectUsers": "搜索并选择用户添加",
+  "userFallback": "用户",
+  "requireApproval": "需要审批",
+  "requireApprovalDesc": "新成员需要管理员审批才能加入",
+  "inviteLink": "邀请链接",
+  "inviteLinkDesc": "允许通过邀请链接加入",
+  "noInviteLink": "暂无邀请链接",
+  "leave": "离开",
+  "memberCount": "{count} 名成员",
+  "@memberCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "createdDate": "创建于 {date}",
+  "@createdDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "messageBtn": "发消息",
+  "viewAllMembers": "查看全部成员",
+  "removeMemberConfirm": "确定要将 {name} 移出本群吗？",
+  "@removeMemberConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "noMembersFound": "未找到成员",
+  "noResultsFor": "未找到 \"{query}\" 的结果",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {"type": "String"}
+    }
+  },
+  "requestedDate": "申请于 {date}",
+  "@requestedDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "searchUsersHint": "搜索用户...",
+  "joined": "已加入",
+  "noCommunitiesFound": "未找到社区",
+  "themeDark": "深色",
+  "themeLight": "浅色",
+  "delete": "删除",
+  "deleteConfirmUndo": "此操作无法撤销",
+  "deleteNameConfirm": "删除 \"{name}\"？",
+  "@deleteNameConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "failedCreateCollection": "创建收藏夹失败",
+  "failedDeleteCollection": "删除收藏夹失败",
+  "newCollection": "新建收藏夹",
+  "savedCount": "已保存 {count} 条",
+  "@savedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "failedDeleteWord": "删除词语失败",
+  "addHiddenWord": "添加隐藏词",
+  "keyword": "关键词",
+  "phrase": "短语",
+  "enterWordOrPhrase": "请输入词语",
+  "failedAddWord": "添加词语失败",
+  "add": "添加",
+  "failedDeleteLink": "删除链接失败",
+  "failedAddLink": "添加链接失败",
+  "failedUpdateLink": "更新链接失败",
+  "failedRemoveUser": "移除失败，请重试",
+  "mutedRestrictedBlocked": "已静音 / 已限制 / 已屏蔽",
+  "noUsersFound": "未找到用户",
+  "reasonLabel": "原因：{reason}",
+  "@reasonLabel": {
+    "placeholders": {
+      "reason": {"type": "String"}
+    }
+  },
+  "seeAllMembers": "查看所有成员",
+  "noCollectionsYet": "暂无收藏夹",
+  "noLinksYet": "暂无链接"
 }
