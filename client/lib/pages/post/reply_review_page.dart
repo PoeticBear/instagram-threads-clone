@@ -6,6 +6,7 @@ import 'package:threads/helper/utility.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/network/api_client.dart';
 import 'package:threads/services/post_service.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class ReplyReviewPage extends StatefulWidget {
   final String postId;
@@ -60,10 +61,11 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
       }
     } catch (_) {
       if (mounted) {
+        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Failed to approve reply.'),
-            backgroundColor: Colors.red,
+            backgroundColor: appColors.destructive,
           ),
         );
       }
@@ -83,10 +85,11 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
       }
     } catch (_) {
       if (mounted) {
+        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Failed to reject reply.'),
-            backgroundColor: Colors.red,
+            backgroundColor: appColors.destructive,
           ),
         );
       }
@@ -95,20 +98,21 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          icon: Icon(CupertinoIcons.back, color: appColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Pending Replies',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
             fontSize: 18,
           ),
@@ -120,22 +124,22 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
               ? Center(
                   child: Text(
                     l10n.noPendingRequests,
-                    style: const TextStyle(
-                      color: Color(0xff888888),
+                    style: TextStyle(
+                      color: appColors.textMuted,
                       fontSize: 16,
                     ),
                   ),
                 )
               : RefreshIndicator(
-                  backgroundColor: const Color(0xff222222),
-                  color: Colors.white,
+                  backgroundColor: appColors.surfaceSecondary,
+                  color: appColors.textPrimary,
                   onRefresh: _loadPendingReplies,
                   child: ListView.separated(
                     itemCount: _pendingReplies.length,
-                    separatorBuilder: (_, __) => const Padding(
+                    separatorBuilder: (_, __) => Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Divider(
-                        color: Color(0xff333333),
+                        color: appColors.divider,
                         height: 0.5,
                         thickness: 0.5,
                       ),
@@ -150,6 +154,7 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
   }
 
   Widget _buildReplyTile(Reply reply, AppLocalizations l10n) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
@@ -169,8 +174,8 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
                     Flexible(
                       child: Text(
                         reply.displayName.isNotEmpty ? reply.displayName : reply.username,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: appColors.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                         ),
@@ -180,8 +185,8 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
                     const SizedBox(width: 8),
                     Text(
                       Utility.getdob(reply.createdAt.toIso8601String()),
-                      style: const TextStyle(
-                        color: Color(0xff555555),
+                      style: TextStyle(
+                        color: appColors.textHint,
                         fontSize: 12,
                       ),
                     ),
@@ -192,8 +197,8 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
                 if (reply.content.isNotEmpty)
                   Text(
                     reply.content,
-                    style: const TextStyle(
-                      color: Color(0xff888888),
+                    style: TextStyle(
+                      color: appColors.textMuted,
                       fontSize: 14,
                     ),
                     maxLines: 3,
@@ -206,14 +211,14 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
                     _buildActionButton(
                       label: l10n.approve,
                       icon: CupertinoIcons.checkmark_circle_fill,
-                      color: Colors.green,
+                      color: appColors.repost,
                       onTap: () => _approveReply(reply),
                     ),
                     const SizedBox(width: 16),
                     _buildActionButton(
                       label: l10n.reject,
                       icon: CupertinoIcons.xmark_circle_fill,
-                      color: Colors.red,
+                      color: appColors.destructive,
                       onTap: () => _rejectReply(reply),
                     ),
                   ],
@@ -243,16 +248,17 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
   }
 
   Widget _buildDefaultAvatar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: const Color(0xff1a1a1a),
+        color: appColors.surface,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Icon(
+      child: Icon(
         CupertinoIcons.person_fill,
-        color: Color(0xff888888),
+        color: appColors.textMuted,
         size: 20,
       ),
     );

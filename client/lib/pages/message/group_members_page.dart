@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/model/message.module.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class GroupMembersPage extends StatefulWidget {
   final int groupId;
@@ -37,24 +38,25 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }
 
   void _confirmRemoveMember(GroupMember member) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color.fromARGB(255, 28, 28, 30),
-        title: const Text(
+        backgroundColor: appColors.surfaceSecondary,
+        title: Text(
           'Remove Member',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: appColors.textPrimary),
         ),
         content: Text(
           'Are you sure you want to remove ${member.displayName.isNotEmpty ? member.displayName : member.username} from this group?',
-          style: const TextStyle(color: Colors.grey),
+          style: TextStyle(color: appColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'Cancel',
-              style: TextStyle(color: Colors.grey[400]),
+              style: TextStyle(color: appColors.textSecondary),
             ),
           ),
           TextButton(
@@ -67,9 +69,9 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                 userId: member.userId,
               );
             },
-            child: const Text(
+            child: Text(
               'Remove',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: appColors.destructive),
             ),
           ),
         ],
@@ -78,17 +80,18 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return AppBar(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(Icons.arrow_back, color: appColors.textPrimary),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: const Text(
+      title: Text(
         'Members',
         style: TextStyle(
-          color: Colors.white,
+          color: appColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
@@ -98,18 +101,19 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }
 
   Widget _buildSearchField() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: TextField(
         controller: _searchController,
-        style: const TextStyle(color: Colors.white),
-        cursorColor: Colors.white,
+        style: TextStyle(color: appColors.textPrimary),
+        cursorColor: appColors.textPrimary,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
+          prefixIcon: Icon(Icons.search, size: 20, color: appColors.textMuted),
           hintText: 'Search members...',
-          hintStyle: TextStyle(color: Colors.grey[500]),
+          hintStyle: TextStyle(color: appColors.textMuted),
           filled: true,
-          fillColor: const Color.fromARGB(255, 22, 22, 22),
+          fillColor: appColors.surface,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 10,
@@ -127,6 +131,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }
 
   Widget _buildMemberAvatar(GroupMember member) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final avatarUrl = member.avatarUrl;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return CircleAvatar(
@@ -136,18 +141,19 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
     }
     return CircleAvatar(
       radius: 22,
-      backgroundColor: Colors.grey[800],
+      backgroundColor: appColors.surface,
       child: Text(
         (member.displayName.isNotEmpty
                 ? member.displayName
                 : member.username)[0]
             .toUpperCase(),
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+        style: TextStyle(color: appColors.textPrimary, fontSize: 16),
       ),
     );
   }
 
   Widget _buildMemberItem(GroupMember member, bool isAdmin, int currentUserId) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isMemberAdmin = member.role == 2;
     final displayName = member.displayName.isNotEmpty
         ? member.displayName
@@ -169,8 +175,8 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                     Flexible(
                       child: Text(
                         displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: appColors.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                         ),
@@ -186,13 +192,13 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.2),
+                          color: appColors.accent.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Admin',
                           style: TextStyle(
-                            color: Colors.blue,
+                            color: appColors.accent,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -205,7 +211,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                   Text(
                     '@$username',
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: appColors.textMuted,
                       fontSize: 13,
                     ),
                   ),
@@ -222,14 +228,14 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                 ),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: const Color.fromARGB(255, 46, 46, 46),
+                    color: appColors.divider,
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
+                child: Text(
                   'Remove',
                   style: TextStyle(
-                    color: Colors.red,
+                    color: appColors.destructive,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -243,19 +249,20 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final currentUserId =
         Provider.of<AuthState>(context, listen: false).userModel?.userId ?? 0;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: _buildAppBar(),
       body: Consumer<MessageState>(
         builder: (context, state, _) {
           if (state.isLoadingGroupMembers && state.groupMembers.isEmpty) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.grey,
+                color: appColors.textSecondary,
               ),
             );
           }
@@ -284,14 +291,14 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.people_outline,
-                            size: 48, color: Colors.grey[700]),
+                            size: 48, color: appColors.surface),
                         const SizedBox(height: 12),
                         Text(
                           _searchQuery.isEmpty
                               ? 'No members found'
                               : 'No results for "$_searchQuery"',
                           style: TextStyle(
-                            color: Colors.grey[500],
+                            color: appColors.textMuted,
                             fontSize: 15,
                           ),
                         ),
@@ -308,8 +315,8 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
               _buildSearchField(),
               Expanded(
                 child: RefreshIndicator(
-                  color: Colors.white,
-                  backgroundColor: Colors.grey[900],
+                  color: appColors.textPrimary,
+                  backgroundColor: appColors.surface,
                   onRefresh: () =>
                       state.loadGroupMembers(widget.groupId),
                   child: ListView.separated(
@@ -317,7 +324,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                     itemCount: filteredMembers.length,
                     separatorBuilder: (_, __) => Divider(
                       height: 0.5,
-                      color: const Color.fromARGB(255, 46, 46, 46),
+                      color: appColors.divider,
                       indent: 72,
                     ),
                     itemBuilder: (context, index) {

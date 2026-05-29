@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/services/search_service.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class SearchPostTile extends StatelessWidget {
   final SearchPostItem post;
@@ -10,6 +11,7 @@ class SearchPostTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -17,7 +19,7 @@ class SearchPostTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildAvatar(post.avatarUrl),
+            _buildAvatar(context, post.avatarUrl),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -27,8 +29,8 @@ class SearchPostTile extends StatelessWidget {
                     children: [
                       Text(
                         post.displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: appColors.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -39,7 +41,7 @@ class SearchPostTile extends StatelessWidget {
                         '@${post.username}',
                         style: TextStyle(
                           fontSize: 15,
-                          color: Colors.grey[500],
+                          color: appColors.textMuted,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -50,7 +52,7 @@ class SearchPostTile extends StatelessWidget {
                     post.content,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.grey[400],
+                      color: appColors.textSecondary,
                       height: 1.3,
                     ),
                     maxLines: 2,
@@ -59,18 +61,18 @@ class SearchPostTile extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.favorite_outline, size: 14, color: Colors.grey[600]),
+                      Icon(Icons.favorite_outline, size: 14, color: appColors.textMuted),
                       const SizedBox(width: 4),
                       Text(
                         '${post.likesCount}',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 13, color: appColors.textMuted),
                       ),
                       const SizedBox(width: 14),
-                      Icon(Icons.chat_bubble_outline, size: 14, color: Colors.grey[600]),
+                      Icon(Icons.chat_bubble_outline, size: 14, color: appColors.textMuted),
                       const SizedBox(width: 4),
                       Text(
                         '${post.repliesCount}',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 13, color: appColors.textMuted),
                       ),
                     ],
                   ),
@@ -83,16 +85,17 @@ class SearchPostTile extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar(String? url) {
+  Widget _buildAvatar(BuildContext context, String? url) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (url == null || url.isEmpty) {
       return Container(
         height: 40,
         width: 40,
         decoration: BoxDecoration(
-          color: Colors.grey[800],
+          color: appColors.surface,
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.person, size: 24, color: Colors.grey[600]),
+        child: Icon(Icons.person, size: 24, color: appColors.textSecondary),
       );
     }
     return ClipRRect(

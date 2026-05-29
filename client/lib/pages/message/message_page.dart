@@ -5,6 +5,7 @@ import 'package:threads/model/message.module.dart';
 import 'package:threads/pages/message/chat_detail_page.dart';
 import 'package:threads/pages/message/message_list_tile.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class MessagePage extends StatefulWidget {
   const MessagePage({super.key});
@@ -73,16 +74,17 @@ class _MessagePageState extends State<MessagePage>
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Messages',
           style: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 28,
             fontWeight: FontWeight.w700,
           ),
@@ -90,9 +92,9 @@ class _MessagePageState extends State<MessagePage>
         actions: [
           IconButton(
             onPressed: _showNewMessageSheet,
-            icon: const Icon(
+            icon: Icon(
               Icons.edit_outlined,
-              color: Colors.white,
+              color: appColors.textPrimary,
               size: 26,
             ),
           ),
@@ -100,9 +102,9 @@ class _MessagePageState extends State<MessagePage>
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: Colors.white,
+          labelColor: appColors.textPrimary,
+          unselectedLabelColor: appColors.textSecondary,
+          indicatorColor: appColors.textPrimary,
           indicatorSize: TabBarIndicatorSize.label,
           labelStyle:
               const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),

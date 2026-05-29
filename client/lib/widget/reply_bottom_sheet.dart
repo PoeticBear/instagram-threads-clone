@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/helper/utility.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/state/post.state.dart';
@@ -81,13 +82,14 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
       }
     } catch (e) {
       if (mounted) {
+        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         setState(() {
           _isPosting = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to post reply'),
-            backgroundColor: Colors.grey[900],
+            backgroundColor: appColors.surface,
             duration: Duration(seconds: 2),
           ),
         );
@@ -136,10 +138,11 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
 
   void _showReplyOptions(Reply reply, int index) {
     final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xff1a1a1a),
+      backgroundColor: appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -153,20 +156,20 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: appColors.textSecondary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             ListTile(
               leading: Icon(
                 reply.isPinned ? CupertinoIcons.pin_slash : CupertinoIcons.pin,
-                color: Colors.white,
+                color: appColors.textPrimary,
                 size: 22,
               ),
               title: Text(
                 reply.isPinned ? 'Unpin reply' : 'Pin reply',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: appColors.textPrimary,
                   fontSize: 16,
                 ),
               ),
@@ -216,13 +219,14 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
     } catch (e) {
       // Rollback on failure
       if (mounted) {
+        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         setState(() {
           _replies[index] = reply;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(reply.isPinned ? 'Failed to unpin reply' : 'Failed to pin reply'),
-            backgroundColor: Colors.grey[900],
+            backgroundColor: appColors.surface,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -242,15 +246,16 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
   }
 
   Widget _buildAvatar(String? profilePic) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (profilePic == null || profilePic.isEmpty) {
       return Container(
         height: 30,
         width: 30,
         decoration: BoxDecoration(
-          color: Colors.grey[800],
+          color: appColors.divider,
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.person, size: 18, color: Colors.grey[600]),
+        child: Icon(Icons.person, size: 18, color: appColors.textSecondary),
       );
     }
     return ClipRRect(
@@ -264,6 +269,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
   }
 
   Widget _buildReplyItem(Reply reply, int index) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       onLongPress: () => _showReplyOptions(reply, index),
       child: Padding(
@@ -282,7 +288,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                       Text(
                         reply.displayName,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: appColors.textPrimary,
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
                         ),
@@ -291,7 +297,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                       Text(
                         Utility.getdob(reply.createdAt.toIso8601String()),
                         style: TextStyle(
-                          color: Color.fromARGB(255, 78, 78, 78),
+                          color: appColors.textHint,
                           fontSize: 12,
                         ),
                       ),
@@ -300,7 +306,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                         Icon(
                           CupertinoIcons.pin,
                           size: 12,
-                          color: Colors.grey[500],
+                          color: appColors.textMuted,
                         ),
                       ],
                     ],
@@ -309,7 +315,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                   Text(
                     reply.content,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: appColors.textPrimary,
                       fontSize: 14,
                     ),
                   ),
@@ -321,13 +327,13 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                         Icon(
                           reply.isLiked ? Iconsax.heart5 : Iconsax.heart,
                           size: 14,
-                          color: reply.isLiked ? Colors.red : Colors.grey,
+                          color: reply.isLiked ? appColors.like : appColors.textSecondary,
                         ),
                         SizedBox(width: 4),
                         Text(
                           '${reply.likesCount}',
                           style: TextStyle(
-                            color: Colors.grey,
+                            color: appColors.textSecondary,
                             fontSize: 12,
                           ),
                         ),
@@ -346,11 +352,12 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
 
     return Container(
       height: screenHeight * 0.9,
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: appColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
@@ -361,7 +368,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[600],
+              color: appColors.textSecondary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -371,14 +378,14 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
             child: Text(
               'Replies',
               style: TextStyle(
-                color: Colors.white,
+                color: appColors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
           Divider(
-            color: Color.fromARGB(255, 46, 46, 46),
+            color: appColors.divider,
             height: 0.5,
           ),
           // Reply list
@@ -387,7 +394,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                 ? Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.grey[600],
+                      color: appColors.textSecondary,
                     ),
                   )
                 : _replies.isEmpty
@@ -395,7 +402,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                         child: Text(
                           'No replies yet',
                           style: TextStyle(
-                            color: Colors.grey,
+                            color: appColors.textSecondary,
                             fontSize: 14,
                           ),
                         ),
@@ -405,7 +412,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                         padding: EdgeInsets.only(top: 4, bottom: 8),
                         itemCount: _replies.length,
                         separatorBuilder: (context, index) => Divider(
-                          color: Color.fromARGB(255, 46, 46, 46),
+                          color: appColors.divider,
                           height: 0.5,
                           indent: 56,
                           endIndent: 16,
@@ -415,7 +422,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                       ),
           ),
           Divider(
-            color: Color.fromARGB(255, 46, 46, 46),
+            color: appColors.divider,
             height: 0.5,
           ),
           // Bottom input bar
@@ -426,18 +433,18 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
               top: 8,
               bottom: MediaQuery.of(context).viewInsets.bottom + 8,
             ),
-            color: Colors.black,
+            color: appColors.background,
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _replyController,
-                    style: TextStyle(color: Colors.white, fontSize: 14),
+                    style: TextStyle(color: appColors.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Write a reply...',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: appColors.textSecondary),
                       filled: true,
-                      fillColor: Color.fromARGB(255, 22, 22, 22),
+                      fillColor: appColors.surface,
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       border: OutlineInputBorder(
@@ -461,7 +468,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: appColors.textPrimary,
                             ),
                           ),
                         )
@@ -469,8 +476,8 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                           onPressed: _postReply,
                           icon: Icon(Iconsax.send_2, size: 18),
                           style: IconButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
+                            backgroundColor: appColors.textPrimary,
+                            foregroundColor: appColors.background,
                             padding: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),

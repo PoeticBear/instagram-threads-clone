@@ -13,6 +13,7 @@ import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/draft.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/model/draft.module.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/draft_list_sheet.dart';
 
 class ComposePost extends StatefulWidget {
@@ -180,12 +181,13 @@ class _ComposePostState extends State<ComposePost> {
   }
 
   Future<void> _saveCurrentDraft() async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final content = _textEditingController.text.trim();
     if (content.isEmpty && _imageFiles.isEmpty && !_showPollEditor) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Nothing to save as draft'),
-          backgroundColor: Colors.grey[700],
+          backgroundColor: appColors.surface,
           duration: Duration(seconds: 1),
         ),
       );
@@ -202,7 +204,7 @@ class _ComposePostState extends State<ComposePost> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Draft saved'),
-          backgroundColor: Colors.green,
+          backgroundColor: appColors.repost,
           duration: Duration(seconds: 1),
         ),
       );
@@ -210,7 +212,7 @@ class _ComposePostState extends State<ComposePost> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to save draft'),
-          backgroundColor: Colors.red,
+          backgroundColor: appColors.destructive,
         ),
       );
     }
@@ -245,6 +247,7 @@ class _ComposePostState extends State<ComposePost> {
 
     print('🚀 _submit 开始: text="${_textEditingController.text}" images=${_imageFiles.length} poll=$_showPollEditor replyType=$_replyType');
 
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     var state = Provider.of<PostState>(context, listen: false);
     PostModel postModel = await _createPostModel();
 
@@ -270,7 +273,7 @@ class _ComposePostState extends State<ComposePost> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.publishSuccess),
-          backgroundColor: Colors.green,
+          backgroundColor: appColors.repost,
           duration: Duration(seconds: 1),
         ),
       );
@@ -289,7 +292,7 @@ class _ComposePostState extends State<ComposePost> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.publishFailed),
-          backgroundColor: Colors.red,
+          backgroundColor: appColors.destructive,
         ),
       );
     }
@@ -298,23 +301,24 @@ class _ComposePostState extends State<ComposePost> {
   // ─── Location ────────────────────────────────────────────
 
   void _showLocationDialog() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final controller = TextEditingController(text: _location ?? '');
     showCupertinoDialog(
       context: context,
       builder: (dialogContext) => CupertinoAlertDialog(
         title: Text(
           AppLocalizations.of(context)!.addLocation,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: appColors.textPrimary),
         ),
         content: Padding(
           padding: const EdgeInsets.only(top: 12),
           child: CupertinoTextField(
             controller: controller,
             placeholder: AppLocalizations.of(context)!.enterLocation,
-            placeholderStyle: const TextStyle(color: Color(0xff888888)),
-            style: const TextStyle(color: Colors.white),
+            placeholderStyle: TextStyle(color: appColors.textMuted),
+            style: TextStyle(color: appColors.textPrimary),
             decoration: BoxDecoration(
-              color: const Color(0xff1a1a1a),
+              color: appColors.surface,
               borderRadius: BorderRadius.circular(8),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -350,9 +354,10 @@ class _ComposePostState extends State<ComposePost> {
   // ─── Reply Permission Sheet ──────────────────────────────
 
   void _showReplyTypeSheet() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     showModalBottomSheet(
       context: context,
-      backgroundColor: Color.fromARGB(255, 29, 29, 29),
+      backgroundColor: appColors.surfaceTertiary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
@@ -366,13 +371,13 @@ class _ComposePostState extends State<ComposePost> {
                 child: Text(
                   AppLocalizations.of(context)!.whoCanReply,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              Divider(color: Colors.grey[800], height: 1),
+              Divider(color: appColors.divider, height: 1),
               _replyTypeOption(1, Iconsax.global, AppLocalizations.of(context)!.everyoneCanReply),
               _replyTypeOption(2, Iconsax.user, AppLocalizations.of(context)!.followersCanReply),
               _replyTypeOption(3, Iconsax.people, AppLocalizations.of(context)!.followingCanReply),
@@ -386,16 +391,17 @@ class _ComposePostState extends State<ComposePost> {
   }
 
   Widget _replyTypeOption(int value, IconData icon, String label) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isSelected = _replyType == value;
     return ListTile(
-      leading: Icon(icon, color: isSelected ? Colors.white : Colors.grey[600], size: 22),
+      leading: Icon(icon, color: isSelected ? appColors.textPrimary : appColors.textSecondary, size: 22),
       title: Text(label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[400],
+            color: isSelected ? appColors.textPrimary : appColors.textSecondary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           )),
       trailing: isSelected
-          ? Icon(Icons.check, color: Colors.white, size: 20)
+          ? Icon(Icons.check, color: appColors.textPrimary, size: 20)
           : null,
       onTap: () {
         setState(() => _replyType = value);
@@ -417,19 +423,20 @@ class _ComposePostState extends State<ComposePost> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     var authState = Provider.of<AuthState>(context);
     final charCount = _textEditingController.text.length;
     final profilePic = authState.userModel?.profilePic ?? '';
     final displayName = authState.userModel?.displayName ?? '';
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         toolbarHeight: 56,
         leading: Container(),
         flexibleSpace: SafeArea(
           child: Container(
-            color: Color.fromARGB(255, 29, 29, 29),
+            color: appColors.surfaceTertiary,
             height: 56,
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -445,13 +452,13 @@ class _ComposePostState extends State<ComposePost> {
                     // 通过 pop 或者直接操作 HomePage state
                   },
                   child: Text(AppLocalizations.of(context)!.cancel,
-                      style: TextStyle(color: Colors.white, fontSize: 16)),
+                      style: TextStyle(color: appColors.textPrimary, fontSize: 16)),
                 ),
                 Expanded(
                   child: Center(
                     child: Text(AppLocalizations.of(context)!.newPost,
                         style: TextStyle(
-                            color: Colors.white,
+                            color: appColors.textPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.w700)),
                   ),
@@ -479,12 +486,12 @@ class _ComposePostState extends State<ComposePost> {
                       // Left: avatar + thread line
                       Column(
                         children: [
-                          _buildAvatar(profilePic, 40),
+                          _buildAvatar(appColors, profilePic, 40),
                           SizedBox(height: 6),
                           Container(
                             width: 2,
                             height: 30,
-                            color: Color.fromARGB(255, 87, 87, 87),
+                            color: appColors.dividerSecondary,
                           ),
                         ],
                       ),
@@ -497,7 +504,7 @@ class _ComposePostState extends State<ComposePost> {
                             Text(
                               displayName,
                               style: TextStyle(
-                                color: Colors.white,
+                                color: appColors.textPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -505,8 +512,8 @@ class _ComposePostState extends State<ComposePost> {
                             TextField(
                               maxLength: _maxContentLength,
                               maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                              keyboardAppearance: Brightness.dark,
-                              style: TextStyle(color: Colors.white, fontSize: 16),
+                              keyboardAppearance: Theme.of(context).brightness,
+                              style: TextStyle(color: appColors.textPrimary, fontSize: 16),
                               controller: _textEditingController,
                               onChanged: (_) => setState(() {}),
                               maxLines: null,
@@ -516,7 +523,7 @@ class _ComposePostState extends State<ComposePost> {
                                 hintText: AppLocalizations.of(context)!.saySomething,
                                 hintStyle: TextStyle(
                                   fontSize: 16,
-                                  color: Color.fromARGB(255, 112, 112, 112),
+                                  color: appColors.textHint,
                                 ),
                               ),
                             ),
@@ -526,7 +533,7 @@ class _ComposePostState extends State<ComposePost> {
                                 child: Text(
                                   '$charCount / $_maxContentLength',
                                   style: TextStyle(
-                                    color: charCount > 450 ? Colors.orange : Colors.grey[600],
+                                    color: charCount > 450 ? Colors.orange : appColors.textSecondary,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -546,9 +553,9 @@ class _ComposePostState extends State<ComposePost> {
                         runSpacing: 8,
                         children: [
                           for (int i = 0; i < _imageFiles.length; i++)
-                            _buildImagePreview(_imageFiles[i], i),
+                            _buildImagePreview(appColors, _imageFiles[i], i),
                           if (_imageFiles.length < _maxImages)
-                            _buildAddImageTile(),
+                            _buildAddImageTile(appColors),
                         ],
                       ),
                     ),
@@ -557,7 +564,7 @@ class _ComposePostState extends State<ComposePost> {
                   if (_showPollEditor)
                     Padding(
                       padding: EdgeInsets.only(left: 52, top: 12),
-                      child: _buildPollEditor(),
+                      child: _buildPollEditor(appColors),
                     ),
 
                   // ── Location chip ──
@@ -569,12 +576,12 @@ class _ComposePostState extends State<ComposePost> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Iconsax.location, size: 14, color: Colors.grey[500]),
+                            Icon(Iconsax.location, size: 14, color: appColors.textMuted),
                             SizedBox(width: 4),
                             Flexible(
                               child: Text(
                                 _location!,
-                                style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                                style: TextStyle(color: appColors.textSecondary, fontSize: 13),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -588,7 +595,7 @@ class _ComposePostState extends State<ComposePost> {
           ),
 
           // ── Bottom toolbar ──
-          _buildBottomToolbar(),
+          _buildBottomToolbar(appColors),
         ],
       ),
     );
@@ -596,16 +603,16 @@ class _ComposePostState extends State<ComposePost> {
 
   // ─── Widget builders ──────────────────────────────────────
 
-  Widget _buildAvatar(String url, double size) {
+  Widget _buildAvatar(AppColors appColors, String url, double size) {
     if (url.isEmpty) {
       return Container(
         height: size,
         width: size,
         decoration: BoxDecoration(
-          color: Colors.grey[800],
+          color: appColors.surface,
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.person, size: size * 0.6, color: Colors.grey[600]),
+        child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
       );
     }
     return ClipRRect(
@@ -614,7 +621,7 @@ class _ComposePostState extends State<ComposePost> {
     );
   }
 
-  Widget _buildImagePreview(File file, int index) {
+  Widget _buildImagePreview(AppColors appColors, File file, int index) {
     return Stack(
       children: [
         ClipRRect(
@@ -630,10 +637,10 @@ class _ComposePostState extends State<ComposePost> {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: Colors.black87,
+                color: appColors.background.withValues(alpha: 0.87),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.close, size: 14, color: Colors.white),
+              child: Icon(Icons.close, size: 14, color: appColors.textPrimary),
             ),
           ),
         ),
@@ -641,27 +648,27 @@ class _ComposePostState extends State<ComposePost> {
     );
   }
 
-  Widget _buildAddImageTile() {
+  Widget _buildAddImageTile(AppColors appColors) {
     return GestureDetector(
       onTap: _pickImage,
       child: Container(
         width: 80,
         height: 80,
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: appColors.surface,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[700]!, width: 1),
+          border: Border.all(color: appColors.divider, width: 1),
         ),
-        child: Icon(Icons.add, size: 28, color: Colors.grey[500]),
+        child: Icon(Icons.add, size: 28, color: appColors.textMuted),
       ),
     );
   }
 
-  Widget _buildPollEditor() {
+  Widget _buildPollEditor(AppColors appColors) {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 22, 22, 22),
+        color: appColors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -675,24 +682,24 @@ class _ComposePostState extends State<ComposePost> {
                   Expanded(
                     child: TextField(
                       controller: _pollControllers[i],
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      style: TextStyle(color: appColors.textPrimary, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: AppLocalizations.of(context)!.optionLabel(i + 1),
-                        hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        hintStyle: TextStyle(color: appColors.textSecondary, fontSize: 14),
                         filled: true,
-                        fillColor: Colors.grey[900],
+                        fillColor: appColors.surface,
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[700]!),
+                          borderSide: BorderSide(color: appColors.divider),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[700]!),
+                          borderSide: BorderSide(color: appColors.divider),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[500]!),
+                          borderSide: BorderSide(color: appColors.textMuted),
                         ),
                       ),
                       onChanged: (_) => setState(() {}),
@@ -700,7 +707,7 @@ class _ComposePostState extends State<ComposePost> {
                   ),
                   if (_pollControllers.length > _minPollOptions)
                     IconButton(
-                      icon: Icon(Icons.close, size: 18, color: Colors.grey[500]),
+                      icon: Icon(Icons.close, size: 18, color: appColors.textMuted),
                       onPressed: () => _removePollOption(i),
                     ),
                 ],
@@ -713,10 +720,10 @@ class _ComposePostState extends State<ComposePost> {
                 padding: EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    Icon(Icons.add, size: 18, color: Colors.grey[500]),
+                    Icon(Icons.add, size: 18, color: appColors.textMuted),
                     SizedBox(width: 4),
                     Text(AppLocalizations.of(context)!.addOption,
-                        style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                        style: TextStyle(color: appColors.textMuted, fontSize: 14)),
                   ],
                 ),
               ),
@@ -726,7 +733,7 @@ class _ComposePostState extends State<ComposePost> {
             child: GestureDetector(
               onTap: _togglePollEditor,
               child: Text(AppLocalizations.of(context)!.removePoll,
-                  style: TextStyle(color: Colors.red[300], fontSize: 13)),
+                  style: TextStyle(color: appColors.destructive.withValues(alpha: 0.8), fontSize: 13)),
             ),
           ),
         ],
@@ -734,12 +741,12 @@ class _ComposePostState extends State<ComposePost> {
     );
   }
 
-  Widget _buildBottomToolbar() {
+  Widget _buildBottomToolbar(AppColors appColors) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 29, 29, 29),
-        border: Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5)),
+        color: appColors.surfaceTertiary,
+        border: Border(top: BorderSide(color: appColors.divider, width: 0.5)),
       ),
       child: SafeArea(
         top: false,
@@ -750,32 +757,32 @@ class _ComposePostState extends State<ComposePost> {
               onPressed: _showPollEditor ? null : _pickImage,
               icon: Icon(Iconsax.picture_frame,
                   size: 22,
-                  color: _showPollEditor ? Colors.grey[700] : Colors.white),
+                  color: _showPollEditor ? appColors.divider : appColors.textPrimary),
             ),
             // Poll button
             IconButton(
               onPressed: _imageFiles.isNotEmpty ? null : _togglePollEditor,
               icon: Icon(Iconsax.chart_square,
                   size: 22,
-                  color: _imageFiles.isNotEmpty ? Colors.grey[700]
-                      : (_showPollEditor ? Colors.blue : Colors.white)),
+                  color: _imageFiles.isNotEmpty ? appColors.divider
+                      : (_showPollEditor ? appColors.accent : appColors.textPrimary)),
             ),
             // Reply type button
             IconButton(
               onPressed: _showReplyTypeSheet,
-              icon: Icon(_replyTypeIcon, size: 22, color: Colors.grey[500]),
+              icon: Icon(_replyTypeIcon, size: 22, color: appColors.textMuted),
             ),
             // Drafts button
             IconButton(
               onPressed: _showDraftListSheet,
-              icon: Icon(Iconsax.note_text, size: 22, color: Colors.grey[500]),
+              icon: Icon(Iconsax.note_text, size: 22, color: appColors.textMuted),
             ),
             // Location button
             IconButton(
               onPressed: _showLocationDialog,
               icon: Icon(Iconsax.location,
                   size: 22,
-                  color: _location != null ? Colors.blue : Colors.grey[500]),
+                  color: _location != null ? appColors.accent : appColors.textMuted),
             ),
             Spacer(),
             // Save draft text button
@@ -787,7 +794,7 @@ class _ComposePostState extends State<ComposePost> {
                   child: Text(
                     'Draft',
                     style: TextStyle(
-                      color: Colors.grey[400],
+                      color: appColors.textSecondary,
                       fontSize: 14,
                     ),
                   ),
@@ -802,13 +809,13 @@ class _ComposePostState extends State<ComposePost> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.blue,
+                        color: appColors.accent,
                       ),
                     )
                   : Text(
                       AppLocalizations.of(context)!.post,
                       style: TextStyle(
-                        color: _canPost ? Colors.blue : Colors.grey[700],
+                        color: _canPost ? appColors.accent : appColors.divider,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),

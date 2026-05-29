@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/helper/utility.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/state/post.state.dart';
 
@@ -45,6 +46,7 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
   }
 
   Widget _buildHistoryItem(EditHistory entry) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -53,7 +55,7 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
           Text(
             entry.content,
             style: TextStyle(
-              color: Colors.white,
+              color: appColors.textPrimary,
               fontSize: 14,
             ),
           ),
@@ -61,7 +63,7 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
           Text(
             Utility.getdob(entry.editedAt.toIso8601String()),
             style: TextStyle(
-              color: Color.fromARGB(255, 78, 78, 78),
+              color: appColors.textHint,
               fontSize: 12,
             ),
           ),
@@ -74,11 +76,12 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
 
     return Container(
       height: screenHeight * 0.9,
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: appColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
@@ -89,7 +92,7 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[600],
+              color: appColors.textSecondary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -102,20 +105,20 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
                 Text(
                   l10n.editHistory,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Icon(Icons.close, color: Colors.white, size: 22),
+                  child: Icon(Icons.close, color: appColors.textPrimary, size: 22),
                 ),
               ],
             ),
           ),
           Divider(
-            color: Color.fromARGB(255, 46, 46, 46),
+            color: appColors.divider,
             height: 0.5,
           ),
           // History list
@@ -124,7 +127,7 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
                 ? Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.grey[600],
+                      color: appColors.textSecondary,
                     ),
                   )
                 : _editHistory.isEmpty
@@ -132,20 +135,20 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
                         child: Text(
                           l10n.noPostsYet,
                           style: TextStyle(
-                            color: Colors.grey,
+                            color: appColors.textSecondary,
                             fontSize: 14,
                           ),
                         ),
                       )
                     : RefreshIndicator(
-                        color: Colors.white,
-                        backgroundColor: Colors.grey[900],
+                        color: appColors.textPrimary,
+                        backgroundColor: appColors.surface,
                         onRefresh: _loadEditHistory,
                         child: ListView.separated(
                           padding: EdgeInsets.only(top: 4, bottom: 8),
                           itemCount: _editHistory.length,
                           separatorBuilder: (context, index) => Divider(
-                            color: Color.fromARGB(255, 46, 46, 46),
+                            color: appColors.divider,
                             height: 0.5,
                             indent: 16,
                             endIndent: 16,

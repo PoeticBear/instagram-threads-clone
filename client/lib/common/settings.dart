@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/locale.state.dart';
+import 'package:threads/state/theme.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/common/settings/notification_settings.dart';
 import 'package:threads/common/settings/privacy_settings.dart';
 import 'package:threads/common/settings/relation_control_page.dart';
@@ -25,10 +27,11 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     var authState = Provider.of<AuthState>(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         flexibleSpace: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -40,15 +43,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Stack(
                       children: [
-                        const BackButton(),
+                        BackButton(color: appColors.textPrimary),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
                           child: Padding(
                             padding: const EdgeInsets.only(left: 35, top: 12),
                             child: Text(
                               l10n.back,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: appColors.textPrimary,
                                 fontSize: 20,
                               ),
                             ),
@@ -69,8 +72,8 @@ class _SettingsPageState extends State<SettingsPage> {
           padding: const EdgeInsets.only(bottom: 27),
           child: Text(
             l10n.settingsTitle,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: appColors.textPrimary,
               fontWeight: FontWeight.w500,
               fontSize: 18,
             ),
@@ -84,7 +87,7 @@ class _SettingsPageState extends State<SettingsPage> {
             // Top divider
             Container(
               height: 0.5,
-              color: const Color.fromARGB(255, 77, 77, 77),
+              color: appColors.divider,
               width: MediaQuery.of(context).size.width,
             ),
             const SizedBox(height: 20),
@@ -267,28 +270,73 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 15),
 
-            // Divider before language
+            // Divider before appearance
             Container(
               height: 0.5,
-              color: const Color.fromARGB(255, 77, 77, 77),
+              color: appColors.divider,
               width: MediaQuery.of(context).size.width,
             ),
             const SizedBox(height: 5),
+
+            // Appearance row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const SizedBox(width: 20),
+                Icon(CupertinoIcons.moon_stars, size: 30, color: appColors.textSecondary),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Text(
+                    l10n.appearance,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: appColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, _) {
+                    return GestureDetector(
+                      onTap: () => themeProvider.toggleTheme(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: appColors.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          themeProvider.themeMode == ThemeMode.dark ? 'Dark' : 'Light',
+                          style: TextStyle(
+                            color: appColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 20),
+              ],
+            ),
+
+            const SizedBox(height: 15),
 
             // Language row
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 const SizedBox(width: 20),
-                const Icon(CupertinoIcons.globe, size: 30),
+                Icon(CupertinoIcons.globe, size: 30, color: appColors.textSecondary),
                 const SizedBox(width: 20),
                 Expanded(
                   child: Text(
                     l10n.language,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: appColors.textPrimary,
                     ),
                   ),
                 ),
@@ -306,15 +354,15 @@ class _SettingsPageState extends State<SettingsPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xff1a1a1a),
+                          color: appColors.surface,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           localeProvider.locale.languageCode == 'en'
                               ? 'English'
                               : '中文',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: appColors.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -332,7 +380,7 @@ class _SettingsPageState extends State<SettingsPage> {
             // Divider before logout
             Container(
               height: 0.5,
-              color: const Color.fromARGB(255, 77, 77, 77),
+              color: appColors.divider,
               width: MediaQuery.of(context).size.width,
             ),
             const SizedBox(height: 5),
@@ -351,8 +399,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       l10n.logOut,
-                      style: const TextStyle(
-                        color: Colors.blue,
+                      style: TextStyle(
+                        color: appColors.accent,
                         fontWeight: FontWeight.w500,
                         fontSize: 17,
                       ),
@@ -373,6 +421,7 @@ class _SettingsPageState extends State<SettingsPage> {
     bool showArrow = false,
     VoidCallback? onTap,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -380,22 +429,22 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
         child: Row(
           children: [
-            Icon(icon, size: 30, color: Colors.white),
+            Icon(icon, size: 30, color: appColors.textPrimary),
             const SizedBox(width: 20),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: appColors.textPrimary,
                 ),
               ),
             ),
             if (showArrow)
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
-                color: Color(0xff888888),
+                color: appColors.textMuted,
                 size: 20,
               ),
           ],

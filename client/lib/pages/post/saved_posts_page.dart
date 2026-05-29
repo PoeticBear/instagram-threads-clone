@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 
 class SavedPostsPage extends StatefulWidget {
@@ -24,30 +25,31 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Icon(CupertinoIcons.back, color: Colors.white),
+          child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         title: Text(
           AppLocalizations.of(context)!.savedPosts,
-          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+          style: TextStyle(color: appColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700),
         ),
       ),
       body: Consumer<PostState>(
         builder: (context, state, _) {
           if (state.isLoadingSavedPosts) {
-            return Center(child: CircularProgressIndicator(color: Colors.white));
+            return Center(child: CircularProgressIndicator(color: appColors.textPrimary));
           }
           if (state.savedPosts.isEmpty) {
             return Center(
               child: Text(
                 AppLocalizations.of(context)!.noSavedPosts,
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                style: TextStyle(color: appColors.textSecondary, fontSize: 16),
               ),
             );
           }

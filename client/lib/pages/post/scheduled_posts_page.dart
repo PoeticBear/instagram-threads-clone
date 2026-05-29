@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 
 class ScheduledPostsPage extends StatefulWidget {
@@ -29,20 +30,21 @@ class _ScheduledPostsPageState extends State<ScheduledPostsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Icon(CupertinoIcons.back, color: Colors.white),
+          child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         title: Text(
           l10n.scheduledPosts,
           style: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w700,
           ),
@@ -52,20 +54,20 @@ class _ScheduledPostsPageState extends State<ScheduledPostsPage> {
         builder: (context, state, _) {
           if (state.isLoadingScheduled) {
             return Center(
-              child: CircularProgressIndicator(color: Colors.white),
+              child: CircularProgressIndicator(color: appColors.textPrimary),
             );
           }
           if (state.scheduledPosts.isEmpty) {
             return Center(
               child: Text(
                 l10n.noScheduledPosts,
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                style: TextStyle(color: appColors.textSecondary, fontSize: 16),
               ),
             );
           }
           return RefreshIndicator(
-            color: Colors.white,
-            backgroundColor: Colors.black,
+            color: appColors.textPrimary,
+            backgroundColor: appColors.background,
             onRefresh: _onRefresh,
             child: ListView.builder(
               itemCount: state.scheduledPosts.length,
@@ -80,20 +82,20 @@ class _ScheduledPostsPageState extends State<ScheduledPostsPage> {
                           horizontal: 16,
                           vertical: 8,
                         ),
-                        color: Color(0xff1a1a1a),
+                        color: appColors.surface,
                         child: Row(
                           children: [
                             Icon(
                               CupertinoIcons.clock,
                               size: 16,
-                              color: Colors.grey,
+                              color: appColors.textSecondary,
                             ),
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _formatScheduledTime(post.scheduledTime!),
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: appColors.textSecondary,
                                   fontSize: 13,
                                 ),
                               ),
@@ -133,16 +135,16 @@ class _ScheduledPostsPageState extends State<ScheduledPostsPage> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.15),
+                                  color: appColors.destructive.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
-                                    color: Colors.red.withOpacity(0.3),
+                                    color: appColors.destructive.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Text(
                                   l10n.cancelSchedule,
                                   style: TextStyle(
-                                    color: Colors.red,
+                                    color: appColors.destructive,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -154,7 +156,7 @@ class _ScheduledPostsPageState extends State<ScheduledPostsPage> {
                       ),
                     Divider(
                       height: 0.5,
-                      color: Color(0xff333333),
+                      color: appColors.divider,
                     ),
                   ],
                 );

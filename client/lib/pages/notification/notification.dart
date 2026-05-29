@@ -6,6 +6,7 @@ import 'package:threads/pages/post/post_detail_page.dart';
 import 'package:threads/pages/profile/profile.dart';
 import 'package:threads/state/notification.state.dart';
 import 'package:threads/services/notification_service.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -47,16 +48,17 @@ class _NotificationPageState extends State<NotificationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         centerTitle: false,
         title: Text(
           AppLocalizations.of(context)!.activityTitle,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontSize: 35,
             fontWeight: FontWeight.w700,
           ),
@@ -134,6 +136,7 @@ class _NotificationPageState extends State<NotificationPage> {
     required int? currentType,
     required VoidCallback onTap,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isActive = currentType == type;
     return GestureDetector(
       onTap: onTap,
@@ -142,10 +145,10 @@ class _NotificationPageState extends State<NotificationPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.black,
+          color: isActive ? appColors.textPrimary : appColors.background,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isActive ? Colors.white : Colors.grey,
+            color: isActive ? appColors.textPrimary : appColors.textSecondary,
             width: 0.5,
           ),
         ),
@@ -153,7 +156,7 @@ class _NotificationPageState extends State<NotificationPage> {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: isActive ? Colors.black : Colors.white,
+            color: isActive ? appColors.background : appColors.textPrimary,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -162,11 +165,12 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Widget _buildNotificationList(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final state = context.watch<NotificationState>();
 
     if (state.isbusy && state.notifications.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      return Center(
+        child: CircularProgressIndicator(color: appColors.textPrimary),
       );
     }
 
@@ -174,14 +178,14 @@ class _NotificationPageState extends State<NotificationPage> {
       return Center(
         child: Text(
           AppLocalizations.of(context)!.noNotifications,
-          style: const TextStyle(color: Colors.grey, fontSize: 16),
+          style: TextStyle(color: appColors.textSecondary, fontSize: 16),
         ),
       );
     }
 
     return RefreshIndicator(
-      color: Colors.white,
-      backgroundColor: Colors.black,
+      color: appColors.textPrimary,
+      backgroundColor: appColors.background,
       onRefresh: _onRefresh,
       child: ListView.separated(
         controller: _scrollController,
@@ -189,12 +193,12 @@ class _NotificationPageState extends State<NotificationPage> {
         itemCount: state.notifications.length + (state.hasMore ? 1 : 0),
         separatorBuilder: (_, __) => Divider(
           height: 0.5,
-          color: const Color.fromARGB(255, 69, 69, 69),
+          color: appColors.divider,
           indent: 52,
         ),
         itemBuilder: (context, index) {
           if (index == state.notifications.length) {
-            return const Padding(
+            return Padding(
               padding: EdgeInsets.all(16),
               child: Center(
                 child: SizedBox(
@@ -202,7 +206,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                   ),
                 ),
               ),
@@ -299,6 +303,7 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final hasAvatar = (notification.fromProfilePic ?? '').isNotEmpty;
     return InkWell(
       onTap: onTap,
@@ -320,10 +325,10 @@ class _NotificationTile extends StatelessWidget {
                           fit: BoxFit.cover,
                           width: 40,
                           height: 40,
-                          errorWidget: (_, __, ___) => _defaultAvatar(),
+                          errorWidget: (_, __, ___) => _defaultAvatar(appColors),
                         ),
                       )
-                    : _defaultAvatar(),
+                    : _defaultAvatar(appColors),
               ),
               const SizedBox(width: 12),
               // Content
@@ -333,12 +338,12 @@ class _NotificationTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(_typeIcon(), size: 14, color: Colors.grey),
+                        Icon(_typeIcon(), size: 14, color: appColors.textSecondary),
                         const SizedBox(width: 4),
                         Text(
                           notification.fromDisplayName ?? notification.fromUsername ?? '',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: appColors.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -347,8 +352,8 @@ class _NotificationTile extends StatelessWidget {
                         Expanded(
                           child: Text(
                             _typeText(context),
-                            style: const TextStyle(
-                              color: Colors.grey,
+                            style: TextStyle(
+                              color: appColors.textSecondary,
                               fontSize: 14,
                             ),
                             maxLines: 1,
@@ -363,8 +368,8 @@ class _NotificationTile extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           notification.body,
-                          style: const TextStyle(
-                            color: Color.fromARGB(255, 180, 180, 180),
+                          style: TextStyle(
+                            color: appColors.textSecondary,
                             fontSize: 13,
                           ),
                           maxLines: 2,
@@ -375,8 +380,8 @@ class _NotificationTile extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         _formatTime(context, notification.createdAt),
-                        style: const TextStyle(
-                          color: Colors.grey,
+                        style: TextStyle(
+                          color: appColors.textMuted,
                           fontSize: 12,
                         ),
                       ),
@@ -390,8 +395,8 @@ class _NotificationTile extends StatelessWidget {
                   width: 8,
                   height: 8,
                   margin: const EdgeInsets.only(top: 4),
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
+                  decoration: BoxDecoration(
+                    color: appColors.accent,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -402,15 +407,15 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
-  Widget _defaultAvatar() {
+  Widget _defaultAvatar(AppColors appColors) {
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: appColors.surface,
         shape: BoxShape.circle,
       ),
-      child: Icon(Icons.person, size: 24, color: Colors.grey[600]),
+      child: Icon(Icons.person, size: 24, color: appColors.textSecondary),
     );
   }
 

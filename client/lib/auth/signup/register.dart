@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/pages/home.dart';
 import 'package:threads/state/auth.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -85,13 +86,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: appColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -108,10 +110,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 48),
-              const Text(
+              Text(
                 '注册',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: appColors.textPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
@@ -120,12 +122,12 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 32),
               TextField(
                 controller: _usernameController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: appColors.textPrimary),
                 decoration: InputDecoration(
                   hintText: '用户名',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  hintStyle: TextStyle(color: appColors.textHint),
                   filled: true,
-                  fillColor: const Color(0xff1a1a1a),
+                  fillColor: appColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -137,13 +139,13 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: appColors.textPrimary),
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   hintText: '密码',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  hintStyle: TextStyle(color: appColors.textHint),
                   filled: true,
-                  fillColor: const Color(0xff1a1a1a),
+                  fillColor: appColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -155,7 +157,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       _obscurePassword
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: Colors.grey[600],
+                      color: appColors.textHint,
                     ),
                     onPressed: () {
                       setState(() => _obscurePassword = !_obscurePassword);
@@ -166,13 +168,13 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmPasswordController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: appColors.textPrimary),
                 obscureText: _obscureConfirmPassword,
                 decoration: InputDecoration(
                   hintText: '确认密码',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  hintStyle: TextStyle(color: appColors.textHint),
                   filled: true,
-                  fillColor: const Color(0xff1a1a1a),
+                  fillColor: appColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -184,7 +186,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       _obscureConfirmPassword
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: Colors.grey[600],
+                      color: appColors.textHint,
                     ),
                     onPressed: () {
                       setState(() =>
@@ -199,17 +201,17 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _handleRegister,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: appColors.textPrimary,
+                    foregroundColor: appColors.background,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.black)
-                      : const Text(
+                      ? CircularProgressIndicator(color: appColors.background)
+                      : Text(
                           '注册',
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 ),
@@ -220,7 +222,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Text(
                   '已有账号？去登录',
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: appColors.textMuted,
                     fontSize: 14,
                   ),
                   textAlign: TextAlign.center,

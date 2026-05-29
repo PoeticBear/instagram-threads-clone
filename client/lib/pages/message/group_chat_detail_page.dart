@@ -7,6 +7,7 @@ import 'package:threads/pages/message/chat_detail_page.dart';
 import 'package:threads/pages/message/group_members_page.dart';
 import 'package:threads/pages/message/join_requests_page.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class GroupChatDetailPage extends StatefulWidget {
   final int groupId;
@@ -32,10 +33,11 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
   }
 
   void _showEditNameSheet(GroupChat group) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final controller = TextEditingController(text: group.name);
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color.fromARGB(255, 28, 28, 30),
+      backgroundColor: appColors.surfaceSecondary,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -56,16 +58,16 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[600],
+                    color: appColors.textSecondary,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Edit Group Name',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: appColors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -74,15 +76,15 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               TextField(
                 controller: controller,
                 maxLength: 50,
-                style: const TextStyle(color: Colors.white),
-                cursorColor: Colors.white,
+                style: TextStyle(color: appColors.textPrimary),
+                cursorColor: appColors.textPrimary,
                 decoration: InputDecoration(
                   counterStyle:
-                      TextStyle(color: Colors.grey[500], fontSize: 12),
+                      TextStyle(color: appColors.textMuted, fontSize: 12),
                   hintText: 'Group name',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
+                  hintStyle: TextStyle(color: appColors.textMuted),
                   filled: true,
-                  fillColor: const Color.fromARGB(255, 22, 22, 22),
+                  fillColor: appColors.surface,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
@@ -113,15 +115,15 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                     Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: appColors.accent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Save',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: appColors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -151,24 +153,25 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
   }
 
   void _confirmLeaveGroup() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color.fromARGB(255, 28, 28, 30),
-        title: const Text(
+        backgroundColor: appColors.surfaceSecondary,
+        title: Text(
           'Leave Group',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: appColors.textPrimary),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to leave this group?',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: appColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'Cancel',
-              style: TextStyle(color: Colors.grey[400]),
+              style: TextStyle(color: appColors.textSecondary),
             ),
           ),
           TextButton(
@@ -181,9 +184,9 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                 Navigator.of(this.context).pop();
               }
             },
-            child: const Text(
+            child: Text(
               'Leave',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: appColors.destructive),
             ),
           ),
         ],
@@ -206,6 +209,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
   }
 
   Widget _buildGroupAvatar(GroupChat? group) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final avatarUrl = group?.avatarUrl;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return ClipRRect(
@@ -218,14 +222,14 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
           placeholder: (context, url) => Container(
             width: 80,
             height: 80,
-            color: Colors.grey[800],
-            child: Icon(Icons.group, size: 36, color: Colors.grey[600]),
+            color: appColors.surface,
+            child: Icon(Icons.group, size: 36, color: appColors.textSecondary),
           ),
           errorWidget: (context, url, error) => Container(
             width: 80,
             height: 80,
-            color: Colors.grey[800],
-            child: Icon(Icons.group, size: 36, color: Colors.grey[600]),
+            color: appColors.surface,
+            child: Icon(Icons.group, size: 36, color: appColors.textSecondary),
           ),
         ),
       );
@@ -234,25 +238,26 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: appColors.surface,
         shape: BoxShape.circle,
       ),
-      child: Icon(Icons.group, size: 36, color: Colors.grey[600]),
+      child: Icon(Icons.group, size: 36, color: appColors.textSecondary),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return AppBar(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(Icons.arrow_back, color: appColors.textPrimary),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: const Text(
+      title: Text(
         'Group Info',
         style: TextStyle(
-          color: Colors.white,
+          color: appColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
@@ -263,17 +268,18 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: _buildAppBar(),
       body: Consumer<MessageState>(
         builder: (context, state, _) {
           final group = state.currentGroupChat;
           if (group == null) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.grey,
+                color: appColors.textSecondary,
               ),
             );
           }
@@ -293,15 +299,15 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                     children: [
                       Text(
                         group.name,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: appColors.textPrimary,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(width: 6),
                       Icon(Icons.edit_outlined,
-                          size: 18, color: Colors.grey[500]),
+                          size: 18, color: appColors.textMuted),
                     ],
                   ),
                 ),
@@ -312,18 +318,19 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                   children: [
                     Text(
                       '${group.membersCount} members',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      style: TextStyle(
+                          color: appColors.textSecondary, fontSize: 14),
                     ),
                     if (group.createTime != null) ...[
                       Text(
                         '  ·  ',
                         style: TextStyle(
-                            color: Colors.grey[600], fontSize: 14),
+                            color: appColors.textSecondary, fontSize: 14),
                       ),
                       Text(
                         'Created ${_formatDate(group.createTime)}',
-                        style:
-                            TextStyle(color: Colors.grey[400], fontSize: 14),
+                        style: TextStyle(
+                            color: appColors.textSecondary, fontSize: 14),
                       ),
                     ],
                   ],
@@ -331,7 +338,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                 const SizedBox(height: 24),
                 Container(
                   height: 0.5,
-                  color: const Color.fromARGB(255, 46, 46, 46),
+                  color: appColors.divider,
                 ),
                 const SizedBox(height: 8),
                 // Settings switches
@@ -359,7 +366,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                 ),
                 Container(
                   height: 0.5,
-                  color: const Color.fromARGB(255, 46, 46, 46),
+                  color: appColors.divider,
                 ),
                 const SizedBox(height: 16),
                 // Members preview
@@ -376,15 +383,15 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: const Color.fromARGB(255, 46, 46, 46),
+                        color: appColors.divider,
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Leave Group',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.red,
+                        color: appColors.destructive,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -405,6 +412,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -415,8 +423,8 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -425,7 +433,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: appColors.textMuted,
                     fontSize: 12,
                   ),
                 ),
@@ -435,8 +443,8 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: Colors.blue,
-            activeThumbColor: Colors.white,
+            activeTrackColor: appColors.accent,
+            activeThumbColor: appColors.textPrimary,
           ),
         ],
       ),
@@ -444,6 +452,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
   }
 
   Widget _buildMembersPreview(MessageState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final members = state.groupMembers;
     final displayMembers = members.take(6).toList();
     final remaining = members.length - displayMembers.length;
@@ -461,7 +470,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: const Color.fromARGB(255, 46, 46, 46),
+            color: appColors.divider,
           ),
           borderRadius: BorderRadius.circular(10),
         ),
@@ -473,14 +482,14 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               children: [
                 Text(
                   'Members (${members.length})',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Icon(Icons.chevron_right,
-                    size: 20, color: Colors.grey[500]),
+                    size: 20, color: appColors.textMuted),
               ],
             ),
             if (displayMembers.isNotEmpty) ...[
@@ -496,11 +505,11 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                     if (index == displayMembers.length) {
                       return CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.grey[800],
+                        backgroundColor: appColors.surface,
                         child: Text(
                           '+$remaining',
                           style: TextStyle(
-                            color: Colors.grey[400],
+                            color: appColors.textSecondary,
                             fontSize: 12,
                           ),
                         ),
@@ -519,6 +528,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
   }
 
   Widget _buildMemberAvatar(GroupMember member) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final avatarUrl = member.avatarUrl;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return CircleAvatar(
@@ -528,18 +538,19 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
     }
     return CircleAvatar(
       radius: 20,
-      backgroundColor: Colors.grey[800],
+      backgroundColor: appColors.surface,
       child: Text(
         (member.displayName.isNotEmpty
                 ? member.displayName
                 : member.username)[0]
             .toUpperCase(),
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: appColors.textPrimary, fontSize: 14),
       ),
     );
   }
 
   Widget _buildActionButtons(GroupChat group) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
       children: [
         // Message button — navigate to group chat
@@ -549,19 +560,19 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.blue,
+              color: appColors.accent,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.chat_bubble_outline,
-                    size: 18, color: Colors.white),
+                Icon(Icons.chat_bubble_outline,
+                    size: 18, color: appColors.textPrimary),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Message',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -579,19 +590,19 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: const Color.fromARGB(255, 46, 46, 46),
+                  color: appColors.divider,
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.link, size: 18, color: Colors.grey[400]),
+                  Icon(Icons.link, size: 18, color: appColors.textSecondary),
                   const SizedBox(width: 8),
                   Text(
                     'Copy Invite Link',
                     style: TextStyle(
-                      color: Colors.grey[300],
+                      color: appColors.textSecondary,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -616,7 +627,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
               border: Border.all(
-                color: const Color.fromARGB(255, 46, 46, 46),
+                color: appColors.divider,
               ),
               borderRadius: BorderRadius.circular(10),
             ),
@@ -624,12 +635,12 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.people_outline,
-                    size: 18, color: Colors.grey[400]),
+                    size: 18, color: appColors.textSecondary),
                 const SizedBox(width: 8),
                 Text(
                   'View All Members',
                   style: TextStyle(
-                    color: Colors.grey[300],
+                    color: appColors.textSecondary,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -655,7 +666,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: const Color.fromARGB(255, 46, 46, 46),
+                  color: appColors.divider,
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -663,12 +674,12 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.person_add_outlined,
-                      size: 18, color: Colors.grey[400]),
+                      size: 18, color: appColors.textSecondary),
                   const SizedBox(width: 8),
                   Text(
                     'Join Requests',
                     style: TextStyle(
-                      color: Colors.grey[300],
+                      color: appColors.textSecondary,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),

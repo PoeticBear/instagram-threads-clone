@@ -152,6 +152,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get language => '语言';
 
   @override
+  String get appearance => '外观';
+
+  @override
   String get back => '返回';
 
   @override
@@ -764,13 +767,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get justNow => '刚刚';
 
   @override
-  String minutesAgo(int count) => '$count分钟前';
+  String minutesAgo(int count) {
+    return '$count分钟前';
+  }
 
   @override
-  String hoursAgo(int count) => '$count小时前';
+  String hoursAgo(int count) {
+    return '$count小时前';
+  }
 
   @override
-  String daysAgo(int count) => '$count天前';
+  String daysAgo(int count) {
+    return '$count天前';
+  }
 
   @override
   String get notifiedLikedPost => '赞了你的帖子';

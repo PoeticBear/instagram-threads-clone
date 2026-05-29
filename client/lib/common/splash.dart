@@ -43,7 +43,7 @@ class _SplashPageState extends State<SplashPage> {
   Widget build(BuildContext context) {
     var state = Provider.of<AuthState>(context);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: state.authStatus == AuthStatus.NOT_DETERMINED
           ? _body()
           : state.authStatus == AuthStatus.NOT_LOGGED_IN

@@ -12,6 +12,7 @@ import 'package:threads/pages/composePost/post.dart';
 import 'package:threads/pages/profile/profile.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/poll_widget.dart';
 import 'package:threads/widget/edit_history_sheet.dart';
 import 'package:threads/widget/reply_bottom_sheet.dart';
@@ -34,6 +35,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     final hasImage = widget.postModel.imagePath != null &&
         widget.postModel.imagePath!.isNotEmpty;
     final hasPoll = widget.postModel.pollData != null;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
 
     Widget avatar(String url, double size) {
       if (url.isEmpty) {
@@ -41,10 +43,10 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           height: size,
           width: size,
           decoration: BoxDecoration(
-            color: Colors.grey[800],
+            color: appColors.surface,
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.person, size: size * 0.6, color: Colors.grey[600]),
+          child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
         );
       }
       return ClipRRect(
@@ -58,7 +60,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     }
 
     return Container(
-        color: Colors.black,
+        color: appColors.background,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
@@ -66,7 +68,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             Container(
               height: 0.2,
               width: MediaQuery.of(context).size.width,
-              color: Colors.grey,
+              color: appColors.divider,
             ),
             Container(
               height: 10,
@@ -86,7 +88,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                   child: Text(
                     displayName,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: appColors.textPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -96,15 +98,14 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 ),
                 Text(
                   Utility.getdob(widget.postModel.createdAt),
-                  style:
-                      TextStyle(color: const Color.fromARGB(255, 78, 78, 78)),
+                  style: TextStyle(color: appColors.textMuted),
                 ),
                 Container(
                   width: 5,
                 ),
                 GestureDetector(
                   onTap: () => _showMoreMenu(context),
-                  child: Icon(Icons.more_horiz, color: Colors.white),
+                  child: Icon(Icons.more_horiz, color: appColors.textPrimary),
                 ),
               ],
             ),
@@ -113,7 +114,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 child: Text(
                   widget.postModel.bio ?? '',
                   style: TextStyle(
-                      color: Color.fromARGB(255, 255, 255, 255),
+                      color: appColors.textPrimary,
                       fontWeight: FontWeight.w500,
                       fontSize: 18),
                 )),
@@ -134,7 +135,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                               Container(
                                 width: 2,
                                 height: 30,
-                                color: const Color.fromARGB(255, 46, 46, 46),
+                                color: appColors.divider,
                               ),
                               Container(
                                 height: 5,
@@ -158,7 +159,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                               Container(
                                 width: 2,
                                 height: 300,
-                                color: const Color.fromARGB(255, 46, 46, 46),
+                                color: appColors.divider,
                               ),
                               Container(
                                 height: 5,
@@ -178,19 +179,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                                           placeholder: (context, url) => Container(
                                             height: 300,
                                             width: 290,
-                                            color: Colors.grey[900],
+                                            color: appColors.surface,
                                             child: Center(
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                color: Colors.grey[600],
+                                                color: appColors.textSecondary,
                                               ),
                                             ),
                                           ),
                                           errorWidget: (context, url, error) => Container(
                                             height: 300,
                                             width: 290,
-                                            color: Colors.grey[900],
-                                            child: Icon(Icons.broken_image, color: Colors.grey[600]),
+                                            color: appColors.surface,
+                                            child: Icon(Icons.broken_image, color: appColors.textSecondary),
                                           ),
                                       ))),
                         ],
@@ -221,12 +222,12 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                         : Iconsax.heart,
                     size: 20,
                     color: widget.postModel.isLiked == true
-                        ? Colors.red
-                        : Colors.white,
+                        ? appColors.like
+                        : appColors.textPrimary,
                   ),
                 ),
                 Container(width: 4),
-                Text('${widget.postModel.likesCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text('${widget.postModel.likesCount ?? 0}', style: TextStyle(color: appColors.textSecondary, fontSize: 13)),
                 Container(width: 10),
                 // Comment button
                 GestureDetector(
@@ -234,18 +235,18 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
-                      backgroundColor: Colors.black,
+                      backgroundColor: appColors.background,
                       builder: (context) => ReplyBottomSheet(postId: widget.postModel.id),
                     );
                   },
                   child: Icon(
                     Iconsax.message,
                     size: 20,
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                   ),
                 ),
                 Container(width: 4),
-                Text('${widget.postModel.repliesCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text('${widget.postModel.repliesCount ?? 0}', style: TextStyle(color: appColors.textSecondary, fontSize: 13)),
                 Container(width: 10),
                 // Repost button
                 GestureDetector(
@@ -254,12 +255,12 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     Iconsax.repeat,
                     size: 20,
                     color: widget.postModel.isReposted == true
-                        ? Colors.green
-                        : Colors.white,
+                        ? appColors.repost
+                        : appColors.textPrimary,
                   ),
                 ),
                 Container(width: 4),
-                Text('${widget.postModel.repostsCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text('${widget.postModel.repostsCount ?? 0}', style: TextStyle(color: appColors.textSecondary, fontSize: 13)),
                 Container(width: 10),
                 // Share button
                 GestureDetector(
@@ -267,11 +268,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                   child: Icon(
                     Iconsax.send_2,
                     size: 20,
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                   ),
                 ),
                 Container(width: 4),
-                Text('${widget.postModel.sharesCount ?? 0}', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text('${widget.postModel.sharesCount ?? 0}', style: TextStyle(color: appColors.textSecondary, fontSize: 13)),
               ],
             ),
             Container(
@@ -297,14 +298,16 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   // ==================== Bottom Sheet Helpers ====================
 
   Widget _buildSheetDivider() {
-    return Divider(color: Color.fromARGB(255, 46, 46, 46), height: 0.5);
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return Divider(color: appColors.divider, height: 0.5);
   }
 
   Widget _buildSheetOption({
     required String label,
     required VoidCallback onTap,
-    Color textColor = Colors.white,
+    Color? textColor,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -313,7 +316,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         child: Text(
           label,
           style: TextStyle(
-            color: textColor,
+            color: textColor ?? appColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w400,
           ),
@@ -325,11 +328,12 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   // ==================== Repost Sheet ====================
 
   void _showRepostSheet(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isReposted = widget.postModel.isReposted == true;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -360,7 +364,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             if (isReposted) ...[
               _buildSheetOption(
                 label: 'Undo Repost',
-                textColor: Colors.red,
+                textColor: appColors.destructive,
                 onTap: () {
                   Navigator.pop(context);
                   final state = Provider.of<PostState>(context, listen: false);
@@ -377,13 +381,14 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   // ==================== Quote Sheet ====================
 
   void _showQuoteSheet(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final controller = TextEditingController();
     final l10n = AppLocalizations.of(context)!;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -402,11 +407,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 children: [
                   Text(
                     l10n.quoteRepost,
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: appColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(sheetContext),
-                    child: Icon(Icons.close, color: Colors.white),
+                    child: Icon(Icons.close, color: appColors.textPrimary),
                   ),
                 ],
               ),
@@ -415,21 +420,21 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Color(0xff1a1a1a),
+                  color: appColors.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Color(0xff333333), width: 0.5),
+                  border: Border.all(color: appColors.border, width: 0.5),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.postModel.user?.displayName ?? '',
-                      style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: appColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                     SizedBox(height: 4),
                     Text(
                       widget.postModel.bio ?? '',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      style: TextStyle(color: appColors.textSecondary, fontSize: 14),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -439,23 +444,23 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               SizedBox(height: 12),
               TextField(
                 controller: controller,
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: appColors.textPrimary),
                 maxLines: 3,
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: l10n.quotePlaceholder,
-                  hintStyle: TextStyle(color: Color(0xff888888)),
+                  hintStyle: TextStyle(color: appColors.textHint),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Color(0xff333333)),
+                    borderSide: BorderSide(color: appColors.border),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Color(0xff333333)),
+                    borderSide: BorderSide(color: appColors.border),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey),
+                    borderSide: BorderSide(color: appColors.textSecondary),
                   ),
                 ),
               ),
@@ -465,7 +470,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 height: 44,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: appColors.accent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -503,11 +508,12 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   // ==================== Share Sheet ====================
 
   void _showShareSheet(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final postId = widget.postModel.id;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -526,7 +532,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Link copied to clipboard'),
-                    backgroundColor: Colors.grey[900],
+                    backgroundColor: appColors.surface,
                     duration: Duration(seconds: 2),
                   ),
                 );
@@ -550,6 +556,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   // ==================== More Menu Sheet ====================
 
   void _showMoreMenu(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isSaved = widget.postModel.isSaved == true;
     final isPinned = widget.postModel.isPinned == true;
     final postId = widget.postModel.id;
@@ -563,7 +570,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -593,23 +600,23 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               _buildSheetDivider(),
               _buildSheetOption(
                 label: l10n.deletePost,
-                textColor: Colors.red,
+                textColor: appColors.destructive,
                 onTap: () async {
                   Navigator.pop(context);
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      backgroundColor: Color(0xff1a1a1a),
-                      title: Text(l10n.deletePost, style: TextStyle(color: Colors.white)),
-                      content: Text(l10n.deletePostConfirm, style: TextStyle(color: Colors.grey)),
+                      backgroundColor: appColors.surface,
+                      title: Text(l10n.deletePost, style: TextStyle(color: appColors.textPrimary)),
+                      content: Text(l10n.deletePostConfirm, style: TextStyle(color: appColors.textSecondary)),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(l10n.cancel, style: TextStyle(color: Colors.grey)),
+                          child: Text(l10n.cancel, style: TextStyle(color: appColors.textSecondary)),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(l10n.deletePost, style: TextStyle(color: Colors.red)),
+                          child: Text(l10n.deletePost, style: TextStyle(color: appColors.destructive)),
                         ),
                       ],
                     ),
@@ -621,7 +628,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(success ? l10n.postDeleted : 'Failed'),
-                          backgroundColor: success ? Colors.green : Colors.red,
+                          backgroundColor: success ? appColors.repost : appColors.destructive,
                           duration: Duration(seconds: 1),
                         ),
                       );
@@ -660,7 +667,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             if (!isOwnPost) ...[
               _buildSheetOption(
                 label: l10n.report,
-                textColor: Colors.red,
+                textColor: appColors.destructive,
                 onTap: () {
                   Navigator.pop(context);
                   final state = Provider.of<PostState>(context, listen: false);
@@ -676,7 +683,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
-                  backgroundColor: Colors.black,
+                  backgroundColor: appColors.background,
                   builder: (context) => EditHistorySheet(postId: postId),
                 );
               },

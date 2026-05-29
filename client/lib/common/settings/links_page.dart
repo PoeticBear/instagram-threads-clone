@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class LinksPage extends StatefulWidget {
   const LinksPage({super.key});
@@ -41,6 +42,7 @@ class _LinksPageState extends State<LinksPage> {
   }
 
   Future<void> _deleteLink(UserLink link) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       await _userService.deleteLink(link.id);
       setState(() {
@@ -49,9 +51,9 @@ class _LinksPageState extends State<LinksPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to delete link.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Failed to delete link.'),
+            backgroundColor: appColors.destructive,
           ),
         );
       }
@@ -75,10 +77,11 @@ class _LinksPageState extends State<LinksPage> {
             _loadLinks();
           } catch (_) {
             if (mounted) {
+              final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Failed to add link.'),
-                  backgroundColor: Colors.red,
+                SnackBar(
+                  content: const Text('Failed to add link.'),
+                  backgroundColor: appColors.destructive,
                 ),
               );
             }
@@ -109,10 +112,11 @@ class _LinksPageState extends State<LinksPage> {
             _loadLinks();
           } catch (_) {
             if (mounted) {
+              final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Failed to update link.'),
-                  backgroundColor: Colors.red,
+                SnackBar(
+                  content: const Text('Failed to update link.'),
+                  backgroundColor: appColors.destructive,
                 ),
               );
             }
@@ -128,12 +132,13 @@ class _LinksPageState extends State<LinksPage> {
     required TextEditingController urlController,
     required VoidCallback onConfirm,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     showCupertinoDialog(
       context: context,
       builder: (dialogContext) => CupertinoAlertDialog(
         title: Text(
           title,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: appColors.textPrimary),
         ),
         content: Padding(
           padding: const EdgeInsets.only(top: 12),
@@ -143,10 +148,10 @@ class _LinksPageState extends State<LinksPage> {
               CupertinoTextField(
                 controller: titleController,
                 placeholder: 'Title',
-                placeholderStyle: const TextStyle(color: Color(0xff888888)),
-                style: const TextStyle(color: Colors.white),
+                placeholderStyle: TextStyle(color: appColors.textMuted),
+                style: TextStyle(color: appColors.textPrimary),
                 decoration: BoxDecoration(
-                  color: const Color(0xff1a1a1a),
+                  color: appColors.surface,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -155,10 +160,10 @@ class _LinksPageState extends State<LinksPage> {
               CupertinoTextField(
                 controller: urlController,
                 placeholder: 'URL',
-                placeholderStyle: const TextStyle(color: Color(0xff888888)),
-                style: const TextStyle(color: Colors.white),
+                placeholderStyle: TextStyle(color: appColors.textMuted),
+                style: TextStyle(color: appColors.textPrimary),
                 decoration: BoxDecoration(
-                  color: const Color(0xff1a1a1a),
+                  color: appColors.surface,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -184,18 +189,19 @@ class _LinksPageState extends State<LinksPage> {
   }
 
   void _confirmDelete(UserLink link) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     showCupertinoDialog(
       context: context,
       builder: (dialogContext) => CupertinoAlertDialog(
         title: Text(
           'Delete "${link.title}"?',
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: appColors.textPrimary),
         ),
-        content: const Padding(
-          padding: EdgeInsets.only(top: 8),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
           child: Text(
             'This action cannot be undone.',
-            style: TextStyle(color: Color(0xff888888)),
+            style: TextStyle(color: appColors.textMuted),
           ),
         ),
         actions: [
@@ -219,26 +225,27 @@ class _LinksPageState extends State<LinksPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          icon: Icon(CupertinoIcons.back, color: appColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Links',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
             fontSize: 18,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.add, color: Colors.white, size: 26),
+            icon: Icon(CupertinoIcons.add, color: appColors.textPrimary, size: 26),
             onPressed: _showAddDialog,
           ),
         ],
@@ -250,21 +257,21 @@ class _LinksPageState extends State<LinksPage> {
                   child: Text(
                     'No links yet',
                     style: TextStyle(
-                      color: const Color(0xff888888),
+                      color: appColors.textMuted,
                       fontSize: 16,
                     ),
                   ),
                 )
               : RefreshIndicator(
-                  backgroundColor: const Color(0xff222222),
-                  color: Colors.white,
+                  backgroundColor: appColors.surfaceSecondary,
+                  color: appColors.textPrimary,
                   onRefresh: _loadLinks,
                   child: ListView.separated(
                     itemCount: _links.length,
-                    separatorBuilder: (_, __) => const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                    separatorBuilder: (_, __) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Divider(
-                        color: Color(0xff333333),
+                        color: appColors.divider,
                         height: 0.5,
                         thickness: 0.5,
                       ),
@@ -279,6 +286,7 @@ class _LinksPageState extends State<LinksPage> {
   }
 
   Widget _buildLinkTile(UserLink link) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Dismissible(
       key: ValueKey(link.id),
       direction: DismissDirection.endToStart,
@@ -289,8 +297,8 @@ class _LinksPageState extends State<LinksPage> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red.withValues(alpha: 0.15),
-        child: const Icon(CupertinoIcons.delete, color: Colors.red, size: 24),
+        color: appColors.destructive.withValues(alpha: 0.15),
+        child: Icon(CupertinoIcons.delete, color: appColors.destructive, size: 24),
       ),
       child: GestureDetector(
         onTap: () => _showEditDialog(link),
@@ -304,12 +312,12 @@ class _LinksPageState extends State<LinksPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xff1a1a1a),
+                  color: appColors.surface,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   CupertinoIcons.link,
-                  color: Color(0xff888888),
+                  color: appColors.textMuted,
                   size: 20,
                 ),
               ),
@@ -321,8 +329,8 @@ class _LinksPageState extends State<LinksPage> {
                   children: [
                     Text(
                       link.title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: appColors.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -331,8 +339,8 @@ class _LinksPageState extends State<LinksPage> {
                     const SizedBox(height: 4),
                     Text(
                       link.url,
-                      style: const TextStyle(
-                        color: Color(0xff888888),
+                      style: TextStyle(
+                        color: appColors.textMuted,
                         fontSize: 13,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -343,8 +351,8 @@ class _LinksPageState extends State<LinksPage> {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           link.createTime!,
-                          style: const TextStyle(
-                            color: Color(0xff555555),
+                          style: TextStyle(
+                            color: appColors.textHint,
                             fontSize: 12,
                           ),
                         ),
@@ -352,9 +360,9 @@ class _LinksPageState extends State<LinksPage> {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
-                color: Color(0xff444444),
+                color: appColors.dividerSecondary,
                 size: 18,
               ),
             ],

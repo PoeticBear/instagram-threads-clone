@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/model/message.module.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
@@ -16,6 +17,7 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final screenWidth = MediaQuery.of(context).size.width;
     final maxBubbleWidth = screenWidth * 0.7;
 
@@ -38,13 +40,13 @@ class ChatBubble extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 50, 50, 50),
+                  color: appColors.dividerSecondary,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
+                child: Text(
                   'Quoted message',
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: appColors.textSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -54,7 +56,7 @@ class ChatBubble extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               padding: _bubblePadding,
               decoration: BoxDecoration(
-                color: _bubbleColor,
+                color: _bubbleColor(appColors),
                 borderRadius: _borderRadius,
               ),
               child: _buildContent(context),
@@ -75,9 +77,9 @@ class ChatBubble extends StatelessWidget {
     return const EdgeInsets.all(12);
   }
 
-  Color get _bubbleColor {
-    if (isMe) return Colors.blue[700]!;
-    return Colors.grey[800]!;
+  Color _bubbleColor(AppColors appColors) {
+    if (isMe) return appColors.accent;
+    return appColors.surface;
   }
 
   BorderRadius get _borderRadius {
@@ -94,11 +96,12 @@ class ChatBubble extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // Main content
-        _buildMediaContent(),
+        _buildMediaContent(appColors),
         // Timestamp and status row
         const SizedBox(height: 4),
         Row(
@@ -107,13 +110,13 @@ class ChatBubble extends StatelessWidget {
             Text(
               _formatTime(message.createTime),
               style: TextStyle(
-                color: Colors.grey[500],
+                color: appColors.textMuted,
                 fontSize: 11,
               ),
             ),
             if (isMe) ...[
               const SizedBox(width: 4),
-              _buildDeliveryStatus(),
+              _buildDeliveryStatus(appColors),
             ],
           ],
         ),
@@ -121,7 +124,7 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildMediaContent() {
+  Widget _buildMediaContent(AppColors appColors) {
     switch (message.mediaType) {
       case 1:
         // Image message
@@ -134,23 +137,23 @@ class ChatBubble extends StatelessWidget {
               width: double.infinity,
               placeholder: (context, url) => Container(
                 height: 200,
-                color: Colors.grey[700],
-                child: const Center(
+                color: appColors.surfaceSecondary,
+                child: Center(
                   child: SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.grey,
+                      color: appColors.textSecondary,
                     ),
                   ),
                 ),
               ),
               errorWidget: (context, url, error) => Container(
                 height: 200,
-                color: Colors.grey[700],
-                child: const Center(
-                  child: Icon(Icons.broken_image, color: Colors.grey),
+                color: appColors.surfaceSecondary,
+                child: Center(
+                  child: Icon(Icons.broken_image, color: appColors.textSecondary),
                 ),
               ),
             ),
@@ -161,12 +164,12 @@ class ChatBubble extends StatelessWidget {
         // Video message
         return Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.videocam, color: Colors.white70, size: 20),
-            SizedBox(width: 6),
+          children: [
+            Icon(Icons.videocam, color: appColors.textMuted, size: 20),
+            const SizedBox(width: 6),
             Text(
               'Video message',
-              style: TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(color: appColors.textPrimary, fontSize: 14),
             ),
           ],
         );
@@ -174,12 +177,12 @@ class ChatBubble extends StatelessWidget {
         // Voice message
         return Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.mic, color: Colors.white70, size: 20),
-            SizedBox(width: 6),
+          children: [
+            Icon(Icons.mic, color: appColors.textMuted, size: 20),
+            const SizedBox(width: 6),
             Text(
               'Voice message',
-              style: TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(color: appColors.textPrimary, fontSize: 14),
             ),
           ],
         );
@@ -187,12 +190,12 @@ class ChatBubble extends StatelessWidget {
         // File message
         return Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.insert_drive_file, color: Colors.white70, size: 20),
-            SizedBox(width: 6),
+          children: [
+            Icon(Icons.insert_drive_file, color: appColors.textMuted, size: 20),
+            const SizedBox(width: 6),
             Text(
               'File',
-              style: TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(color: appColors.textPrimary, fontSize: 14),
             ),
           ],
         );
@@ -200,15 +203,15 @@ class ChatBubble extends StatelessWidget {
         // Text message (mediaType == 0)
         return Text(
           message.content,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontSize: 14,
           ),
         );
     }
   }
 
-  Widget _buildDeliveryStatus() {
+  Widget _buildDeliveryStatus(AppColors appColors) {
     if (!isMe) return const SizedBox.shrink();
 
     switch (message.deliveryStatus) {
@@ -219,22 +222,22 @@ class ChatBubble extends StatelessWidget {
           height: 12,
           child: CircularProgressIndicator(
             strokeWidth: 1.5,
-            color: Colors.grey[500],
+            color: appColors.textMuted,
           ),
         );
       case 2:
         // Sent
-        return Icon(Icons.check, size: 14, color: Colors.grey[500]);
+        return Icon(Icons.check, size: 14, color: appColors.textMuted);
       case 3:
         // Read
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check, size: 12, color: Colors.blue[300]),
+            Icon(Icons.check, size: 12, color: appColors.accent),
             Transform.translate(
               offset: const Offset(-6, 0),
               child:
-                  Icon(Icons.check, size: 12, color: Colors.blue[300]),
+                  Icon(Icons.check, size: 12, color: appColors.accent),
             ),
           ],
         );
@@ -244,6 +247,7 @@ class ChatBubble extends StatelessWidget {
   }
 
   Widget _buildReactions(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     // Group reactions by emoji and count them
     final Map<String, int> emojiCounts = {};
     for (final reaction in message.reactions) {
@@ -255,10 +259,10 @@ class ChatBubble extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 12),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 38, 38, 38),
+        color: appColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color.fromARGB(255, 60, 60, 60),
+          color: appColors.dividerSecondary,
           width: 0.5,
         ),
       ),
@@ -275,7 +279,7 @@ class ChatBubble extends StatelessWidget {
                 Text(
                   '${entry.value}',
                   style: TextStyle(
-                    color: Colors.grey[400],
+                    color: appColors.textSecondary,
                     fontSize: 12,
                   ),
                 ),

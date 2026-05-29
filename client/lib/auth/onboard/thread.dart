@@ -2,6 +2,7 @@ import 'package:awesome_icons/awesome_icons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/pages/home.dart';
+import 'package:threads/theme/app_colors.dart';
 
 import '../../widget/custom/rippleButton.dart';
 
@@ -15,6 +16,7 @@ class ThreadPage extends StatefulWidget {
 class _ThreadPageState extends State<ThreadPage> {
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
         bottomNavigationBar: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -27,7 +29,7 @@ class _ThreadPageState extends State<ThreadPage> {
                         height: 50,
                         width: MediaQuery.of(context).size.width - 80,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: appColors.textPrimary,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Center(
@@ -35,7 +37,7 @@ class _ThreadPageState extends State<ThreadPage> {
                           "Join Threads",
                           style: TextStyle(
                               fontFamily: "icons.ttf",
-                              color: Colors.black,
+                              color: appColors.background,
                               fontSize: 18,
                               fontWeight: FontWeight.w500),
                         ))),
@@ -46,7 +48,7 @@ class _ThreadPageState extends State<ThreadPage> {
           ],
         ),
         appBar: AppBar(
-          backgroundColor: Colors.black,
+          backgroundColor: appColors.background,
           leading: Container(),
           flexibleSpace: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -69,7 +71,7 @@ class _ThreadPageState extends State<ThreadPage> {
                                 padding: EdgeInsets.only(left: 35, top: 12),
                                 child: Text("Back",
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: appColors.textPrimary,
                                       fontSize: 20,
                                     ))),
                           )
@@ -82,7 +84,7 @@ class _ThreadPageState extends State<ThreadPage> {
             ],
           ),
         ),
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         body: ListView(
           children: [
             Column(mainAxisAlignment: MainAxisAlignment.start, children: [
@@ -92,7 +94,7 @@ class _ThreadPageState extends State<ThreadPage> {
               Text(
                 "How Threads works",
                 style: TextStyle(
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     fontSize: 28,
                     fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
@@ -108,7 +110,7 @@ class _ThreadPageState extends State<ThreadPage> {
                   ),
                   Icon(
                     CupertinoIcons.person,
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     size: 30,
                   ),
                   Container(
@@ -119,7 +121,7 @@ class _ThreadPageState extends State<ThreadPage> {
                     style: TextStyle(
                         fontFamily: "arial",
                         fontSize: 18,
-                        color: Colors.white,
+                        color: appColors.textPrimary,
                         fontWeight: FontWeight.w600),
                   )
                 ],
@@ -138,7 +140,7 @@ class _ThreadPageState extends State<ThreadPage> {
                     style: TextStyle(
                         fontFamily: "arial",
                         fontSize: 18,
-                        color: Colors.grey,
+                        color: appColors.textSecondary,
                         fontWeight: FontWeight.w500,
                         wordSpacing: 1.2),
                   )
@@ -155,7 +157,7 @@ class _ThreadPageState extends State<ThreadPage> {
                   ),
                   Icon(
                     FontAwesomeIcons.globeAmericas,
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     size: 28,
                   ),
                   Container(
@@ -166,7 +168,7 @@ class _ThreadPageState extends State<ThreadPage> {
                     style: TextStyle(
                         fontFamily: "arial",
                         fontSize: 18,
-                        color: Colors.white,
+                        color: appColors.textPrimary,
                         fontWeight: FontWeight.w600),
                   )
                 ],
@@ -185,7 +187,7 @@ class _ThreadPageState extends State<ThreadPage> {
                     style: TextStyle(
                         fontFamily: "arial",
                         fontSize: 18,
-                        color: Colors.grey,
+                        color: appColors.textSecondary,
                         fontWeight: FontWeight.w500,
                         wordSpacing: 1.2),
                   )
@@ -202,7 +204,7 @@ class _ThreadPageState extends State<ThreadPage> {
                   ),
                   Icon(
                     FontAwesomeIcons.globeAmericas,
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     size: 28,
                   ),
                   Container(
@@ -213,7 +215,7 @@ class _ThreadPageState extends State<ThreadPage> {
                     style: TextStyle(
                         fontFamily: "arial",
                         fontSize: 18,
-                        color: Colors.white,
+                        color: appColors.textPrimary,
                         fontWeight: FontWeight.w600),
                   )
                 ],
@@ -232,7 +234,7 @@ class _ThreadPageState extends State<ThreadPage> {
                     style: TextStyle(
                         fontFamily: "arial",
                         fontSize: 18,
-                        color: Colors.grey,
+                        color: appColors.textSecondary,
                         fontWeight: FontWeight.w500,
                         wordSpacing: 1.2),
                   )

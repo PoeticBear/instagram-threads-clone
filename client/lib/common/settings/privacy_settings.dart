@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/settings.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class PrivacySettingsPage extends StatelessWidget {
   const PrivacySettingsPage({super.key});
@@ -10,19 +11,20 @@ class PrivacySettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          icon: Icon(CupertinoIcons.back, color: appColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.privacySettings,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
             fontSize: 18,
           ),
@@ -39,7 +41,7 @@ class PrivacySettingsPage extends StatelessWidget {
           return ListView(
             children: [
               // -- Reply permission --
-              _sectionHeader(l10n.whoCanReplyToYou),
+              _sectionHeader(context, l10n.whoCanReplyToYou),
               _buildSelectorRow(
                 context: context,
                 title: l10n.replyEveryone,
@@ -65,10 +67,10 @@ class PrivacySettingsPage extends StatelessWidget {
                 onTap: () => state.updateSetting('reply_allow_type', 4),
               ),
 
-              _buildSectionDivider(),
+              _buildSectionDivider(context),
 
               // -- Mention permission --
-              _sectionHeader(l10n.whoCanMentionYou),
+              _sectionHeader(context, l10n.whoCanMentionYou),
               _buildSelectorRow(
                 context: context,
                 title: l10n.mentionEveryone,
@@ -88,7 +90,7 @@ class PrivacySettingsPage extends StatelessWidget {
                 onTap: () => state.updateSetting('mention_allow_type', 3),
               ),
 
-              _buildSectionDivider(),
+              _buildSectionDivider(context),
 
               // -- Message requests --
               _buildToggleRow(
@@ -98,8 +100,8 @@ class PrivacySettingsPage extends StatelessWidget {
                 onChanged: (v) =>
                     state.updateSetting('message_request_enabled', v ? 1 : 0),
               ),
-              _buildDivider(),
-              _sectionHeader(l10n.messageRequestAllowType),
+              _buildDivider(context),
+              _sectionHeader(context, l10n.messageRequestAllowType),
               _buildSelectorRow(
                 context: context,
                 title: l10n.msgReqAnyone,
@@ -115,10 +117,10 @@ class PrivacySettingsPage extends StatelessWidget {
                     state.updateSetting('message_request_allow_type', 1),
               ),
 
-              _buildSectionDivider(),
+              _buildSectionDivider(context),
 
               // -- Interaction restriction --
-              _sectionHeader(l10n.interactionRestriction),
+              _sectionHeader(context, l10n.interactionRestriction),
               _buildSelectorRow(
                 context: context,
                 title: l10n.restrictionNone,
@@ -141,7 +143,7 @@ class PrivacySettingsPage extends StatelessWidget {
                     state.updateSetting('interaction_restriction_type', 3),
               ),
 
-              _buildSectionDivider(),
+              _buildSectionDivider(context),
 
               // -- Display toggles --
               _buildToggleRow(
@@ -151,7 +153,7 @@ class PrivacySettingsPage extends StatelessWidget {
                 onChanged: (v) =>
                     state.updateSetting('show_read_receipts', v ? 1 : 0),
               ),
-              _buildDivider(),
+              _buildDivider(context),
               _buildToggleRow(
                 context: context,
                 title: l10n.showOnlineStatus,
@@ -159,7 +161,7 @@ class PrivacySettingsPage extends StatelessWidget {
                 onChanged: (v) =>
                     state.updateSetting('show_online_status', v ? 1 : 0),
               ),
-              _buildDivider(),
+              _buildDivider(context),
               _buildToggleRow(
                 context: context,
                 title: l10n.allowRecommend,
@@ -167,7 +169,7 @@ class PrivacySettingsPage extends StatelessWidget {
                 onChanged: (v) =>
                     state.updateSetting('allow_recommend', v ? 1 : 0),
               ),
-              _buildDivider(),
+              _buildDivider(context),
               _buildToggleRow(
                 context: context,
                 title: l10n.hideLikesCount,
@@ -175,7 +177,7 @@ class PrivacySettingsPage extends StatelessWidget {
                 onChanged: (v) =>
                     state.updateSetting('hide_likes_count', v ? 1 : 0),
               ),
-              _buildDivider(),
+              _buildDivider(context),
               _buildToggleRow(
                 context: context,
                 title: l10n.silentMode,
@@ -183,10 +185,10 @@ class PrivacySettingsPage extends StatelessWidget {
                 onChanged: (v) =>
                     state.updateSetting('silent_mode', v ? 1 : 0),
               ),
-              _buildDivider(),
+              _buildDivider(context),
 
               // -- Content rating --
-              _sectionHeader(l10n.contentRating),
+              _sectionHeader(context, l10n.contentRating),
               _buildSelectorRow(
                 context: context,
                 title: l10n.ratingAll,
@@ -212,13 +214,14 @@ class PrivacySettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _sectionHeader(String title) {
+  Widget _sectionHeader(BuildContext context, String title) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appColors.textPrimary,
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -232,6 +235,7 @@ class PrivacySettingsPage extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -242,16 +246,16 @@ class PrivacySettingsPage extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: appColors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
             ),
             if (isSelected)
-              const Icon(
+              Icon(
                 CupertinoIcons.checkmark,
-                color: Colors.white,
+                color: appColors.textPrimary,
                 size: 20,
               ),
           ],
@@ -266,6 +270,7 @@ class PrivacySettingsPage extends StatelessWidget {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
@@ -273,8 +278,8 @@ class PrivacySettingsPage extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: appColors.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w400,
             ),
@@ -282,33 +287,35 @@ class PrivacySettingsPage extends StatelessWidget {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: Colors.white,
-            inactiveTrackColor: const Color(0xff444444),
-            thumbColor: value ? Colors.black : Colors.white,
+            activeTrackColor: appColors.textPrimary,
+            inactiveTrackColor: appColors.dividerSecondary,
+            thumbColor: value ? appColors.background : appColors.textPrimary,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20),
+  Widget _buildDivider(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Divider(
-        color: Color(0xff333333),
+        color: appColors.divider,
         height: 0.5,
         thickness: 0.5,
       ),
     );
   }
 
-  Widget _buildSectionDivider() {
+  Widget _buildSectionDivider(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
       children: [
         const SizedBox(height: 8),
         Container(
           height: 0.5,
-          color: const Color(0xff444444),
+          color: appColors.dividerSecondary,
         ),
         const SizedBox(height: 8),
       ],

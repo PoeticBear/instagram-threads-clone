@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 import 'package:threads/pages/composePost/post.dart';
 
@@ -45,9 +46,10 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     var authState = Provider.of<AuthState>(context, listen: false);
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
       extendBody: true,
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: Container(),
         centerTitle: true,
@@ -79,7 +81,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
       body: Consumer<PostState>(builder: (context, state, child) {
         if (state.isBusy) {
           return Center(
-            child: CircularProgressIndicator(color: Colors.white),
+            child: CircularProgressIndicator(color: appColors.textPrimary),
           );
         }
 
@@ -87,7 +89,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
         if (posts == null || posts.isEmpty) {
           return Center(
             child: Text(AppLocalizations.of(context)!.noPostsYet,
-                style: TextStyle(color: Colors.grey, fontSize: 16)),
+                style: TextStyle(color: appColors.textSecondary, fontSize: 16)),
           );
         }
 
@@ -108,7 +110,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.grey,
+                        color: appColors.textSecondary,
                       ),
                     ),
                   ),
@@ -123,6 +125,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
   }
 
   Widget _buildQuickPostArea(userModel) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final profilePic = userModel?.profilePic ?? '';
     final displayName = userModel?.displayName ?? userModel?.userName ?? '';
 
@@ -132,10 +135,10 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
           height: size,
           width: size,
           decoration: BoxDecoration(
-            color: Colors.grey[800],
+            color: appColors.surface,
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.person, size: size * 0.6, color: Colors.grey[600]),
+          child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
         );
       }
       return ClipRRect(
@@ -164,7 +167,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
       },
       behavior: HitTestBehavior.opaque,
       child: Container(
-        color: Colors.black,
+        color: appColors.background,
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +181,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                   Text(
                     displayName.isNotEmpty ? displayName : (userModel?.userName ?? AppLocalizations.of(context)!.anonymousUser),
                     style: TextStyle(
-                      color: Colors.white,
+                      color: appColors.textPrimary,
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
@@ -186,7 +189,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                   SizedBox(height: 6),
                   Text(
                     AppLocalizations.of(context)!.whatsNew,
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                    style: TextStyle(color: appColors.textSecondary, fontSize: 14),
                   ),
                 ],
               ),

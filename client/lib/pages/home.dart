@@ -10,6 +10,7 @@ import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/notification.state.dart';
 import 'package:threads/pages/profile/myprofile.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'camera/camera.dart';
 import 'feed/feed.dart';
 
@@ -70,6 +71,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   bool isSelected = false;
   Widget iconBar(int tabCount, IconData icon) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final isActive = tab == tabCount;
     return GestureDetector(
         onTap: () {
           setState(() {
@@ -79,16 +82,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         child: Icon(
           icon,
           size: 30,
-          color: Colors.grey,
+          color: isActive ? appColors.textPrimary : appColors.textSecondary,
         ));
   }
 
   Widget bottomNavBar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     Widget separator = Container(
       width: 40,
     );
     return Container(
-        color: Colors.black,
+        color: appColors.background,
         height: 90,
         padding: EdgeInsets.only(bottom: 20),
         width: MediaQuery.of(context).size.width,
@@ -119,7 +123,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         extendBody: true,
         bottomNavigationBar: bottomNavBar(),
         extendBodyBehindAppBar: true,
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: tabPage(tab));
   }
 }

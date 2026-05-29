@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class JoinRequestsPage extends StatefulWidget {
   final int groupId;
@@ -26,17 +27,18 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return AppBar(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(Icons.arrow_back, color: appColors.textPrimary),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: const Text(
+      title: Text(
         'Join Requests',
         style: TextStyle(
-          color: Colors.white,
+          color: appColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
@@ -46,6 +48,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   }
 
   Widget _buildUserAvatar(String? avatarUrl, String fallbackInitial) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return CircleAvatar(
         radius: 22,
@@ -54,10 +57,10 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     }
     return CircleAvatar(
       radius: 22,
-      backgroundColor: Colors.grey[800],
+      backgroundColor: appColors.surface,
       child: Text(
         fallbackInitial.isNotEmpty ? fallbackInitial[0].toUpperCase() : '?',
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+        style: TextStyle(color: appColors.textPrimary, fontSize: 16),
       ),
     );
   }
@@ -73,6 +76,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   }
 
   Widget _buildRequestItem(Map<String, dynamic> request) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final requestId = request['id'] as int? ?? 0;
     final username = request['username'] as String? ?? '';
     final displayName = request['display_name'] as String? ??
@@ -95,8 +99,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
               children: [
                 Text(
                   displayName,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -107,7 +111,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                   Text(
                     '@$username',
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: appColors.textMuted,
                       fontSize: 13,
                     ),
                   ),
@@ -115,7 +119,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                   Text(
                     'Requested ${_formatDate(createTime)}',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: appColors.textSecondary,
                       fontSize: 11,
                     ),
                   ),
@@ -139,13 +143,13 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                 vertical: 7,
               ),
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: appColors.repost,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
+              child: Text(
                 'Approve',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: appColors.textPrimary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -169,13 +173,13 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                 vertical: 7,
               ),
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 46, 46, 46),
+                color: appColors.surface,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 'Decline',
                 style: TextStyle(
-                  color: Colors.grey[400],
+                  color: appColors.textSecondary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -189,16 +193,17 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: _buildAppBar(),
       body: Consumer<MessageState>(
         builder: (context, state, _) {
           if (state.isLoadingJoinRequests && state.joinRequests.isEmpty) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.grey,
+                color: appColors.textSecondary,
               ),
             );
           }
@@ -211,12 +216,12 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.person_add_outlined,
-                      size: 48, color: Colors.grey[700]),
+                      size: 48, color: appColors.surface),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'No pending requests',
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: appColors.textSecondary,
                       fontSize: 16,
                     ),
                   ),
@@ -226,15 +231,15 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
           }
 
           return RefreshIndicator(
-            color: Colors.white,
-            backgroundColor: Colors.grey[900],
+            color: appColors.textPrimary,
+            backgroundColor: appColors.surface,
             onRefresh: () => state.loadJoinRequests(widget.groupId),
             child: ListView.separated(
               padding: const EdgeInsets.only(top: 8, bottom: 16),
               itemCount: requests.length,
               separatorBuilder: (_, __) => Divider(
                 height: 0.5,
-                color: const Color.fromARGB(255, 46, 46, 46),
+                color: appColors.divider,
                 indent: 72,
               ),
               itemBuilder: (context, index) {

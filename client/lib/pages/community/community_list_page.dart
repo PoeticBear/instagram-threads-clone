@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/model/community.module.dart';
 import 'package:threads/state/community.state.dart';
 import 'package:threads/pages/community/community_detail_page.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class CommunityListPage extends StatefulWidget {
   const CommunityListPage({Key? key}) : super(key: key);
@@ -65,17 +66,18 @@ class _CommunityListPageState extends State<CommunityListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: const Icon(CupertinoIcons.back, color: Colors.white),
+          child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         title: Text(
           'Communities',
           style: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 22,
             fontWeight: FontWeight.w700,
           ),
@@ -95,12 +97,12 @@ class _CommunityListPageState extends State<CommunityListPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.groups_outlined,
-                      size: 48, color: Colors.grey[700]),
+                      size: 48, color: appColors.surface),
                   const SizedBox(height: 12),
                   Text(
                     'No communities found',
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: appColors.textMuted,
                       fontSize: 16,
                     ),
                   ),
@@ -110,17 +112,17 @@ class _CommunityListPageState extends State<CommunityListPage> {
           }
 
           return RefreshIndicator(
-            color: Colors.white,
-            backgroundColor: Colors.black,
+            color: appColors.textPrimary,
+            backgroundColor: appColors.background,
             onRefresh: _onRefresh,
             child: ListView.separated(
               controller: _scrollController,
               padding: const EdgeInsets.only(top: 8, bottom: 16),
               itemCount: state.communities.length +
                   (state.hasMoreCommunities ? 1 : 0),
-              separatorBuilder: (_, __) => const Divider(
+              separatorBuilder: (_, __) => Divider(
                 height: 0.5,
-                color: Color.fromARGB(255, 46, 46, 46),
+                color: appColors.divider,
                 indent: 78,
               ),
               itemBuilder: (context, index) {
@@ -132,7 +134,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
                 }
 
                 final community = state.communities[index];
-                return _buildCommunityItem(community);
+                return _buildCommunityItem(community, appColors);
               },
             ),
           );
@@ -141,7 +143,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
     );
   }
 
-  Widget _buildCommunityItem(CommunityInfo community) {
+  Widget _buildCommunityItem(CommunityInfo community, AppColors appColors) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -158,7 +160,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Thumbnail
-            _buildCoverThumbnail(community),
+            _buildCoverThumbnail(community, appColors),
             const SizedBox(width: 12),
             // Info
             Expanded(
@@ -171,8 +173,8 @@ class _CommunityListPageState extends State<CommunityListPage> {
                       Flexible(
                         child: Text(
                           community.name,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: appColors.textPrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -188,13 +190,13 @@ class _CommunityListPageState extends State<CommunityListPage> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.2),
+                            color: appColors.accent.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Joined',
                             style: TextStyle(
-                              color: Colors.blue,
+                              color: appColors.accent,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
@@ -210,7 +212,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
                     Text(
                       community.description!,
                       style: TextStyle(
-                        color: Colors.grey[400],
+                        color: appColors.textSecondary,
                         fontSize: 14,
                       ),
                       maxLines: 2,
@@ -223,8 +225,8 @@ class _CommunityListPageState extends State<CommunityListPage> {
                     children: [
                       Text(
                         '${community.membersCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: appColors.textPrimary,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -232,15 +234,15 @@ class _CommunityListPageState extends State<CommunityListPage> {
                       Text(
                         ' members',
                         style: TextStyle(
-                          color: Colors.grey[500],
+                          color: appColors.textMuted,
                           fontSize: 13,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         '${community.postsCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: appColors.textPrimary,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -248,7 +250,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
                       Text(
                         ' posts',
                         style: TextStyle(
-                          color: Colors.grey[500],
+                          color: appColors.textMuted,
                           fontSize: 13,
                         ),
                       ),
@@ -260,7 +262,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
             // Chevron
             Icon(
               Icons.chevron_right,
-              color: Colors.grey[600],
+              color: appColors.textSecondary,
               size: 20,
             ),
           ],
@@ -269,7 +271,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
     );
   }
 
-  Widget _buildCoverThumbnail(CommunityInfo community) {
+  Widget _buildCoverThumbnail(CommunityInfo community, AppColors appColors) {
     if (community.coverUrl != null && community.coverUrl!.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(10),
@@ -278,24 +280,24 @@ class _CommunityListPageState extends State<CommunityListPage> {
           width: 50,
           height: 50,
           fit: BoxFit.cover,
-          errorWidget: (_, __, ___) => _buildPlaceholderIcon(),
+          errorWidget: (_, __, ___) => _buildPlaceholderIcon(appColors),
         ),
       );
     }
-    return _buildPlaceholderIcon();
+    return _buildPlaceholderIcon(appColors);
   }
 
-  Widget _buildPlaceholderIcon() {
+  Widget _buildPlaceholderIcon(AppColors appColors) {
     return Container(
       width: 50,
       height: 50,
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 28, 28, 30),
+        color: appColors.surfaceSecondary,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(
         Icons.groups_outlined,
-        color: Colors.grey[600],
+        color: appColors.textSecondary,
         size: 26,
       ),
     );

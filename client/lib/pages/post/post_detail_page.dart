@@ -6,6 +6,7 @@ import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/reply_bottom_sheet.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -109,21 +110,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Icon(CupertinoIcons.back, color: Colors.white),
+          child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.white))
+          ? Center(child: CircularProgressIndicator(color: appColors.textPrimary))
           : RefreshIndicator(
-              color: Colors.white,
-              backgroundColor: Colors.black,
+              color: appColors.textPrimary,
+              backgroundColor: appColors.background,
               onRefresh: () async {
                 _currentPage = 1;
                 _hasMore = true;
@@ -135,7 +137,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   SliverToBoxAdapter(child: _buildPostContent(context)),
                   // Divider
                   SliverToBoxAdapter(
-                    child: Divider(color: Color(0xff333333), height: 0.5),
+                    child: Divider(color: appColors.divider, height: 0.5),
                   ),
                   // Replies
                   if (_replies.isEmpty)
@@ -143,7 +145,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       child: Center(
                         child: Text(
                           AppLocalizations.of(context)!.noRepliesYet,
-                          style: TextStyle(color: Color(0xff555555)),
+                          style: TextStyle(color: appColors.textHint),
                         ),
                       ),
                     )
@@ -161,7 +163,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: appColors.textPrimary,
                                   ),
                                 ),
                               ),
@@ -179,6 +181,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   Widget _buildPostContent(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (_post == null) return SizedBox.shrink();
     final post = _post!;
     final user = post.user;
@@ -193,12 +196,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
         children: [
           Row(
             children: [
-              _buildAvatar(profilePic, 35),
+              _buildAvatar(context, profilePic, 35),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
                   displayName,
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                  style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w700),
                 ),
               ),
               GestureDetector(
@@ -206,18 +209,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,
-                    backgroundColor: Colors.black,
+                    backgroundColor: appColors.background,
                     builder: (context) => ReplyBottomSheet(postId: widget.postId),
                   );
                 },
-                child: Icon(Icons.chat_bubble_outline, color: Colors.white, size: 20),
+                child: Icon(Icons.chat_bubble_outline, color: appColors.textPrimary, size: 20),
               ),
             ],
           ),
           SizedBox(height: 12),
           Text(
             post.bio ?? '',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
+            style: TextStyle(color: appColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w400),
           ),
           if (hasImage) ...[
             SizedBox(height: 12),
@@ -229,8 +232,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 width: double.infinity,
                 errorWidget: (_, __, ___) => Container(
                   height: 200,
-                  color: Colors.grey[900],
-                  child: Icon(Icons.broken_image, color: Colors.grey[600]),
+                  color: appColors.surface,
+                  child: Icon(Icons.broken_image, color: appColors.textSecondary),
                 ),
               ),
             ),
@@ -239,22 +242,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
             SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.location_on, size: 14, color: Color(0xff888888)),
+                Icon(Icons.location_on, size: 14, color: appColors.textMuted),
                 SizedBox(width: 4),
-                Text(post.location!, style: TextStyle(color: Color(0xff888888), fontSize: 13)),
+                Text(post.location!, style: TextStyle(color: appColors.textMuted, fontSize: 13)),
               ],
             ),
           ],
           SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.favorite, size: 16, color: post.isLiked == true ? Colors.red : Color(0xff888888)),
+              Icon(Icons.favorite, size: 16, color: post.isLiked == true ? appColors.like : appColors.textMuted),
               SizedBox(width: 4),
-              Text('${post.likesCount ?? 0}', style: TextStyle(color: Color(0xff888888), fontSize: 13)),
+              Text('${post.likesCount ?? 0}', style: TextStyle(color: appColors.textMuted, fontSize: 13)),
               SizedBox(width: 16),
-              Text('${post.repliesCount ?? 0} replies', style: TextStyle(color: Color(0xff888888), fontSize: 13)),
+              Text('${post.repliesCount ?? 0} replies', style: TextStyle(color: appColors.textMuted, fontSize: 13)),
               SizedBox(width: 16),
-              Text('${post.repostsCount ?? 0} reposts', style: TextStyle(color: Color(0xff888888), fontSize: 13)),
+              Text('${post.repostsCount ?? 0} reposts', style: TextStyle(color: appColors.textMuted, fontSize: 13)),
             ],
           ),
         ],
@@ -263,6 +266,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   Widget _buildReplyItem(BuildContext context, Reply reply) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final profilePic = reply.profilePic ?? '';
     return Column(
       children: [
@@ -271,7 +275,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildAvatar(profilePic, 32),
+              _buildAvatar(context, profilePic, 32),
               SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -281,23 +285,23 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       children: [
                         Text(
                           reply.displayName,
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                          style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
                         ),
                         SizedBox(width: 8),
                         Text(
                           _formatTime(reply.createdAt),
-                          style: TextStyle(color: Color(0xff555555), fontSize: 12),
+                          style: TextStyle(color: appColors.textHint, fontSize: 12),
                         ),
                         if (reply.isPinned) ...[
                           SizedBox(width: 8),
-                          Icon(Icons.push_pin, size: 12, color: Colors.grey),
+                          Icon(Icons.push_pin, size: 12, color: appColors.textSecondary),
                         ],
                       ],
                     ),
                     SizedBox(height: 4),
                     Text(
                       reply.content,
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      style: TextStyle(color: appColors.textPrimary, fontSize: 14),
                     ),
                     SizedBox(height: 8),
                     Row(
@@ -316,11 +320,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           child: Icon(
                             reply.isLiked ? Icons.favorite : Icons.favorite_border,
                             size: 16,
-                            color: reply.isLiked ? Colors.red : Color(0xff888888),
+                            color: reply.isLiked ? appColors.like : appColors.textMuted,
                           ),
                         ),
                         SizedBox(width: 4),
-                        Text('${reply.likesCount}', style: TextStyle(color: Color(0xff888888), fontSize: 12)),
+                        Text('${reply.likesCount}', style: TextStyle(color: appColors.textMuted, fontSize: 12)),
                       ],
                     ),
                   ],
@@ -329,21 +333,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
             ],
           ),
         ),
-        Divider(color: Color(0xff333333), height: 0.5, indent: 54),
+        Divider(color: appColors.divider, height: 0.5, indent: 54),
       ],
     );
   }
 
-  Widget _buildAvatar(String url, double size) {
+  Widget _buildAvatar(BuildContext context, String url, double size) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (url.isEmpty) {
       return Container(
         height: size,
         width: size,
         decoration: BoxDecoration(
-          color: Colors.grey[800],
+          color: appColors.surface,
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.person, size: size * 0.6, color: Colors.grey[600]),
+        child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
       );
     }
     return ClipRRect(

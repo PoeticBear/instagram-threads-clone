@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class PollWidget extends StatelessWidget {
   final String postId;
@@ -34,7 +35,7 @@ class PollWidget extends StatelessWidget {
         children: [
           ...pollData.options.map((option) {
             if (showResults) {
-              return _buildResultOption(option);
+              return _buildResultOption(context, option);
             } else {
               return _BuildVotingOption(
                 option: option,
@@ -43,13 +44,14 @@ class PollWidget extends StatelessWidget {
             }
           }),
           const SizedBox(height: 6),
-          _buildFooter(showResults),
+          _buildFooter(context, showResults),
         ],
       ),
     );
   }
 
-  Widget _buildResultOption(PollOption option) {
+  Widget _buildResultOption(BuildContext context, PollOption option) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final totalVotes = pollData.totalVotes > 0 ? pollData.totalVotes : 1;
     final percentage = (option.votesCount / totalVotes * 100).round();
     final isVoted = pollData.userVotedOptionId == option.id;
@@ -61,7 +63,7 @@ class PollWidget extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isVoted ? Colors.blue : Colors.grey[700]!,
+            color: isVoted ? appColors.textPrimary : appColors.border,
             width: isVoted ? 1.5 : 1,
           ),
         ),
@@ -74,15 +76,13 @@ class PollWidget extends StatelessWidget {
               Container(
                 width: double.infinity,
                 height: 40,
-                color: Colors.grey[900],
+                color: appColors.surface,
               ),
               FractionallySizedBox(
                 widthFactor: percentage / 100,
                 child: Container(
                   height: 40,
-                  color: isVoted
-                      ? Colors.blue.withOpacity(0.3)
-                      : Colors.grey[800],
+                  color: appColors.surfaceSecondary,
                 ),
               ),
               // Content
@@ -93,14 +93,14 @@ class PollWidget extends StatelessWidget {
                     Icon(
                       isVoted ? Icons.check_circle : Icons.circle_outlined,
                       size: 16,
-                      color: isVoted ? Colors.blue : Colors.grey[500],
+                      color: isVoted ? appColors.textPrimary : appColors.textMuted,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         option.optionText,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: appColors.textPrimary,
                           fontSize: 14,
                           fontWeight: isVoted ? FontWeight.w600 : FontWeight.normal,
                         ),
@@ -109,7 +109,7 @@ class PollWidget extends StatelessWidget {
                     Text(
                       '$percentage%',
                       style: TextStyle(
-                        color: Colors.grey[400],
+                        color: appColors.textMuted,
                         fontSize: 13,
                       ),
                     ),
@@ -123,7 +123,8 @@ class PollWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter(bool showResults) {
+  Widget _buildFooter(BuildContext context, bool showResults) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final parts = <String>[
       '${pollData.totalVotes} 票',
     ];
@@ -137,7 +138,7 @@ class PollWidget extends StatelessWidget {
     return Text(
       parts.join(' · '),
       style: TextStyle(
-        color: Colors.grey[500],
+        color: appColors.textMuted,
         fontSize: 12,
       ),
     );
@@ -155,6 +156,7 @@ class _BuildVotingOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
@@ -166,19 +168,19 @@ class _BuildVotingOption extends StatelessWidget {
           height: 40,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[600]!),
-            color: Colors.grey[900],
+            border: Border.all(color: appColors.border),
+            color: appColors.surface,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: [
-              Icon(Icons.circle_outlined, size: 16, color: Colors.grey[500]),
+              Icon(Icons.circle_outlined, size: 16, color: appColors.textMuted),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   option.optionText,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
                     fontSize: 14,
                   ),
                 ),

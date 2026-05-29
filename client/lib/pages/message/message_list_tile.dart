@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/model/message.module.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class MessageListTile extends StatelessWidget {
   final Conversation conversation;
@@ -14,6 +15,7 @@ class MessageListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final hasAvatar = (conversation.peerAvatarUrl ?? '').isNotEmpty;
     final displayName = conversation.peerDisplayName.isNotEmpty
         ? conversation.peerDisplayName
@@ -29,7 +31,7 @@ class MessageListTile extends StatelessWidget {
         child: Row(
           children: [
             // Avatar
-            _buildAvatar(hasAvatar),
+            _buildAvatar(hasAvatar, appColors),
             const SizedBox(width: 12),
             // Middle: name + last message
             Expanded(
@@ -42,15 +44,15 @@ class MessageListTile extends StatelessWidget {
                         Icon(
                           Icons.push_pin,
                           size: 14,
-                          color: Colors.grey[500],
+                          color: appColors.textMuted,
                         ),
                         const SizedBox(width: 4),
                       ],
                       Expanded(
                         child: Text(
                           displayName,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: appColors.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -64,9 +66,7 @@ class MessageListTile extends StatelessWidget {
                   Text(
                     lastMessage.isNotEmpty ? lastMessage : 'No messages yet',
                     style: TextStyle(
-                      color: lastMessage.isNotEmpty
-                          ? Colors.grey
-                          : Colors.grey[600],
+                      color: appColors.textSecondary,
                       fontSize: 14,
                     ),
                     maxLines: 1,
@@ -84,12 +84,12 @@ class MessageListTile extends StatelessWidget {
                   Text(
                     _formatTime(conversation.lastMessageTime!),
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: appColors.textMuted,
                       fontSize: 12,
                     ),
                   ),
                 const SizedBox(height: 4),
-                if (unreadCount > 0) _buildUnreadBadge(unreadCount),
+                if (unreadCount > 0) _buildUnreadBadge(unreadCount, appColors),
               ],
             ),
           ],
@@ -98,7 +98,7 @@ class MessageListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar(bool hasAvatar) {
+  Widget _buildAvatar(bool hasAvatar, AppColors appColors) {
     return SizedBox(
       width: 50,
       height: 50,
@@ -109,38 +109,38 @@ class MessageListTile extends StatelessWidget {
                 fit: BoxFit.cover,
                 width: 50,
                 height: 50,
-                errorWidget: (_, __, ___) => _defaultAvatar(),
+                errorWidget: (_, __, ___) => _defaultAvatar(appColors),
               ),
             )
-          : _defaultAvatar(),
+          : _defaultAvatar(appColors),
     );
   }
 
-  Widget _defaultAvatar() {
+  Widget _defaultAvatar(AppColors appColors) {
     return Container(
       width: 50,
       height: 50,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: appColors.surface,
         shape: BoxShape.circle,
       ),
-      child: Icon(Icons.person, size: 28, color: Colors.grey[600]),
+      child: Icon(Icons.person, size: 28, color: appColors.textSecondary),
     );
   }
 
-  Widget _buildUnreadBadge(int count) {
+  Widget _buildUnreadBadge(int count, AppColors appColors) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.red,
+        color: appColors.destructive,
         borderRadius: BorderRadius.circular(10),
       ),
       constraints: const BoxConstraints(minWidth: 18),
       alignment: Alignment.center,
       child: Text(
         count > 99 ? '99+' : '$count',
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appColors.textPrimary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),

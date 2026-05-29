@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/model/message.module.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 import 'chat_bubble.dart';
 import 'group_chat_detail_page.dart';
@@ -164,6 +165,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Widget _buildPeerAvatar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (widget.peerAvatarUrl != null &&
         widget.peerAvatarUrl!.isNotEmpty) {
       return ClipRRect(
@@ -176,14 +178,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           placeholder: (context, url) => Container(
             width: 32,
             height: 32,
-            color: Colors.grey[800],
-            child: Icon(Icons.person, size: 18, color: Colors.grey[600]),
+            color: appColors.surface,
+            child: Icon(Icons.person, size: 18, color: appColors.textSecondary),
           ),
           errorWidget: (context, url, error) => Container(
             width: 32,
             height: 32,
-            color: Colors.grey[800],
-            child: Icon(Icons.person, size: 18, color: Colors.grey[600]),
+            color: appColors.surface,
+            child: Icon(Icons.person, size: 18, color: appColors.textSecondary),
           ),
         ),
       );
@@ -192,14 +194,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: appColors.surface,
         shape: BoxShape.circle,
       ),
-      child: Icon(Icons.person, size: 18, color: Colors.grey[600]),
+      child: Icon(Icons.person, size: 18, color: appColors.textSecondary),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final displayName = widget.isGroupChat
         ? (widget.peerDisplayName ?? widget.peerUsername ?? 'Group Chat')
         : (widget.peerDisplayName?.isNotEmpty == true
@@ -207,10 +210,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             : widget.peerUsername ?? '');
 
     return AppBar(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(Icons.arrow_back, color: appColors.textPrimary),
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Row(
@@ -221,8 +224,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           Flexible(
             child: Text(
               displayName,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: appColors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -235,7 +238,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       actions: [
         if (widget.isGroupChat && widget.groupId != null)
           IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.white),
+            icon: Icon(Icons.info_outline, color: appColors.textPrimary),
             onPressed: () {
               Navigator.push(
                 context,
@@ -249,7 +252,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           )
         else
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: Colors.white),
+            icon: Icon(Icons.more_horiz, color: appColors.textPrimary),
             onPressed: () {
               // TODO: Show conversation options
             },
@@ -274,21 +277,22 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Widget _buildMessageList(int currentUserId) {
     return Consumer<MessageState>(
       builder: (context, state, _) {
+        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         if (state.isLoadingMessages && state.currentMessages.isEmpty) {
-          return const Center(
+          return Center(
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Colors.grey,
+              color: appColors.textSecondary,
             ),
           );
         }
 
         if (state.currentMessages.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
               'No messages yet',
               style: TextStyle(
-                color: Colors.grey,
+                color: appColors.textSecondary,
                 fontSize: 14,
               ),
             ),
@@ -296,8 +300,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         }
 
         return RefreshIndicator(
-          color: Colors.white,
-          backgroundColor: Colors.grey[900],
+          color: appColors.textPrimary,
+          backgroundColor: appColors.surface,
           onRefresh: () => state.loadMessages(widget.conversationId),
           child: ListView.builder(
             controller: _scrollController,
@@ -308,15 +312,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             itemBuilder: (context, index) {
               if (index == state.currentMessages.length) {
                 // Loading indicator at the top (loading more)
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Center(
                     child: SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.grey,
+                        color: appColors.textSecondary,
                       ),
                     ),
                   ),
@@ -334,6 +338,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Widget _buildInputBar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Container(
       padding: EdgeInsets.only(
         left: 12,
@@ -341,19 +346,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         top: 8,
         bottom: MediaQuery.of(context).viewInsets.bottom + 8,
       ),
-      color: Colors.black,
+      color: appColors.background,
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _inputController,
               focusNode: _inputFocusNode,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(color: appColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Message...',
-                hintStyle: TextStyle(color: Colors.grey[500]),
+                hintStyle: TextStyle(color: appColors.textMuted),
                 filled: true,
-                fillColor: const Color.fromARGB(255, 22, 22, 22),
+                fillColor: appColors.surface,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,
@@ -381,12 +386,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                   icon: Icon(
                     Icons.send,
                     size: 20,
-                    color: hasText ? Colors.blue[400] : Colors.grey[600],
+                    color: hasText ? appColors.accent : appColors.textSecondary,
                   ),
                   padding: EdgeInsets.zero,
                   style: IconButton.styleFrom(
                     backgroundColor: hasText
-                        ? const Color.fromARGB(255, 30, 30, 30)
+                        ? appColors.surfaceTertiary
                         : Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -403,17 +408,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final currentUserId = _getCurrentUserId() ?? 0;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: _buildAppBar(),
       body: Column(
         children: [
           Expanded(child: _buildMessageList(currentUserId)),
           Container(
             height: 0.5,
-            color: const Color.fromARGB(255, 46, 46, 46),
+            color: appColors.divider,
           ),
           _buildInputBar(),
         ],

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../model/user.module.dart';
 import '../../state/auth.state.dart';
 import '../../widget/custom/rippleButton.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class EmailPage extends StatefulWidget {
   final String? name;
@@ -40,6 +41,7 @@ class _SignupState extends State<EmailPage> {
   }
 
   Widget _body(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(mainAxisAlignment: MainAxisAlignment.start, children: [
       Container(
         height: 130,
@@ -51,7 +53,7 @@ class _SignupState extends State<EmailPage> {
       Text(
         "Crée ton compte avec ton\nadresse e-mail",
         style: TextStyle(
-            color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+            color: appColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w500),
         textAlign: TextAlign.center,
       ),
       Container(
@@ -79,14 +81,15 @@ class _SignupState extends State<EmailPage> {
       {required TextEditingController controller,
       bool isPassword = false,
       bool isEmail = false}) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 15),
       child: TextField(
-        keyboardAppearance: Brightness.dark,
+        keyboardAppearance: Theme.of(context).brightness,
         controller: controller,
         keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: appColors.textPrimary,
           fontStyle: FontStyle.normal,
           fontWeight: FontWeight.normal,
         ),
@@ -96,31 +99,31 @@ class _SignupState extends State<EmailPage> {
           labelText: hint,
           hintText: hint,
           labelStyle: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 14.0,
             fontWeight: FontWeight.w400,
           ),
           hintStyle: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 14.0,
           ),
           prefixIcon: Icon(
             Icons.supervised_user_circle,
-            color: Colors.white,
+            color: appColors.textPrimary,
             size: 18,
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
-                color: Color.fromARGB(255, 163, 163, 163), width: 1.5),
+                color: appColors.divider, width: 1.5),
             borderRadius: BorderRadius.circular(10.0),
           ),
           floatingLabelStyle: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 18.0,
           ),
           focusedBorder: OutlineInputBorder(
             borderSide:
-                BorderSide(color: Color.fromARGB(255, 61, 61, 61), width: 1.5),
+                BorderSide(color: appColors.divider, width: 1.5),
             borderRadius: BorderRadius.circular(10.0),
           ),
         ),
@@ -129,6 +132,7 @@ class _SignupState extends State<EmailPage> {
   }
 
   Widget _submitButton(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Container(
         height: 164,
         color: Colors.transparent,
@@ -138,7 +142,7 @@ class _SignupState extends State<EmailPage> {
               Text(
                   "En continuant, tu acceptes notre Politique de\nConfidentialité et nos Conditions Générales\nd'Utilisation.\n",
                   style: TextStyle(
-                      color: Color.fromARGB(255, 61, 61, 61),
+                      color: appColors.textMuted,
                       fontSize: 13,
                       fontWeight: FontWeight.w500),
                   textAlign: TextAlign.center),
@@ -153,8 +157,8 @@ class _SignupState extends State<EmailPage> {
                           decoration: BoxDecoration(
                             color: _emailController.text.length < 30 &&
                                     _emailController.text.isNotEmpty
-                                ? Colors.white
-                                : Color.fromARGB(255, 61, 61, 61),
+                                ? appColors.textPrimary
+                                : appColors.divider,
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: Center(
@@ -162,7 +166,7 @@ class _SignupState extends State<EmailPage> {
                             "Continuer",
                             style: TextStyle(
                                 fontFamily: "icons.ttf",
-                                color: Colors.black,
+                                color: appColors.background,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800),
                           ))),
@@ -224,10 +228,11 @@ class _SignupState extends State<EmailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
       extendBodyBehindAppBar: true,
       key: _scaffoldKey,
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: Container(),
         elevation: 0,
@@ -249,7 +254,7 @@ class _SignupState extends State<EmailPage> {
                           padding: EdgeInsets.only(left: 35, top: 12),
                           child: Text("Back",
                               style: TextStyle(
-                                color: Colors.white,
+                                color: appColors.textPrimary,
                                 fontSize: 20,
                               ))),
                     )
@@ -259,7 +264,7 @@ class _SignupState extends State<EmailPage> {
             )
           ],
         ),
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
       ),
       body: SingleChildScrollView(child: _body(context)),
     );

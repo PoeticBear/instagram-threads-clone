@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/model/community.module.dart';
 import 'package:threads/state/community.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class CommunityMembersPage extends StatefulWidget {
   final int communityId;
@@ -76,17 +77,18 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: const Icon(CupertinoIcons.back, color: Colors.white),
+          child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         title: Text(
           'Members',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -96,7 +98,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
       ),
       body: Column(
         children: [
-          _buildSearchField(),
+          _buildSearchField(appColors),
           Expanded(
             child: Consumer<CommunityState>(
               builder: (context, state, _) {
@@ -122,14 +124,14 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.people_outline,
-                            size: 48, color: Colors.grey[700]),
+                            size: 48, color: appColors.surface),
                         const SizedBox(height: 12),
                         Text(
                           _searchQuery.isEmpty
                               ? 'No members found'
                               : 'No results for "$_searchQuery"',
                           style: TextStyle(
-                            color: Colors.grey[500],
+                            color: appColors.textMuted,
                             fontSize: 15,
                           ),
                         ),
@@ -139,17 +141,17 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                 }
 
                 return RefreshIndicator(
-                  color: Colors.white,
-                  backgroundColor: Colors.black,
+                  color: appColors.textPrimary,
+                  backgroundColor: appColors.background,
                   onRefresh: _onRefresh,
                   child: ListView.separated(
                     controller: _scrollController,
                     padding: const EdgeInsets.only(top: 4, bottom: 16),
                     itemCount:
                         filteredMembers.length + (state.hasMoreMembers ? 1 : 0),
-                    separatorBuilder: (_, __) => const Divider(
+                    separatorBuilder: (_, __) => Divider(
                       height: 0.5,
-                      color: Color.fromARGB(255, 46, 46, 46),
+                      color: appColors.divider,
                       indent: 72,
                     ),
                     itemBuilder: (context, index) {
@@ -159,7 +161,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                           child: Center(child: CupertinoActivityIndicator()),
                         );
                       }
-                      return _buildMemberItem(filteredMembers[index]);
+                      return _buildMemberItem(filteredMembers[index], appColors);
                     },
                   ),
                 );
@@ -171,19 +173,19 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(AppColors appColors) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: TextField(
         controller: _searchController,
-        style: const TextStyle(color: Colors.white),
-        cursorColor: Colors.white,
+        style: TextStyle(color: appColors.textPrimary),
+        cursorColor: appColors.textPrimary,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
+          prefixIcon: Icon(Icons.search, size: 20, color: appColors.textMuted),
           hintText: 'Search members...',
-          hintStyle: TextStyle(color: Colors.grey[500]),
+          hintStyle: TextStyle(color: appColors.textMuted),
           filled: true,
-          fillColor: const Color.fromARGB(255, 22, 22, 22),
+          fillColor: appColors.surface,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 10,
@@ -200,7 +202,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
     );
   }
 
-  Widget _buildMemberItem(CommunityMember member) {
+  Widget _buildMemberItem(CommunityMember member, AppColors appColors) {
     final displayName = member.displayName.isNotEmpty
         ? member.displayName
         : member.username;
@@ -212,7 +214,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            _buildMemberAvatar(member),
+            _buildMemberAvatar(member, appColors),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -223,8 +225,8 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                       Flexible(
                         child: Text(
                           displayName,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: appColors.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
                           ),
@@ -240,13 +242,13 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.2),
+                            color: appColors.accent.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Admin',
                             style: TextStyle(
-                              color: Colors.blue,
+                              color: appColors.accent,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
@@ -259,7 +261,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                     Text(
                       '@${member.username}',
                       style: TextStyle(
-                        color: Colors.grey[500],
+                        color: appColors.textMuted,
                         fontSize: 13,
                       ),
                     ),
@@ -279,7 +281,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
     );
   }
 
-  Widget _buildMemberAvatar(CommunityMember member) {
+  Widget _buildMemberAvatar(CommunityMember member, AppColors appColors) {
     if (member.avatarUrl != null && member.avatarUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: 22,
@@ -288,13 +290,13 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
     }
     return CircleAvatar(
       radius: 22,
-      backgroundColor: Colors.grey[800],
+      backgroundColor: appColors.divider,
       child: Text(
         (member.displayName.isNotEmpty
                 ? member.displayName
                 : member.username)[0]
             .toUpperCase(),
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+        style: TextStyle(color: appColors.textPrimary, fontSize: 16),
       ),
     );
   }
@@ -302,13 +304,14 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
   // ==================== Member Options (Champion) ====================
 
   void _showMemberOptions(CommunityMember member) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final displayName = member.displayName.isNotEmpty
         ? member.displayName
         : member.username;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color.fromARGB(255, 28, 28, 30),
+      backgroundColor: appColors.surfaceSecondary,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -324,7 +327,7 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[600],
+                    color: appColors.textSecondary,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -336,23 +339,23 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
                   displayName,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const Divider(
-                  color: Color.fromARGB(255, 46, 46, 46), height: 0.5),
+              Divider(
+                  color: appColors.divider, height: 0.5),
               // Set / Remove champion
               if (member.isChampion)
                 ListTile(
                   leading: const Icon(Icons.star_outline,
                       color: Colors.amber),
-                  title: const Text(
+                  title: Text(
                     'Remove Champion',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: appColors.textPrimary),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -367,9 +370,9 @@ class _CommunityMembersPageState extends State<CommunityMembersPage> {
                 ListTile(
                   leading:
                       const Icon(Icons.star, color: Colors.amber),
-                  title: const Text(
+                  title: Text(
                     'Set as Champion',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: appColors.textPrimary),
                   ),
                   onTap: () {
                     Navigator.pop(context);

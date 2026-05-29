@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class ReactionPicker extends StatelessWidget {
   final int messageId;
@@ -26,11 +27,12 @@ class ReactionPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: BoxDecoration(
+        color: appColors.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -41,7 +43,7 @@ class ReactionPicker extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[600],
+              color: appColors.textSecondary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -54,7 +56,7 @@ class ReactionPicker extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 38, 38, 38),
+                    color: appColors.surface,
                     borderRadius: BorderRadius.circular(24),
                   ),
                   alignment: Alignment.center,

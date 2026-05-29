@@ -21,7 +21,7 @@ class TitleText extends StatelessWidget {
     return Text(
       text,
       style: TextStyle(
-          color: Colors.white, fontSize: fontSize, fontWeight: fontWeight),
+          color: color, fontSize: fontSize, fontWeight: fontWeight),
       textAlign: textAlign,
       overflow: overflow,
     );

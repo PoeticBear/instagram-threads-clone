@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:threads/auth/signup/email.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class Signup extends StatefulWidget {
   const Signup({Key? key}) : super(key: key);
@@ -48,6 +49,7 @@ class _SignupState extends State<Signup> {
   }
 
   Widget _body(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(mainAxisAlignment: MainAxisAlignment.start, children: [
       Container(
         height: 120,
@@ -55,7 +57,7 @@ class _SignupState extends State<Signup> {
       Text(
         "Profile",
         style: TextStyle(
-            color: Colors.white, fontSize: 28, fontWeight: FontWeight.w600),
+            color: appColors.textPrimary, fontSize: 28, fontWeight: FontWeight.w600),
         textAlign: TextAlign.center,
       ),
       Container(
@@ -64,7 +66,7 @@ class _SignupState extends State<Signup> {
       Text(
         "Customize your Threads profile.",
         style: TextStyle(
-            color: Color.fromARGB(255, 96, 96, 96),
+            color: appColors.textHint,
             fontSize: 16,
             fontWeight: FontWeight.w600),
         textAlign: TextAlign.center,
@@ -76,10 +78,10 @@ class _SignupState extends State<Signup> {
           height: 250,
           width: 330,
           decoration: BoxDecoration(
-            color: Color.fromARGB(255, 25, 25, 25),
+            color: appColors.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.grey,
+              color: appColors.border,
               width: 0.5,
             ),
           ),
@@ -102,7 +104,7 @@ class _SignupState extends State<Signup> {
                             Text(
                               "Name",
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: appColors.textPrimary,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 18),
                             ),
@@ -111,13 +113,13 @@ class _SignupState extends State<Signup> {
                               prefix: Icon(
                                 Icons.lock_outline_rounded,
                                 size: 15,
-                                color: Colors.white,
+                                color: appColors.textPrimary,
                               ),
                               style:
-                                  TextStyle(color: Colors.white, fontSize: 18),
+                                  TextStyle(color: appColors.textPrimary, fontSize: 18),
                               placeholder: 'instagram account',
                               placeholderStyle:
-                                  TextStyle(color: Colors.grey, fontSize: 18),
+                                  TextStyle(color: appColors.textSecondary, fontSize: 18),
                               padding: EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
@@ -129,7 +131,7 @@ class _SignupState extends State<Signup> {
                             Container(
                               width: 300,
                               height: 0.5,
-                              color: Colors.grey,
+                              color: appColors.divider,
                             ),
                             Container(
                               height: 20,
@@ -146,8 +148,7 @@ class _SignupState extends State<Signup> {
                               context: context,
                               builder: (BuildContext context) => CupertinoTheme(
                                     data: CupertinoThemeData(
-                                      brightness: Brightness
-                                          .dark, // Définir le mode sombre
+                                      brightness: Theme.of(context).brightness,
                                     ),
                                     child: CupertinoActionSheet(
                                       title: Text('Changer de photo de profil'),
@@ -184,7 +185,7 @@ class _SignupState extends State<Signup> {
                                         CupertinoActionSheetAction(
                                           child: Text(
                                             'Supprimer la photo de profil',
-                                            style: TextStyle(color: Colors.red),
+                                            style: TextStyle(color: appColors.destructive),
                                           ),
                                           onPressed: () {
                                             Navigator.pop(context);
@@ -218,7 +219,7 @@ class _SignupState extends State<Signup> {
                       Text(
                         "Bio",
                         style: TextStyle(
-                            color: Colors.white,
+                            color: appColors.textPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 18),
                       ),
@@ -227,12 +228,12 @@ class _SignupState extends State<Signup> {
                         prefix: Icon(
                           Icons.add,
                           size: 15,
-                          color: Colors.white,
+                          color: appColors.textPrimary,
                         ),
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(color: appColors.textPrimary, fontSize: 18),
                         placeholder: 'Write bio',
                         placeholderStyle:
-                            TextStyle(color: Colors.grey, fontSize: 16),
+                            TextStyle(color: appColors.textSecondary, fontSize: 16),
                         padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
@@ -244,7 +245,7 @@ class _SignupState extends State<Signup> {
                       Container(
                         width: 300,
                         height: 0.5,
-                        color: Colors.grey,
+                        color: appColors.divider,
                       ),
                       Container(
                         height: 20,
@@ -257,7 +258,7 @@ class _SignupState extends State<Signup> {
                       Text(
                         "Link",
                         style: TextStyle(
-                            color: Colors.white,
+                            color: appColors.textPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 18),
                       ),
@@ -266,12 +267,12 @@ class _SignupState extends State<Signup> {
                         prefix: Icon(
                           Icons.add,
                           size: 15,
-                          color: Colors.white,
+                          color: appColors.textPrimary,
                         ),
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(color: appColors.textPrimary, fontSize: 18),
                         placeholder: 'Add Link',
                         placeholderStyle:
-                            TextStyle(color: Colors.grey, fontSize: 16),
+                            TextStyle(color: appColors.textSecondary, fontSize: 16),
                         padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
@@ -300,17 +301,17 @@ class _SignupState extends State<Signup> {
             height: 50,
             width: MediaQuery.of(context).size.width - 80,
             decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                color: appColors.textPrimary, borderRadius: BorderRadius.circular(20)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   CupertinoIcons.square_arrow_down,
-                  color: Colors.black,
+                  color: appColors.background,
                 ),
                 Text(
                   " Import from Instagram",
-                  style: TextStyle(color: Colors.black, fontSize: 16),
+                  style: TextStyle(color: appColors.background, fontSize: 16),
                 )
               ],
             ),
@@ -320,10 +321,11 @@ class _SignupState extends State<Signup> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
       extendBodyBehindAppBar: true,
       key: _scaffoldKey,
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: Container(),
         flexibleSpace: Row(
@@ -347,7 +349,7 @@ class _SignupState extends State<Signup> {
                               padding: EdgeInsets.only(left: 35, top: 12),
                               child: Text("Back",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: appColors.textPrimary,
                                     fontSize: 20,
                                   ))),
                         )
@@ -377,7 +379,7 @@ class _SignupState extends State<Signup> {
                               },
                               child: Text("Skip",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: appColors.textPrimary,
                                     fontSize: 20,
                                   )),
                             ),
@@ -392,7 +394,7 @@ class _SignupState extends State<Signup> {
             ),
           ],
         ),
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
       ),
       body: SingleChildScrollView(child: _body(context)),
     );

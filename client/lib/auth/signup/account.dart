@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class SwitchAccount extends StatefulWidget {
   const SwitchAccount({super.key});
@@ -13,6 +14,7 @@ class SwitchAccount extends StatefulWidget {
 class _SwitchAccountState extends State<SwitchAccount> {
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
         appBar: AppBar(
           leading: Container(),
@@ -34,7 +36,7 @@ class _SwitchAccountState extends State<SwitchAccount> {
                             padding: EdgeInsets.only(left: 35, top: 10),
                             child: Text("Back",
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: appColors.textPrimary,
                                   fontSize: 23,
                                 ))),
                       )
@@ -44,9 +46,9 @@ class _SwitchAccountState extends State<SwitchAccount> {
               )
             ],
           ),
-          backgroundColor: Colors.black,
+          backgroundColor: appColors.background,
         ),
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         body: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -55,7 +57,7 @@ class _SwitchAccountState extends State<SwitchAccount> {
                 Text(
                   "Switch accounts",
                   style: TextStyle(
-                      color: Colors.white,
+                      color: appColors.textPrimary,
                       fontSize: 25,
                       fontWeight: FontWeight.w700),
                 ),
@@ -65,7 +67,7 @@ class _SwitchAccountState extends State<SwitchAccount> {
                 Text(
                   "If you don't see the account you're looking\nfor here, you'll need to sign in on Instagram\nfirst.",
                   style: TextStyle(
-                      color: Color.fromARGB(255, 112, 112, 112),
+                      color: appColors.textHint,
                       fontSize: 15,
                       fontWeight: FontWeight.w600),
                   textAlign: TextAlign.center,
@@ -87,9 +89,9 @@ class _SwitchAccountState extends State<SwitchAccount> {
                                         onPressed: () {
                                           Navigator.pop(context);
                                         },
-                                        child: const Text(
+                                        child: Text(
                                           'Confirm',
-                                          style: TextStyle(color: Colors.blue),
+                                          style: TextStyle(color: appColors.accent),
                                         ),
                                       ),
                                     ],
@@ -105,18 +107,17 @@ class _SwitchAccountState extends State<SwitchAccount> {
                                     shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.all(
                                             Radius.circular(40))),
-                                    backgroundColor: Colors.black,
+                                    backgroundColor: appColors.background,
                                     title: Text(
                                       "Account",
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: appColors.textPrimary,
                                           fontWeight: FontWeight.w600),
                                     ),
                                     content: Text(
                                       'There is no more account in this test application, create it',
                                       style: TextStyle(
-                                          color: Color.fromARGB(
-                                              255, 198, 198, 198),
+                                          color: appColors.textSecondary,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w100),
                                     ),
@@ -131,7 +132,7 @@ class _SwitchAccountState extends State<SwitchAccount> {
                                               },
                                               child: Text("Ok",
                                                   style: TextStyle(
-                                                      color: Colors.blue,
+                                                      color: appColors.accent,
                                                       fontWeight:
                                                           FontWeight.w700,
                                                       fontSize: 14))),
@@ -144,10 +145,10 @@ class _SwitchAccountState extends State<SwitchAccount> {
                         height: 175,
                         width: 330,
                         decoration: BoxDecoration(
-                          color: Colors.black,
+                          color: appColors.background,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.grey,
+                            color: appColors.border,
                             width: 0.5,
                           ),
                         ),
@@ -173,13 +174,13 @@ class _SwitchAccountState extends State<SwitchAccount> {
                                     Text(
                                       "Test_account",
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: appColors.textPrimary,
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600),
                                     ),
                                     Text(
                                       "testaccount123",
-                                      style: TextStyle(color: Colors.grey),
+                                      style: TextStyle(color: appColors.textSecondary),
                                     ),
                                   ],
                                 ),
@@ -188,7 +189,7 @@ class _SwitchAccountState extends State<SwitchAccount> {
                                 ),
                                 Icon(
                                   Icons.arrow_forward_ios_rounded,
-                                  color: Colors.white,
+                                  color: appColors.textPrimary,
                                 )
                               ],
                             ),
@@ -197,7 +198,7 @@ class _SwitchAccountState extends State<SwitchAccount> {
                                 child: Container(
                                   width: 300,
                                   height: 0.5,
-                                  color: Colors.grey,
+                                  color: appColors.divider,
                                 )),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -218,13 +219,13 @@ class _SwitchAccountState extends State<SwitchAccount> {
                                     Text(
                                       "Test_account2",
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: appColors.textPrimary,
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600),
                                     ),
                                     Text(
                                       "testaccount21",
-                                      style: TextStyle(color: Colors.grey),
+                                      style: TextStyle(color: appColors.textSecondary),
                                     )
                                   ],
                                 ),
@@ -233,7 +234,7 @@ class _SwitchAccountState extends State<SwitchAccount> {
                                 ),
                                 Icon(
                                   Icons.arrow_forward_ios_rounded,
-                                  color: Colors.white,
+                                  color: appColors.textPrimary,
                                 )
                               ],
                             ),
@@ -249,7 +250,7 @@ class _SwitchAccountState extends State<SwitchAccount> {
                   child: Text(
                     "Log in to another Instagram account",
                     style: TextStyle(
-                        color: Color.fromARGB(255, 112, 112, 112),
+                        color: appColors.textHint,
                         fontSize: 15,
                         fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class RelationControlPage extends StatefulWidget {
   const RelationControlPage({super.key});
@@ -55,15 +56,16 @@ class _RelationControlPageState extends State<RelationControlPage> {
   }
 
   Future<void> _removeUser(RelationControlledUser user) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       await _userService.removeRelationControl(user.userId);
       _loadList();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to remove. Please try again.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Failed to remove. Please try again.'),
+            backgroundColor: appColors.destructive,
           ),
         );
       }
@@ -73,19 +75,20 @@ class _RelationControlPageState extends State<RelationControlPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          icon: Icon(CupertinoIcons.back, color: appColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Muted / Restricted / Blocked',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
             fontSize: 18,
           ),
@@ -100,8 +103,8 @@ class _RelationControlPageState extends State<RelationControlPage> {
               width: double.infinity,
               child: CupertinoSlidingSegmentedControl<int>(
                 groupValue: _selectedType,
-                thumbColor: const Color(0xff333333),
-                backgroundColor: const Color(0xff1a1a1a),
+                thumbColor: appColors.divider,
+                backgroundColor: appColors.surface,
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 onValueChanged: (value) {
                   if (value != null && value != _selectedType) {
@@ -115,7 +118,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                     child: Text(
                       'Muted',
                       style: TextStyle(
-                        color: _selectedType == 1 ? Colors.white : const Color(0xff888888),
+                        color: _selectedType == 1 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -126,7 +129,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                     child: Text(
                       'Restricted',
                       style: TextStyle(
-                        color: _selectedType == 2 ? Colors.white : const Color(0xff888888),
+                        color: _selectedType == 2 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -137,7 +140,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
                     child: Text(
                       'Blocked',
                       style: TextStyle(
-                        color: _selectedType == 3 ? Colors.white : const Color(0xff888888),
+                        color: _selectedType == 3 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -147,8 +150,8 @@ class _RelationControlPageState extends State<RelationControlPage> {
               ),
             ),
           ),
-          const Divider(
-            color: Color(0xff333333),
+          Divider(
+            color: appColors.divider,
             height: 0.5,
             thickness: 0.5,
           ),
@@ -161,21 +164,21 @@ class _RelationControlPageState extends State<RelationControlPage> {
                         child: Text(
                           'No users found',
                           style: TextStyle(
-                            color: const Color(0xff888888),
+                            color: appColors.textMuted,
                             fontSize: 16,
                           ),
                         ),
                       )
                     : RefreshIndicator(
-                        backgroundColor: const Color(0xff222222),
-                        color: Colors.white,
+                        backgroundColor: appColors.surfaceSecondary,
+                        color: appColors.textPrimary,
                         onRefresh: _loadList,
                         child: ListView.separated(
                           itemCount: _users.length,
-                          separatorBuilder: (_, __) => const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
+                          separatorBuilder: (_, __) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Divider(
-                              color: Color(0xff333333),
+                              color: appColors.divider,
                               height: 0.5,
                               thickness: 0.5,
                             ),
@@ -193,6 +196,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
   }
 
   Widget _buildUserTile(RelationControlledUser user) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
@@ -200,7 +204,7 @@ class _RelationControlPageState extends State<RelationControlPage> {
           // Avatar
           CircleAvatar(
             radius: 22,
-            backgroundColor: const Color(0xff333333),
+            backgroundColor: appColors.divider,
             backgroundImage:
                 user.avatarUrl != null && user.avatarUrl!.isNotEmpty
                     ? NetworkImage(user.avatarUrl!)
@@ -208,8 +212,8 @@ class _RelationControlPageState extends State<RelationControlPage> {
             child: user.avatarUrl == null || user.avatarUrl!.isEmpty
                 ? Text(
                     user.username.isNotEmpty ? user.username[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: appColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
@@ -224,8 +228,8 @@ class _RelationControlPageState extends State<RelationControlPage> {
               children: [
                 Text(
                   user.username,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -233,8 +237,8 @@ class _RelationControlPageState extends State<RelationControlPage> {
                 if (user.displayName != null && user.displayName!.isNotEmpty)
                   Text(
                     user.displayName!,
-                    style: const TextStyle(
-                      color: Color(0xff888888),
+                    style: TextStyle(
+                      color: appColors.textMuted,
                       fontSize: 14,
                     ),
                   ),
@@ -243,8 +247,8 @@ class _RelationControlPageState extends State<RelationControlPage> {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       'Reason: ${user.reason}',
-                      style: const TextStyle(
-                        color: Color(0xff666666),
+                      style: TextStyle(
+                        color: appColors.textHint,
                         fontSize: 13,
                       ),
                     ),
@@ -254,8 +258,8 @@ class _RelationControlPageState extends State<RelationControlPage> {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       user.createTime!,
-                      style: const TextStyle(
-                        color: Color(0xff555555),
+                      style: TextStyle(
+                        color: appColors.textHint,
                         fontSize: 12,
                       ),
                     ),
@@ -269,14 +273,14 @@ class _RelationControlPageState extends State<RelationControlPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xff1a1a1a),
+                color: appColors.surface,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xff444444)),
+                border: Border.all(color: appColors.dividerSecondary),
               ),
               child: Text(
                 _actionLabel(),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: appColors.textPrimary,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),

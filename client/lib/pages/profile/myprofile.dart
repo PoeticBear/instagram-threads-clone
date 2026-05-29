@@ -6,6 +6,7 @@ import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/common/settings.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 import 'edit.dart';
 
@@ -50,9 +51,10 @@ class _ProfilePageState extends State<MyProfilePage>
   Widget build(BuildContext context) {
     var authState = Provider.of<AuthState>(context, listen: false);
     var state = Provider.of<AuthState>(context);
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
         extendBodyBehindAppBar: true,
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         appBar: AppBar(
           actions: [
             GestureDetector(
@@ -61,13 +63,13 @@ class _ProfilePageState extends State<MyProfilePage>
                       MaterialPageRoute(builder: (context) => SettingsPage()));
                 },
                 child: Icon(CupertinoIcons.list_bullet_indent,
-                    color: Colors.white))
+                    color: appColors.textPrimary))
           ],
           leading: GestureDetector(
               onTap: () {
                 Navigator.pop(context);
               },
-              child: Icon(CupertinoIcons.globe, color: Colors.white)),
+              child: Icon(CupertinoIcons.globe, color: appColors.textPrimary)),
           elevation: 0,
           backgroundColor: Colors.transparent,
         ),
@@ -92,11 +94,11 @@ class _ProfilePageState extends State<MyProfilePage>
                                   height: 72,
                                   width: 72,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey[800],
+                                    color: appColors.surface,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(Icons.person,
-                                      size: 40, color: Colors.grey[600]),
+                                      size: 40, color: appColors.textSecondary),
                                 )
                               : ClipRRect(
                                   borderRadius: BorderRadius.circular(100),
@@ -113,7 +115,7 @@ class _ProfilePageState extends State<MyProfilePage>
                       child: Text(
                         state.profileUserModel?.displayName.toString() ?? "",
                         style: TextStyle(
-                            color: Colors.white,
+                            color: appColors.textPrimary,
                             fontSize: 28,
                             fontWeight: FontWeight.w800),
                       ),
@@ -131,7 +133,7 @@ class _ProfilePageState extends State<MyProfilePage>
                           child: Text(
                             '${state.profileUserModel?.userName.toString() ?? ""}',
                             style: TextStyle(
-                                color: Colors.grey,
+                                color: appColors.textSecondary,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w400),
                           )),
@@ -152,7 +154,7 @@ class _ProfilePageState extends State<MyProfilePage>
                                 state.profileUserModel?.bio ?? "",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: appColors.textPrimary,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w400),
                               )),
@@ -165,18 +167,18 @@ class _ProfilePageState extends State<MyProfilePage>
                         child: Center(
                           child: Container(
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(255, 19, 19, 19),
+                                color: appColors.surface,
                                 borderRadius: BorderRadius.circular(10)),
                             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.link, size: 14, color: Colors.grey),
+                                Icon(Icons.link, size: 14, color: appColors.textSecondary),
                                 SizedBox(width: 4),
                                 Text(
                                   state.profileUserModel?.link ?? "",
                                   style: TextStyle(
-                                      color: Colors.grey,
+                                      color: appColors.textSecondary,
                                       fontSize: 13),
                                 ),
                               ],
@@ -201,15 +203,15 @@ class _ProfilePageState extends State<MyProfilePage>
                                 height: 40,
                                 width: 165,
                                 decoration: BoxDecoration(
-                                  color: Colors.black,
+                                  color: appColors.background,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: Colors.grey,
+                                    color: appColors.textSecondary,
                                     width: 0.5,
                                   ),
                                 ),
                                 alignment: Alignment.center,
-                                child: Text(AppLocalizations.of(context)!.editProfile))),
+                                child: Text(AppLocalizations.of(context)!.editProfile, style: TextStyle(color: appColors.textPrimary)))),
                         Container(
                           width: 10,
                         ),
@@ -217,15 +219,15 @@ class _ProfilePageState extends State<MyProfilePage>
                             height: 40,
                             width: 165,
                             decoration: BoxDecoration(
-                              color: Colors.black,
+                              color: appColors.background,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.grey,
+                                color: appColors.textSecondary,
                                 width: 0.5,
                               ),
                             ),
                             alignment: Alignment.center,
-                            child: Text(AppLocalizations.of(context)!.shareProfile))
+                            child: Text(AppLocalizations.of(context)!.shareProfile, style: TextStyle(color: appColors.textPrimary)))
                       ],
                     ),
                     Container(

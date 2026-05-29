@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:threads/pages/topic/topic_detail_page.dart';
 import 'package:threads/services/search_service.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class TopicTile extends StatelessWidget {
   final TrendingTopic topic;
@@ -26,6 +27,7 @@ class TopicTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       onTap: () => _navigateToDetail(context),
       child: Container(
@@ -36,10 +38,10 @@ class TopicTile extends StatelessWidget {
               height: 40,
               width: 40,
               decoration: BoxDecoration(
-                color: Colors.grey[850],
+                color: appColors.surface,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.tag, size: 22, color: Colors.grey[400]),
+              child: Icon(Icons.tag, size: 22, color: appColors.textSecondary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -48,8 +50,8 @@ class TopicTile extends StatelessWidget {
                 children: [
                   Text(
                     topic.name,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: appColors.textPrimary,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
@@ -60,7 +62,7 @@ class TopicTile extends StatelessWidget {
                     '${topic.postsCount} posts',
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.grey[500],
+                      color: appColors.textMuted,
                     ),
                   ),
                 ],
@@ -74,15 +76,15 @@ class TopicTile extends StatelessWidget {
                 width: 90,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.black,
+                  color: appColors.background,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey, width: 0.5),
+                  border: Border.all(color: appColors.textSecondary, width: 0.5),
                 ),
-                child: const Text(
+                child: Text(
                   'Follow',
                   style: TextStyle(
                     fontSize: 15,
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

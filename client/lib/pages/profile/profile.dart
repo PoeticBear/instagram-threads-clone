@@ -7,6 +7,7 @@ import 'package:threads/pages/profile/edit.dart';
 import 'package:threads/common/settings.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/profile.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
@@ -78,14 +79,15 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     var state = Provider.of<ProfileState>(context);
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return state.isbusy
         ? Scaffold(
-            backgroundColor: Colors.black,
+            backgroundColor: appColors.background,
             body: Center(child: CupertinoActivityIndicator()),
           )
         : Scaffold(
             extendBodyBehindAppBar: true,
-            backgroundColor: Colors.black,
+            backgroundColor: appColors.background,
             appBar: AppBar(
               actions: [
                 if (state.isMyProfile)
@@ -100,13 +102,13 @@ class _ProfilePageState extends State<ProfilePage>
                           width: 50,
                           height: 50,
                           child: Icon(CupertinoIcons.list_bullet_indent,
-                              color: Colors.white)))
+                              color: appColors.textPrimary)))
               ],
               leading: GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
                   },
-                  child: Icon(CupertinoIcons.back, color: Colors.white)),
+                  child: Icon(CupertinoIcons.back, color: appColors.textPrimary)),
               elevation: 0,
               backgroundColor: Colors.transparent,
             ),
@@ -127,7 +129,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 Text(
                                   state.profileUserModel?.displayName ?? '',
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: appColors.textPrimary,
                                       fontSize: 28,
                                       fontWeight: FontWeight.w600),
                                 ),
@@ -137,7 +139,7 @@ class _ProfilePageState extends State<ProfilePage>
                                     Text(
                                       '@${state.profileUserModel?.userName ?? ''}',
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: appColors.textPrimary,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w400),
                                     ),
@@ -148,8 +150,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       Container(
                                         height: 20,
                                         decoration: BoxDecoration(
-                                            color:
-                                                Color.fromARGB(255, 19, 19, 19),
+                                            color: appColors.surface,
                                             borderRadius:
                                                 BorderRadius.circular(10)),
                                         padding: EdgeInsets.all(2),
@@ -178,7 +179,7 @@ class _ProfilePageState extends State<ProfilePage>
                             child: Text(
                               state.profileUserModel!.bio!,
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: appColors.textPrimary,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w400),
                             ),
@@ -238,9 +239,9 @@ class _ProfilePageState extends State<ProfilePage>
                             onTap: (index) {},
                             controller: _tabController,
                             isScrollable: false,
-                            labelColor: Colors.white,
-                            unselectedLabelColor: Colors.grey,
-                            indicatorColor: Colors.white,
+                            labelColor: appColors.textPrimary,
+                            unselectedLabelColor: appColors.textSecondary,
+                            indicatorColor: appColors.textPrimary,
                             indicatorWeight: 1,
                             tabs: [
                               Padding(
@@ -281,16 +282,17 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildThreadsTab() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (_isLoadingPosts) {
       return Center(
-        child: CircularProgressIndicator(color: Colors.white),
+        child: CircularProgressIndicator(color: appColors.textPrimary),
       );
     }
     if (_userPosts.isEmpty) {
       return Center(
         child: Text(
           AppLocalizations.of(context)!.noThreadsYetOthers,
-          style: TextStyle(color: Color(0xff555555)),
+          style: TextStyle(color: appColors.textHint),
         ),
       );
     }
@@ -305,12 +307,13 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildRepliesTab() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final replies = _userPosts.where((p) => p.replyToPostId != null && p.replyToPostId!.isNotEmpty).toList();
     if (replies.isEmpty) {
       return Center(
         child: Text(
           AppLocalizations.of(context)!.noRepliesYet,
-          style: TextStyle(color: Color(0xff555555)),
+          style: TextStyle(color: appColors.textHint),
         ),
       );
     }
@@ -325,14 +328,15 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildAvatar(ProfileState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final pic = state.profileUserModel?.profilePic ?? '';
     if (pic.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.grey[800],
+          color: appColors.surface,
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.person, size: 36, color: Colors.grey[600]),
+        child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
       );
     }
     return ClipRRect(
@@ -346,17 +350,18 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildStatItem(String count, String label) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return RichText(
       text: TextSpan(
         children: [
           TextSpan(
             text: count,
             style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
           ),
           TextSpan(
             text: label,
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: TextStyle(color: appColors.textSecondary, fontSize: 14),
           ),
         ],
       ),
@@ -368,18 +373,19 @@ class _ProfilePageState extends State<ProfilePage>
     bool isHighlighted = false,
     VoidCallback? onTap,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
         onTap: onTap,
         child: Container(
             height: 40,
             width: 170,
             decoration: BoxDecoration(
-              color: isHighlighted ? Colors.blue : Colors.black,
+              color: isHighlighted ? appColors.accent : appColors.background,
               borderRadius: BorderRadius.circular(8),
               border: isHighlighted
                   ? null
                   : Border.all(
-                      color: Colors.grey,
+                      color: appColors.textSecondary,
                       width: 0.5,
                     ),
             ),
@@ -387,7 +393,7 @@ class _ProfilePageState extends State<ProfilePage>
             child: Text(
               label,
               style: TextStyle(
-                color: isHighlighted ? Colors.white : Colors.white,
+                color: appColors.textPrimary,
                 fontWeight: FontWeight.w500,
               ),
             )));

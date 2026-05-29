@@ -11,6 +11,7 @@ import 'package:threads/model/user.module.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/services/upload_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/theme/app_colors.dart';
 import '../../main.dart';
 
 class CameraPage extends StatefulWidget {
@@ -85,6 +86,7 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -107,12 +109,12 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
                         child: Container(
                           height: 50,
                           width: 50,
-                          color: Colors.white,
+                          color: appColors.surfaceSecondary,
                           child: Icon(
                             flashEnabled
                                 ? Iconsax.flash_15
                                 : Iconsax.flash_slash5,
-                            color: Colors.black,
+                            color: appColors.textPrimary,
                             size: 25,
                           ),
                         ))),
@@ -128,10 +130,10 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
                         child: Container(
                           height: 50,
                           width: 50,
-                          color: Colors.white,
+                          color: appColors.surfaceSecondary,
                           child: Icon(
                             flashEnabled ? Iconsax.home : Iconsax.home,
-                            color: Colors.black,
+                            color: appColors.textPrimary,
                             size: 25,
                           ),
                         ))),
@@ -156,10 +158,10 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
                             child: Container(
                               height: 50,
                               width: 50,
-                              color: Colors.white,
+                              color: appColors.surfaceSecondary,
                               child: Icon(
                                 Icons.loop_rounded,
-                                color: Colors.black,
+                                color: appColors.textPrimary,
                                 size: 27,
                               ),
                             ))),
@@ -175,6 +177,7 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
   }
 
   Widget _body() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (_controller?.value.isInitialized == false) {
       return Container();
     }
@@ -235,8 +238,7 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
                                                 height: 65,
                                                 width: 65,
                                                 decoration: BoxDecoration(
-                                                  color: const Color.fromARGB(
-                                                      255, 88, 88, 88),
+                                                  color: appColors.dividerSecondary.withOpacity(0.7),
                                                   shape: BoxShape.circle,
                                                 ),
                                                 alignment: Alignment.center,
@@ -245,7 +247,7 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
                                                       ? "0.5x"
                                                       : "1x",
                                                   style: TextStyle(
-                                                      color: Colors.white,
+                                                      color: appColors.textPrimary,
                                                       fontSize: 25),
                                                 ),
                                               )))
@@ -263,8 +265,8 @@ class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
                         height: 80,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 213, 213, 213),
-                          border: Border.all(color: Colors.white, width: 5),
+                          color: appColors.surface,
+                          border: Border.all(color: appColors.textPrimary, width: 5),
                           shape: BoxShape.circle,
                         ))),
               ],

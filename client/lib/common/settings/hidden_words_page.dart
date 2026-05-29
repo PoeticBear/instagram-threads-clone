@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class HiddenWordsPage extends StatefulWidget {
   const HiddenWordsPage({super.key});
@@ -45,6 +46,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
   }
 
   Future<void> _deleteWord(HiddenWord word) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       await _userService.deleteHiddenWord(word.id);
       setState(() {
@@ -53,9 +55,9 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to delete word.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Failed to delete word.'),
+            backgroundColor: appColors.destructive,
           ),
         );
       }
@@ -63,6 +65,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
   }
 
   void _showAddDialog() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final contentController = TextEditingController();
     int selectedWordType = _selectedType;
 
@@ -72,9 +75,9 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return CupertinoAlertDialog(
-              title: const Text(
+              title: Text(
                 'Add Hidden Word',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: appColors.textPrimary),
               ),
               content: Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -86,8 +89,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                       width: double.infinity,
                       child: CupertinoSlidingSegmentedControl<int>(
                         groupValue: selectedWordType,
-                        thumbColor: const Color(0xff333333),
-                        backgroundColor: const Color(0xff1a1a1a),
+                        thumbColor: appColors.divider,
+                        backgroundColor: appColors.surface,
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         onValueChanged: (value) {
                           if (value != null) {
@@ -101,8 +104,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                               'Keyword',
                               style: TextStyle(
                                 color: selectedWordType == 1
-                                    ? Colors.white
-                                    : const Color(0xff888888),
+                                    ? appColors.textPrimary
+                                    : appColors.textMuted,
                                 fontSize: 12,
                               ),
                             ),
@@ -113,8 +116,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                               'Phrase',
                               style: TextStyle(
                                 color: selectedWordType == 2
-                                    ? Colors.white
-                                    : const Color(0xff888888),
+                                    ? appColors.textPrimary
+                                    : appColors.textMuted,
                                 fontSize: 12,
                               ),
                             ),
@@ -125,8 +128,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                               'Emoji',
                               style: TextStyle(
                                 color: selectedWordType == 3
-                                    ? Colors.white
-                                    : const Color(0xff888888),
+                                    ? appColors.textPrimary
+                                    : appColors.textMuted,
                                 fontSize: 12,
                               ),
                             ),
@@ -138,10 +141,10 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                     CupertinoTextField(
                       controller: contentController,
                       placeholder: 'Enter word or phrase',
-                      placeholderStyle: const TextStyle(color: Color(0xff888888)),
-                      style: const TextStyle(color: Colors.white),
+                      placeholderStyle: TextStyle(color: appColors.textMuted),
+                      style: TextStyle(color: appColors.textPrimary),
                       decoration: BoxDecoration(
-                        color: const Color(0xff1a1a1a),
+                        color: appColors.surface,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -170,9 +173,9 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                       } catch (_) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Failed to add word.'),
-                              backgroundColor: Colors.red,
+                            SnackBar(
+                              content: const Text('Failed to add word.'),
+                              backgroundColor: appColors.destructive,
                             ),
                           );
                         }
@@ -192,28 +195,29 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final filtered = _filteredWords;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          icon: Icon(CupertinoIcons.back, color: appColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Hidden Words',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
             fontSize: 18,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.add, color: Colors.white, size: 26),
+            icon: Icon(CupertinoIcons.add, color: appColors.textPrimary, size: 26),
             onPressed: _showAddDialog,
           ),
         ],
@@ -227,8 +231,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
               width: double.infinity,
               child: CupertinoSlidingSegmentedControl<int>(
                 groupValue: _selectedType,
-                thumbColor: const Color(0xff333333),
-                backgroundColor: const Color(0xff1a1a1a),
+                thumbColor: appColors.divider,
+                backgroundColor: appColors.surface,
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 onValueChanged: (value) {
                   if (value != null && value != _selectedType) {
@@ -241,7 +245,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                     child: Text(
                       'Keywords',
                       style: TextStyle(
-                        color: _selectedType == 1 ? Colors.white : const Color(0xff888888),
+                        color: _selectedType == 1 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -252,7 +256,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                     child: Text(
                       'Phrases',
                       style: TextStyle(
-                        color: _selectedType == 2 ? Colors.white : const Color(0xff888888),
+                        color: _selectedType == 2 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -263,7 +267,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                     child: Text(
                       'Emoji',
                       style: TextStyle(
-                        color: _selectedType == 3 ? Colors.white : const Color(0xff888888),
+                        color: _selectedType == 3 ? appColors.textPrimary : appColors.textMuted,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -273,8 +277,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
               ),
             ),
           ),
-          const Divider(
-            color: Color(0xff333333),
+          Divider(
+            color: appColors.divider,
             height: 0.5,
             thickness: 0.5,
           ),
@@ -287,21 +291,21 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                         child: Text(
                           'No hidden words',
                           style: TextStyle(
-                            color: const Color(0xff888888),
+                            color: appColors.textMuted,
                             fontSize: 16,
                           ),
                         ),
                       )
                     : RefreshIndicator(
-                        backgroundColor: const Color(0xff222222),
-                        color: Colors.white,
+                        backgroundColor: appColors.surfaceSecondary,
+                        color: appColors.textPrimary,
                         onRefresh: _loadWords,
                         child: ListView.separated(
                           itemCount: filtered.length,
-                          separatorBuilder: (_, __) => const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
+                          separatorBuilder: (_, __) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Divider(
-                              color: Color(0xff333333),
+                              color: appColors.divider,
                               height: 0.5,
                               thickness: 0.5,
                             ),
@@ -319,6 +323,7 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
   }
 
   Widget _buildWordTile(HiddenWord word) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Dismissible(
       key: ValueKey(word.id),
       direction: DismissDirection.endToStart,
@@ -326,8 +331,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red.withValues(alpha: 0.15),
-        child: const Icon(CupertinoIcons.delete, color: Colors.red, size: 24),
+        color: appColors.destructive.withValues(alpha: 0.15),
+        child: Icon(CupertinoIcons.delete, color: appColors.destructive, size: 24),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -340,8 +345,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                 children: [
                   Text(
                     word.content,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: appColors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -351,8 +356,8 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         word.createTime!,
-                        style: const TextStyle(
-                          color: Color(0xff555555),
+                        style: TextStyle(
+                          color: appColors.textHint,
                           fontSize: 12,
                         ),
                       ),
@@ -360,9 +365,9 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               CupertinoIcons.chevron_forward,
-              color: Color(0xff444444),
+              color: appColors.dividerSecondary,
               size: 18,
             ),
           ],

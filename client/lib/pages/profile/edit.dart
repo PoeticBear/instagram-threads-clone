@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/auth.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -81,8 +82,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     var state = Provider.of<AuthState>(context);
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         appBar: AppBar(
           toolbarHeight: 68,
           leading: Container(),
@@ -90,7 +92,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               padding: EdgeInsets.only(left: 5, top: 60),
               child: Container(
                   decoration: BoxDecoration(
-                      color: Color.fromARGB(255, 29, 29, 29),
+                      color: appColors.surfaceTertiary,
                       borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(15),
                           topRight: Radius.circular(15))),
@@ -112,13 +114,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       },
                                       child: Text("Cancel",
                                           style: TextStyle(
-                                              color: Colors.white,
+                                              color: appColors.textPrimary,
                                               fontSize: 20,
                                               fontWeight: FontWeight.w400)))),
                               Text(
                                 "Edit profile   ",
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: appColors.textPrimary,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700),
                               ),
@@ -128,7 +130,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     onTap: _submitButton,
                                     child: Text("Done",
                                         style: TextStyle(
-                                            color: Colors.blue,
+                                            color: appColors.accent,
                                             fontSize: 20,
                                             fontWeight: FontWeight.w600))),
                               )
@@ -145,10 +147,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 child: Container(
                     width: 330,
                     decoration: BoxDecoration(
-                      color: Color.fromARGB(255, 25, 25, 25),
+                      color: appColors.surface,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.grey,
+                        color: appColors.textSecondary,
                         width: 0.5,
                       ),
                     ),
@@ -167,13 +169,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Container(height: 10),
-                                      Text("Name", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18)),
+                                      Text("Name", style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
                                       CupertinoTextField(
                                         controller: _displayName,
-                                        prefix: Icon(Icons.lock_outline_rounded, size: 15, color: Colors.white),
-                                        style: TextStyle(color: Colors.white, fontSize: 18),
+                                        prefix: Icon(Icons.lock_outline_rounded, size: 15, color: appColors.textPrimary),
+                                        style: TextStyle(color: appColors.textPrimary, fontSize: 18),
                                         placeholder: state.userModel?.displayName ?? '',
-                                        placeholderStyle: TextStyle(color: Colors.grey, fontSize: 18),
+                                        placeholderStyle: TextStyle(color: appColors.textSecondary, fontSize: 18),
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
                                       ),
@@ -236,23 +238,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ))))));
   }
 
-  Widget _divider() => Container(width: 300, height: 0.5, color: Colors.grey);
+  Widget _divider() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return Container(width: 300, height: 0.5, color: appColors.textSecondary);
+  }
 
   Widget _fieldSection({
     required String label,
     required TextEditingController controller,
     required String placeholder,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18)),
+        Text(label, style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
         CupertinoTextField(
           controller: controller,
-          prefix: Icon(Icons.add, size: 15, color: Colors.white),
-          style: TextStyle(color: Colors.white, fontSize: 18),
+          prefix: Icon(Icons.add, size: 15, color: appColors.textPrimary),
+          style: TextStyle(color: appColors.textPrimary, fontSize: 18),
           placeholder: placeholder,
-          placeholderStyle: TextStyle(color: Colors.grey, fontSize: 16),
+          placeholderStyle: TextStyle(color: appColors.textSecondary, fontSize: 16),
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
         ),
@@ -268,6 +274,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required String value,
     required VoidCallback onTap,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,14 +283,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18)),
+              Text(label, style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 40, 40, 40),
+                  color: appColors.surfaceSecondary,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(value, style: TextStyle(color: Colors.grey[300], fontSize: 14)),
+                child: Text(value, style: TextStyle(color: appColors.textSecondary, fontSize: 14)),
               ),
             ],
           ),
@@ -300,16 +307,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18)),
+            Text(label, style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
             CupertinoSwitch(
               value: value,
               onChanged: onChanged,
-              activeColor: Colors.blue,
+              activeColor: appColors.accent,
             ),
           ],
         ),
@@ -321,12 +329,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildAvatarEdit(AuthState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       onTap: () {
         showCupertinoModalPopup(
           context: context,
           builder: (BuildContext context) => CupertinoTheme(
-            data: CupertinoThemeData(brightness: Brightness.dark),
+            data: CupertinoThemeData(brightness: Theme.of(context).brightness),
             child: CupertinoActionSheet(
               title: Text('Change avatar'),
               message: Text('Your avatar is visible to everyone'),
@@ -350,7 +359,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   },
                 ),
                 CupertinoActionSheetAction(
-                  child: Text('Remove', style: TextStyle(color: Colors.red)),
+                  child: Text('Remove', style: TextStyle(color: appColors.destructive)),
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -365,7 +374,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       },
       child: CircleAvatar(
-        backgroundColor: Colors.grey[800],
+        backgroundColor: appColors.surface,
         radius: 25,
         backgroundImage: (_image != null
             ? FileImage(_image!)
@@ -376,7 +385,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     state.profileUserModel!.profilePic!,
                   ) as ImageProvider),
         child: (_image == null && (state.profileUserModel?.profilePic ?? '').isEmpty)
-            ? Icon(Icons.person, size: 30, color: Colors.grey[600])
+            ? Icon(Icons.person, size: 30, color: appColors.textSecondary)
             : null,
       ),
     );
@@ -386,7 +395,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) => CupertinoTheme(
-        data: CupertinoThemeData(brightness: Brightness.dark),
+        data: CupertinoThemeData(brightness: Theme.of(context).brightness),
         child: CupertinoActionSheet(
           title: Text('Gender'),
           actions: [
@@ -420,7 +429,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) => CupertinoTheme(
-        data: CupertinoThemeData(brightness: Brightness.dark),
+        data: CupertinoThemeData(brightness: Theme.of(context).brightness),
         child: CupertinoActionSheet(
           title: Text('Account Type'),
           actions: [

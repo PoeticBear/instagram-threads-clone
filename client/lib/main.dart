@@ -8,6 +8,7 @@ import 'package:threads/network/api_client.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/locale.state.dart';
+import 'package:threads/state/theme.state.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/search.state.dart';
@@ -16,6 +17,7 @@ import 'package:threads/state/notification.state.dart';
 import 'package:threads/state/settings.state.dart';
 import 'package:threads/state/draft.state.dart';
 import 'package:threads/state/community.state.dart';
+import 'package:threads/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 List<CameraDescription> cameras = [];
@@ -63,9 +65,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<MessageState>(create: (_) => MessageState()),
         ChangeNotifierProvider<CommunityState>(create: (_) => CommunityState()),
         ChangeNotifierProvider<LocaleProvider>(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
       ],
-      child: Consumer<LocaleProvider>(
-        builder: (context, localeProvider, _) {
+      child: Consumer2<LocaleProvider, ThemeProvider>(
+        builder: (context, localeProvider, themeProvider, _) {
           return MaterialApp(
             locale: localeProvider.locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -73,7 +76,9 @@ class MyApp extends StatelessWidget {
               Locale('en'),
               Locale('zh'),
             ],
-            theme: ThemeData(brightness: Brightness.dark),
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
             title: 'Threads',
             debugShowCheckedModeBanner: false,
             home: SplashPage(),

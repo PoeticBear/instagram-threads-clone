@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/search_service.dart';
 import 'package:threads/state/search.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/list.dart';
 import 'package:threads/widget/search_post_tile.dart';
 import 'package:threads/widget/topic_tile.dart';
@@ -46,16 +47,17 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         centerTitle: false,
         title: Text(
           AppLocalizations.of(context)!.searchTitle,
           style: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 35,
             fontWeight: FontWeight.w700,
           ),
@@ -82,23 +84,23 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   // ── Search Field ──
 
   Widget _buildSearchField(SearchState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
       child: TextField(
-        cursorColor: Colors.white,
-        keyboardAppearance: Brightness.dark,
+        cursorColor: appColors.textPrimary,
         controller: _textController,
         onChanged: (value) => state.onSearchChanged(value),
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: appColors.textPrimary),
         decoration: InputDecoration(
-          prefixIcon: const Icon(Iconsax.search_normal, size: 18, color: Colors.grey),
+          prefixIcon: Icon(Iconsax.search_normal, size: 18, color: appColors.textSecondary),
           suffixIcon: state.searchQuery.isNotEmpty
               ? GestureDetector(
                   onTap: () {
                     _textController.clear();
                     state.onSearchChanged('');
                   },
-                  child: const Icon(Icons.close, size: 18, color: Colors.grey),
+                  child: Icon(Icons.close, size: 18, color: appColors.textSecondary),
                 )
               : null,
           enabledBorder: OutlineInputBorder(
@@ -109,15 +111,15 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
             borderSide: const BorderSide(color: Colors.transparent, width: 0.7),
             borderRadius: BorderRadius.circular(10.0),
           ),
-          fillColor: const Color.fromARGB(255, 48, 48, 48),
+          fillColor: appColors.surface,
           filled: true,
           contentPadding: const EdgeInsets.only(left: 15, top: 5),
           alignLabelWithHint: true,
           hintText: AppLocalizations.of(context)!.search,
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w500,
-            color: Colors.grey,
+            color: appColors.textSecondary,
             fontFamily: 'arial',
           ),
         ),
@@ -128,11 +130,12 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   // ── Tab Bar ──
 
   Widget _buildTabBar(SearchState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return TabBar(
       controller: _tabController,
-      labelColor: Colors.white,
-      unselectedLabelColor: Colors.grey,
-      indicatorColor: Colors.white,
+      labelColor: appColors.textPrimary,
+      unselectedLabelColor: appColors.textSecondary,
+      indicatorColor: appColors.textPrimary,
       indicatorSize: TabBarIndicatorSize.label,
       labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
@@ -149,8 +152,9 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
 
   Widget _buildSearchResults(SearchState state) {
     if (state.isSearching) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+      return Center(
+        child: CircularProgressIndicator(color: appColors.textPrimary),
       );
     }
 
@@ -201,14 +205,15 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   }
 
   Widget _buildSectionHeader(String title, int count) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 16, 15, 4),
       child: Row(
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: appColors.textPrimary,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
@@ -216,7 +221,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
           const SizedBox(width: 8),
           Text(
             '$count',
-            style: TextStyle(color: Colors.grey[500], fontSize: 16),
+            style: TextStyle(color: appColors.textMuted, fontSize: 16),
           ),
         ],
       ),
@@ -241,10 +246,11 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   }
 
   Widget _buildUsersTab(SearchState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (state.searchUsers.isEmpty) return _buildNoResults();
     return ListView.separated(
       itemCount: state.searchUsers.length,
-      separatorBuilder: (_, __) => const Divider(color: Color.fromARGB(255, 69, 69, 69), height: 0.5, indent: 65),
+      separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
         return UserTilePage(user: state.searchUsers[index], isadded: false);
       },
@@ -252,10 +258,11 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   }
 
   Widget _buildTopicsTab(SearchState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (state.searchTopics.isEmpty) return _buildNoResults();
     return ListView.separated(
       itemCount: state.searchTopics.length,
-      separatorBuilder: (_, __) => const Divider(color: Color.fromARGB(255, 69, 69, 69), height: 0.5, indent: 65),
+      separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
         return TopicTile(topic: state.searchTopics[index]);
       },
@@ -263,10 +270,11 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   }
 
   Widget _buildPostsTab(SearchState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (state.searchPosts.isEmpty) return _buildNoResults();
     return ListView.separated(
       itemCount: state.searchPosts.length,
-      separatorBuilder: (_, __) => const Divider(color: Color.fromARGB(255, 69, 69, 69), height: 0.5, indent: 65),
+      separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
         return SearchPostTile(post: state.searchPosts[index]);
       },
@@ -274,15 +282,16 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   }
 
   Widget _buildNoResults() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Iconsax.search_normal, size: 48, color: Colors.grey[700]),
+          Icon(Iconsax.search_normal, size: 48, color: appColors.textMuted),
           const SizedBox(height: 12),
           Text(
             AppLocalizations.of(context)!.noResultsFound,
-            style: TextStyle(color: Colors.grey[500], fontSize: 18),
+            style: TextStyle(color: appColors.textMuted, fontSize: 18),
           ),
         ],
       ),
@@ -293,8 +302,9 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
 
   Widget _buildEmptyState(SearchState state) {
     if (state.isLoadingEmptyState) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+      return Center(
+        child: CircularProgressIndicator(color: appColors.textPrimary),
       );
     }
 
@@ -327,6 +337,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   }
 
   Widget _buildEmptySectionHeader(String title, {String? actionText, VoidCallback? onAction}) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 20, 15, 6),
       child: Row(
@@ -334,8 +345,8 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: appColors.textPrimary,
               fontSize: 22,
               fontWeight: FontWeight.w700,
             ),
@@ -346,7 +357,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
               child: Text(
                 actionText,
                 style: TextStyle(
-                  color: Colors.grey[400],
+                  color: appColors.textMuted,
                   fontSize: 16,
                 ),
               ),
@@ -357,14 +368,15 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   }
 
   Widget _buildHistoryItem(SearchHistoryItem item, SearchState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Dismissible(
       key: Key(item.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red[800],
-        child: const Icon(Icons.delete_outline, color: Colors.white),
+        color: appColors.destructive,
+        child: Icon(Icons.delete_outline, color: appColors.background),
       ),
       onDismissed: (_) => state.deleteHistoryItem(item.id),
       child: GestureDetector(
@@ -376,13 +388,13 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
           child: Row(
             children: [
-              Icon(Iconsax.clock, size: 20, color: Colors.grey[600]),
+              Icon(Iconsax.clock, size: 20, color: appColors.textSecondary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   item.query,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
                     fontSize: 17,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -390,7 +402,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
               ),
               GestureDetector(
                 onTap: () => state.deleteHistoryItem(item.id),
-                child: Icon(Icons.close, size: 18, color: Colors.grey[600]),
+                child: Icon(Icons.close, size: 18, color: appColors.textSecondary),
               ),
             ],
           ),

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class ComposeBottomIconWidget extends StatelessWidget {
   final Function(File) onImageSelected;
@@ -21,9 +22,10 @@ class ComposeBottomIconWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return IconButton(
       onPressed: _pickImage,
-      icon: Icon(Iconsax.picture_frame, size: 24, color: Colors.white),
+      icon: Icon(Iconsax.picture_frame, size: 24, color: appColors.textPrimary),
     );
   }
 }

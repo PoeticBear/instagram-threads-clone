@@ -154,6 +154,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
+  String get appearance => 'Appearance';
+
+  @override
   String get back => 'Back';
 
   @override
@@ -563,7 +566,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaveCommunity => 'Leave';
 
   @override
-  String get leaveCommunityConfirm => 'Are you sure you want to leave this community?';
+  String get leaveCommunityConfirm =>
+      'Are you sure you want to leave this community?';
 
   @override
   String get noCommunities => 'No communities';
@@ -632,7 +636,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteCollection => 'Delete collection';
 
   @override
-  String get deleteCollectionConfirm => 'Are you sure you want to delete this collection?';
+  String get deleteCollectionConfirm =>
+      'Are you sure you want to delete this collection?';
 
   @override
   String get noCollections => 'No collections';
@@ -665,7 +670,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteWord => 'Delete word';
 
   @override
-  String get deleteWordConfirm => 'Are you sure you want to delete this hidden word?';
+  String get deleteWordConfirm =>
+      'Are you sure you want to delete this hidden word?';
 
   @override
   String get noHiddenWords => 'No hidden words';
@@ -767,13 +773,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get justNow => 'Just now';
 
   @override
-  String minutesAgo(int count) => '$count min';
+  String minutesAgo(int count) {
+    return '$count min';
+  }
 
   @override
-  String hoursAgo(int count) => '${count}h';
+  String hoursAgo(int count) {
+    return '${count}h';
+  }
 
   @override
-  String daysAgo(int count) => '${count}d';
+  String daysAgo(int count) {
+    return '${count}d';
+  }
 
   @override
   String get notifiedLikedPost => 'liked your post';

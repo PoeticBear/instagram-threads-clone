@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:threads/auth/onboard/follow.dart';
+import 'package:threads/theme/app_colors.dart';
 import '../../widget/custom/rippleButton.dart';
 
 class PrivacyPage extends StatefulWidget {
@@ -13,9 +14,10 @@ class _PrivacyPageState extends State<PrivacyPage> {
   bool isselected = false;
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
       appBar: AppBar(
-          backgroundColor: Colors.black,
+          backgroundColor: appColors.background,
           leading: Container(),
           flexibleSpace:
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -37,7 +39,7 @@ class _PrivacyPageState extends State<PrivacyPage> {
                               padding: EdgeInsets.only(left: 35, top: 12),
                               child: Text("Back",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: appColors.textPrimary,
                                     fontSize: 20,
                                   ))),
                         )
@@ -48,7 +50,7 @@ class _PrivacyPageState extends State<PrivacyPage> {
               ],
             )
           ])),
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       body: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
         Container(
           height: 10,
@@ -56,7 +58,7 @@ class _PrivacyPageState extends State<PrivacyPage> {
         Text(
           "Privacy",
           style: TextStyle(
-              color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
+              color: appColors.textPrimary, fontSize: 28, fontWeight: FontWeight.w700),
           textAlign: TextAlign.center,
         ),
         Container(
@@ -65,7 +67,7 @@ class _PrivacyPageState extends State<PrivacyPage> {
         Text(
           "You're privacy on Threads and Instagram\ncan be different. Learn more.",
           style: TextStyle(
-              color: Color.fromARGB(255, 96, 96, 96),
+              color: appColors.textHint,
               fontSize: 16,
               fontWeight: FontWeight.w600),
           textAlign: TextAlign.center,
@@ -83,10 +85,10 @@ class _PrivacyPageState extends State<PrivacyPage> {
               height: 120,
               width: 330,
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: appColors.background,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: !isselected ? Colors.white : Colors.grey,
+                  color: !isselected ? appColors.textPrimary : appColors.border,
                   width: !isselected ? 2 : 0.5,
                 ),
               ),
@@ -97,14 +99,14 @@ class _PrivacyPageState extends State<PrivacyPage> {
                   Text(
                     "   Public profile",
                     style: TextStyle(
-                        color: Colors.white,
+                        color: appColors.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600),
                   ),
                   Text(
                     "\n   Anyone on or off Threads can see,\n   share and interact with your content.",
                     style: TextStyle(
-                        color: Colors.white,
+                        color: appColors.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w500),
                   ),
@@ -124,10 +126,10 @@ class _PrivacyPageState extends State<PrivacyPage> {
               height: 120,
               width: 330,
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: appColors.background,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isselected ? Colors.white : Colors.grey,
+                  color: isselected ? appColors.textPrimary : appColors.border,
                   width: isselected ? 2 : 0.5,
                 ),
               ),
@@ -140,7 +142,7 @@ class _PrivacyPageState extends State<PrivacyPage> {
                       Text(
                         "   Private profile",
                         style: TextStyle(
-                            color: Colors.white,
+                            color: appColors.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600),
                       ),
@@ -149,14 +151,14 @@ class _PrivacyPageState extends State<PrivacyPage> {
                       ),
                       Icon(
                         Icons.lock_outlined,
-                        color: Colors.white,
+                        color: appColors.textPrimary,
                       )
                     ],
                   ),
                   Text(
                     "\n   Only you aproved followers can\n   see and interact with your content.",
                     style: TextStyle(
-                        color: Colors.white,
+                        color: appColors.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w500),
                   ),
@@ -172,7 +174,7 @@ class _PrivacyPageState extends State<PrivacyPage> {
                 height: 50,
                 width: MediaQuery.of(context).size.width - 80,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: appColors.textPrimary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Center(
@@ -180,7 +182,7 @@ class _PrivacyPageState extends State<PrivacyPage> {
                   "Next",
                   style: TextStyle(
                       fontFamily: "icons.ttf",
-                      color: Colors.black,
+                      color: appColors.background,
                       fontSize: 18,
                       fontWeight: FontWeight.w500),
                 ))),

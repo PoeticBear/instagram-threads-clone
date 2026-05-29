@@ -6,6 +6,7 @@ import 'package:threads/model/topic.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/state/topic.state.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 
 class TopicDetailPage extends StatefulWidget {
@@ -109,17 +110,18 @@ class _TopicDetailPageState extends State<TopicDetailPage>
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Icon(CupertinoIcons.back, color: Colors.white),
+          child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
         ),
         title: Text(
           widget.topicName ?? 'Topic',
           style: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -132,7 +134,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
             child: Container(
               width: 50,
               height: 50,
-              child: Icon(Icons.more_horiz, color: Colors.white),
+              child: Icon(Icons.more_horiz, color: appColors.textPrimary),
             ),
           ),
         ],
@@ -146,8 +148,8 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           }
 
           return RefreshIndicator(
-            color: Colors.white,
-            backgroundColor: Colors.black,
+            color: appColors.textPrimary,
+            backgroundColor: appColors.background,
             onRefresh: _onRefresh,
             child: ListView(
               controller: _scrollController,
@@ -155,14 +157,14 @@ class _TopicDetailPageState extends State<TopicDetailPage>
                 _buildTopicHeader(state),
                 Container(height: 12),
                 Divider(
-                    color: Color.fromARGB(255, 46, 46, 46), height: 0.5),
+                    color: appColors.divider, height: 0.5),
                 _buildSortTabs(state),
                 Container(height: 8),
                 _buildPostList(state),
                 if (state.relatedTopics.isNotEmpty) ...[
                   Container(height: 16),
                   Divider(
-                      color: Color.fromARGB(255, 46, 46, 46), height: 0.5),
+                      color: appColors.divider, height: 0.5),
                   _buildRelatedTopics(state),
                 ],
               ],
@@ -176,6 +178,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   // ==================== Topic Header ====================
 
   Widget _buildTopicHeader(TopicState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final topic = state.topicDetail;
     final name = topic?.name ?? widget.topicName ?? '';
     final description = topic?.description;
@@ -191,7 +194,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           Text(
             name,
             style: TextStyle(
-              color: Colors.white,
+              color: appColors.textPrimary,
               fontSize: 26,
               fontWeight: FontWeight.w700,
             ),
@@ -202,7 +205,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
             Text(
               description,
               style: TextStyle(
-                color: Colors.grey,
+                color: appColors.textSecondary,
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
               ),
@@ -232,20 +235,21 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   }
 
   Widget _buildStatItem(String count, String label) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return RichText(
       text: TextSpan(
         children: [
           TextSpan(
             text: count,
             style: TextStyle(
-              color: Colors.white,
+              color: appColors.textPrimary,
               fontWeight: FontWeight.w600,
               fontSize: 14,
             ),
           ),
           TextSpan(
             text: label,
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: TextStyle(color: appColors.textSecondary, fontSize: 14),
           ),
         ],
       ),
@@ -253,6 +257,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   }
 
   Widget _buildFollowButton(TopicState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isFollowing = state.isFollowing;
     return GestureDetector(
       onTap: () {
@@ -266,17 +271,17 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         height: 40,
         width: 150,
         decoration: BoxDecoration(
-          color: isFollowing ? Colors.black : Colors.blue,
+          color: isFollowing ? appColors.background : appColors.accent,
           borderRadius: BorderRadius.circular(8),
           border: isFollowing
-              ? Border.all(color: Colors.grey, width: 0.5)
+              ? Border.all(color: appColors.border, width: 0.5)
               : null,
         ),
         alignment: Alignment.center,
         child: Text(
           isFollowing ? 'Following' : 'Follow',
           style: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
             fontSize: 15,
           ),
@@ -286,6 +291,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   }
 
   Widget _buildMuteButton(TopicState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isMuted = state.isMuted;
     return GestureDetector(
       onTap: () {
@@ -299,14 +305,14 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         height: 40,
         width: 40,
         decoration: BoxDecoration(
-          color: Colors.black,
+          color: appColors.background,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey, width: 0.5),
+          border: Border.all(color: appColors.border, width: 0.5),
         ),
         alignment: Alignment.center,
         child: Icon(
           isMuted ? CupertinoIcons.bell_slash_fill : CupertinoIcons.bell,
-          color: isMuted ? Colors.grey : Colors.white,
+          color: isMuted ? appColors.textSecondary : appColors.textPrimary,
           size: 20,
         ),
       ),
@@ -316,6 +322,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   // ==================== Sort Tabs ====================
 
   Widget _buildSortTabs(TopicState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Container(
       width: MediaQuery.of(context).size.width,
       child: TabBar(
@@ -325,9 +332,9 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           state.loadTopicPosts(widget.topicId, sort: sort);
         },
         isScrollable: false,
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey,
-        indicatorColor: Colors.white,
+        labelColor: appColors.textPrimary,
+        unselectedLabelColor: appColors.textSecondary,
+        indicatorColor: appColors.textPrimary,
         indicatorWeight: 1,
         tabs: [
           Tab(
@@ -356,6 +363,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   // ==================== Post List ====================
 
   Widget _buildPostList(TopicState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final posts = state.topicPosts;
 
     if (posts.isEmpty && !state.isLoadingPosts) {
@@ -365,7 +373,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         child: Text(
           'No posts yet.',
           style: TextStyle(
-            color: Color.fromARGB(255, 63, 63, 63),
+            color: appColors.textHint,
             fontSize: 15,
           ),
         ),
@@ -391,6 +399,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   // ==================== Related Topics ====================
 
   Widget _buildRelatedTopics(TopicState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final related = state.relatedTopics;
     if (related.isEmpty) return SizedBox.shrink();
 
@@ -404,7 +413,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
             child: Text(
               'Related Topics',
               style: TextStyle(
-                color: Colors.white,
+                color: appColors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -430,6 +439,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   }
 
   Widget _buildRelatedTopicCard(TopicInfo topic) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -444,10 +454,10 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         width: 140,
         padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Color.fromARGB(255, 19, 19, 19),
+          color: appColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Color.fromARGB(255, 46, 46, 46),
+            color: appColors.divider,
             width: 0.5,
           ),
         ),
@@ -458,7 +468,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
             Text(
               topic.name,
               style: TextStyle(
-                color: Colors.white,
+                color: appColors.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -469,7 +479,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
             Text(
               '${topic.postsCount} posts',
               style: TextStyle(
-                color: Colors.grey,
+                color: appColors.textSecondary,
                 fontSize: 12,
               ),
             ),

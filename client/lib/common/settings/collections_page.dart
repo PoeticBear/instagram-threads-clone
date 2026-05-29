@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class CollectionsPage extends StatefulWidget {
   const CollectionsPage({super.key});
@@ -41,6 +42,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
   }
 
   Future<void> _createCollection(String name) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       final newCollection = await _userService.createCollection(name);
       setState(() {
@@ -49,9 +51,9 @@ class _CollectionsPageState extends State<CollectionsPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to create collection.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Failed to create collection.'),
+            backgroundColor: appColors.destructive,
           ),
         );
       }
@@ -59,6 +61,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
   }
 
   Future<void> _deleteCollection(SaveCollection collection) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       await _userService.deleteCollection(collection.id);
       setState(() {
@@ -67,9 +70,9 @@ class _CollectionsPageState extends State<CollectionsPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to delete collection.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Failed to delete collection.'),
+            backgroundColor: appColors.destructive,
           ),
         );
       }
@@ -77,23 +80,24 @@ class _CollectionsPageState extends State<CollectionsPage> {
   }
 
   void _showCreateDialog() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final controller = TextEditingController();
     showCupertinoDialog(
       context: context,
       builder: (dialogContext) => CupertinoAlertDialog(
-        title: const Text(
+        title: Text(
           'New Collection',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: appColors.textPrimary),
         ),
         content: Padding(
           padding: const EdgeInsets.only(top: 12),
           child: CupertinoTextField(
             controller: controller,
             placeholder: 'Collection name',
-            placeholderStyle: const TextStyle(color: Color(0xff888888)),
-            style: const TextStyle(color: Colors.white),
+            placeholderStyle: TextStyle(color: appColors.textMuted),
+            style: TextStyle(color: appColors.textPrimary),
             decoration: BoxDecoration(
-              color: const Color(0xff1a1a1a),
+              color: appColors.surface,
               borderRadius: BorderRadius.circular(8),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -122,18 +126,19 @@ class _CollectionsPageState extends State<CollectionsPage> {
   }
 
   void _confirmDelete(SaveCollection collection) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     showCupertinoDialog(
       context: context,
       builder: (dialogContext) => CupertinoAlertDialog(
         title: Text(
           'Delete "${collection.name}"?',
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: appColors.textPrimary),
         ),
-        content: const Padding(
-          padding: EdgeInsets.only(top: 8),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
           child: Text(
             'This action cannot be undone.',
-            style: TextStyle(color: Color(0xff888888)),
+            style: TextStyle(color: appColors.textMuted),
           ),
         ),
         actions: [
@@ -158,26 +163,27 @@ class _CollectionsPageState extends State<CollectionsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          icon: Icon(CupertinoIcons.back, color: appColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Collections',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: appColors.textPrimary,
             fontWeight: FontWeight.w500,
             fontSize: 18,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.add, color: Colors.white, size: 26),
+            icon: Icon(CupertinoIcons.add, color: appColors.textPrimary, size: 26),
             onPressed: _showCreateDialog,
           ),
         ],
@@ -189,21 +195,21 @@ class _CollectionsPageState extends State<CollectionsPage> {
                   child: Text(
                     'No collections yet',
                     style: TextStyle(
-                      color: const Color(0xff888888),
+                      color: appColors.textMuted,
                       fontSize: 16,
                     ),
                   ),
                 )
               : RefreshIndicator(
-                  backgroundColor: const Color(0xff222222),
-                  color: Colors.white,
+                  backgroundColor: appColors.surfaceSecondary,
+                  color: appColors.textPrimary,
                   onRefresh: _loadCollections,
                   child: ListView.separated(
                     itemCount: _collections.length,
-                    separatorBuilder: (_, __) => const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                    separatorBuilder: (_, __) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Divider(
-                        color: Color(0xff333333),
+                        color: appColors.divider,
                         height: 0.5,
                         thickness: 0.5,
                       ),
@@ -218,6 +224,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
   }
 
   Widget _buildCollectionTile(SaveCollection collection) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Dismissible(
       key: ValueKey(collection.id),
       direction: DismissDirection.endToStart,
@@ -228,8 +235,8 @@ class _CollectionsPageState extends State<CollectionsPage> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red.withValues(alpha: 0.15),
-        child: const Icon(CupertinoIcons.delete, color: Colors.red, size: 24),
+        color: appColors.destructive.withValues(alpha: 0.15),
+        child: Icon(CupertinoIcons.delete, color: appColors.destructive, size: 24),
       ),
       child: GestureDetector(
         onLongPress: () => _confirmDelete(collection),
@@ -242,12 +249,12 @@ class _CollectionsPageState extends State<CollectionsPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xff1a1a1a),
+                  color: appColors.surface,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   CupertinoIcons.folder,
-                  color: Color(0xff888888),
+                  color: appColors.textMuted,
                   size: 22,
                 ),
               ),
@@ -262,8 +269,8 @@ class _CollectionsPageState extends State<CollectionsPage> {
                         Flexible(
                           child: Text(
                             collection.name,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: appColors.textPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
@@ -275,14 +282,14 @@ class _CollectionsPageState extends State<CollectionsPage> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xff1a1a1a),
+                              color: appColors.surface,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: const Color(0xff444444)),
+                              border: Border.all(color: appColors.dividerSecondary),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Default',
                               style: TextStyle(
-                                color: Color(0xff888888),
+                                color: appColors.textMuted,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -294,8 +301,8 @@ class _CollectionsPageState extends State<CollectionsPage> {
                     const SizedBox(height: 4),
                     Text(
                       '${collection.saveCount} saved',
-                      style: const TextStyle(
-                        color: Color(0xff888888),
+                      style: TextStyle(
+                        color: appColors.textMuted,
                         fontSize: 13,
                       ),
                     ),
@@ -304,8 +311,8 @@ class _CollectionsPageState extends State<CollectionsPage> {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           collection.createTime!,
-                          style: const TextStyle(
-                            color: Color(0xff555555),
+                          style: TextStyle(
+                            color: appColors.textHint,
                             fontSize: 12,
                           ),
                         ),
@@ -313,9 +320,9 @@ class _CollectionsPageState extends State<CollectionsPage> {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
-                color: Color(0xff444444),
+                color: appColors.dividerSecondary,
                 size: 18,
               ),
             ],

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/auth/onboard/thread.dart';
+import 'package:threads/theme/app_colors.dart';
 import '../../widget/custom/rippleButton.dart';
 
 class FollowerPage extends StatefulWidget {
@@ -13,6 +14,7 @@ class FollowerPage extends StatefulWidget {
 class _FollowerPageState extends State<FollowerPage> {
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
       bottomNavigationBar: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -25,7 +27,7 @@ class _FollowerPageState extends State<FollowerPage> {
                       height: 50,
                       width: MediaQuery.of(context).size.width - 80,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: appColors.textPrimary,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
@@ -33,7 +35,7 @@ class _FollowerPageState extends State<FollowerPage> {
                         "Follow all",
                         style: TextStyle(
                             fontFamily: "icons.ttf",
-                            color: Colors.black,
+                            color: appColors.background,
                             fontSize: 18,
                             fontWeight: FontWeight.w500),
                       ))),
@@ -44,7 +46,7 @@ class _FollowerPageState extends State<FollowerPage> {
         ],
       ),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: appColors.background,
         leading: Container(),
         flexibleSpace: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -67,7 +69,7 @@ class _FollowerPageState extends State<FollowerPage> {
                               padding: EdgeInsets.only(left: 35, top: 12),
                               child: Text("Back",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: appColors.textPrimary,
                                     fontSize: 20,
                                   ))),
                         )
@@ -95,7 +97,7 @@ class _FollowerPageState extends State<FollowerPage> {
                               children: [
                                 Text("Next",
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: appColors.textPrimary,
                                       fontSize: 20,
                                     )),
                                 Padding(
@@ -111,7 +113,7 @@ class _FollowerPageState extends State<FollowerPage> {
           ],
         ),
       ),
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       body: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
         Container(
           height: 10,
@@ -119,7 +121,7 @@ class _FollowerPageState extends State<FollowerPage> {
         Text(
           "Follow the same accounts you\nfollow on Instagram?",
           style: TextStyle(
-              color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              color: appColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
           textAlign: TextAlign.center,
         ),
         Container(
@@ -128,7 +130,7 @@ class _FollowerPageState extends State<FollowerPage> {
         Text(
           "How it works",
           style: TextStyle(
-              color: Color.fromARGB(255, 96, 96, 96),
+              color: appColors.textHint,
               fontSize: 16,
               fontWeight: FontWeight.w500),
           textAlign: TextAlign.center,
@@ -146,15 +148,15 @@ class _FollowerPageState extends State<FollowerPage> {
                   ),
                   Icon(
                     Icons.search,
-                    color: Colors.grey,
+                    color: appColors.textSecondary,
                   )
                 ],
               ),
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: appColors.textPrimary, fontSize: 18),
               placeholder: 'Search',
               padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 42, 42, 42),
+                color: appColors.surfaceSecondary,
                 borderRadius: BorderRadius.circular(8),
               ),
             )),
@@ -167,7 +169,7 @@ class _FollowerPageState extends State<FollowerPage> {
             Container(
               height: 50,
               width: MediaQuery.of(context).size.width - 40,
-              color: Colors.black,
+              color: appColors.background,
               child: Row(
                 children: [
                   Image.asset("assets/pp.jpg"),
@@ -181,13 +183,13 @@ class _FollowerPageState extends State<FollowerPage> {
                       Text(
                         "Test_account",
                         style: TextStyle(
-                            color: Colors.white,
+                            color: appColors.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600),
                       ),
                       Text(
                         "testaccount123",
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: appColors.textSecondary),
                       ),
                     ],
                   ),
@@ -210,10 +212,10 @@ class _FollowerPageState extends State<FollowerPage> {
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: appColors.background,
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
-                              color: Colors.grey,
+                              color: appColors.border,
                               width: 0.5,
                             ),
                           )))

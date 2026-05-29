@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/message.state.dart';
+import 'package:threads/theme/app_colors.dart';
 
 class CreateGroupPage extends StatefulWidget {
   const CreateGroupPage({super.key});
@@ -23,12 +24,13 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Future<void> _createGroup() async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a group name'),
-          backgroundColor: Colors.redAccent,
+        SnackBar(
+          content: const Text('Please enter a group name'),
+          backgroundColor: appColors.destructive,
         ),
       );
       return;
@@ -47,9 +49,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to create group'),
-            backgroundColor: Colors.redAccent,
+          SnackBar(
+            content: const Text('Failed to create group'),
+            backgroundColor: appColors.destructive,
           ),
         );
       }
@@ -61,17 +63,18 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return AppBar(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(Icons.arrow_back, color: appColors.textPrimary),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: const Text(
+      title: Text(
         'Create Group',
         style: TextStyle(
-          color: Colors.white,
+          color: appColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
@@ -81,6 +84,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Widget _buildAvatarSection() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Center(
       child: GestureDetector(
         onTap: () {
@@ -90,13 +94,13 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.grey[800],
+            color: appColors.surface,
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.camera_alt_outlined,
             size: 32,
-            color: Colors.grey[500],
+            color: appColors.textMuted,
           ),
         ),
       ),
@@ -104,13 +108,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Widget _buildNameField() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Group Name',
           style: TextStyle(
-            color: Colors.white,
+            color: appColors.textPrimary,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -119,14 +124,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         TextField(
           controller: _nameController,
           maxLength: 50,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-          cursorColor: Colors.white,
+          style: TextStyle(color: appColors.textPrimary, fontSize: 16),
+          cursorColor: appColors.textPrimary,
           decoration: InputDecoration(
-            counterStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
+            counterStyle: TextStyle(color: appColors.textMuted, fontSize: 12),
             hintText: 'Enter group name',
-            hintStyle: TextStyle(color: Colors.grey[500]),
+            hintStyle: TextStyle(color: appColors.textMuted),
             filled: true,
-            fillColor: const Color.fromARGB(255, 22, 22, 22),
+            fillColor: appColors.surface,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 12,
@@ -147,6 +152,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -157,8 +163,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -167,7 +173,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: appColors.textMuted,
                     fontSize: 12,
                   ),
                 ),
@@ -177,8 +183,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: Colors.blue,
-            activeThumbColor: Colors.white,
+            activeTrackColor: appColors.accent,
+            activeThumbColor: appColors.textPrimary,
           ),
         ],
       ),
@@ -188,6 +194,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   Widget _buildSelectedUsers() {
     return Consumer<MessageState>(
       builder: (context, state, _) {
+        final appColors =
+            Theme.of(context).extension<AppColorsExtension>()!.colors;
         final selectedUsers = state.recommendUsers;
         if (selectedUsers.isEmpty) {
           return Padding(
@@ -196,11 +204,11 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               child: Column(
                 children: [
                   Icon(Icons.person_add_outlined,
-                      size: 40, color: Colors.grey[700]),
+                      size: 40, color: appColors.surface),
                   const SizedBox(height: 8),
                   Text(
                     'Search and select users to add',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                    style: TextStyle(color: appColors.textMuted, fontSize: 14),
                   ),
                 ],
               ),
@@ -229,15 +237,16 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: Colors.grey[800],
-                      backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                      backgroundColor: appColors.surface,
+                      backgroundImage: (avatarUrl != null &&
+                              avatarUrl.isNotEmpty)
                           ? CachedNetworkImageProvider(avatarUrl)
                           : null,
                       child: (avatarUrl == null || avatarUrl.isEmpty)
                           ? Text(
                               displayName[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: appColors.textPrimary,
                                 fontSize: 18,
                               ),
                             )
@@ -252,7 +261,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.grey[400],
+                          color: appColors.textSecondary,
                           fontSize: 11,
                         ),
                       ),
@@ -268,31 +277,32 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Widget _buildCreateButton() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
         onPressed: _isCreating ? null : _createGroup,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          disabledBackgroundColor: Colors.blue.withValues(alpha: 0.5),
+          backgroundColor: appColors.accent,
+          disabledBackgroundColor: appColors.accent.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ),
         child: _isCreating
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Colors.white,
+                  color: appColors.textPrimary,
                 ),
               )
-            : const Text(
+            : Text(
                 'Create',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: appColors.textPrimary,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -303,8 +313,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: appColors.background,
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -318,7 +329,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             const SizedBox(height: 16),
             Container(
               height: 0.5,
-              color: const Color.fromARGB(255, 46, 46, 46),
+              color: appColors.divider,
             ),
             const SizedBox(height: 8),
             _buildSwitchTile(
@@ -335,13 +346,13 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             ),
             Container(
               height: 0.5,
-              color: const Color.fromARGB(255, 46, 46, 46),
+              color: appColors.divider,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Members',
               style: TextStyle(
-                color: Colors.white,
+                color: appColors.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),

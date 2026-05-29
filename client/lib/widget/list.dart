@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/pages/profile/profile.dart';
+import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/custom/title_text.dart';
 
 class UserTilePage extends StatelessWidget {
@@ -14,6 +15,7 @@ class UserTilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -33,10 +35,10 @@ class UserTilePage extends StatelessWidget {
                       height: 40,
                       width: 40,
                       decoration: BoxDecoration(
-                        color: Colors.grey[800],
+                        color: appColors.surface,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.person, size: 24, color: Colors.grey[600]),
+                      child: Icon(Icons.person, size: 24, color: appColors.textSecondary),
                     )
                   : CachedNetworkImage(
                       imageUrl: user.profilePic!,
@@ -52,7 +54,7 @@ class UserTilePage extends StatelessWidget {
                   TitleText(
                     user.displayName == null ? "" : user.displayName!,
                     fontSize: 20,
-                    color: Colors.white,
+                    color: appColors.textPrimary,
                     fontWeight: FontWeight.w600,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -61,7 +63,7 @@ class UserTilePage extends StatelessWidget {
                     user.userName!,
                     style: TextStyle(
                       fontSize: 17,
-                      color: Colors.grey,
+                      color: appColors.textSecondary,
                     ),
                   ),
                   Container(
@@ -72,7 +74,7 @@ class UserTilePage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: appColors.textPrimary,
                     ),
                   ),
                 ],
@@ -90,10 +92,10 @@ class UserTilePage extends StatelessWidget {
                           width: 100,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: appColors.background,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.grey,
+                              color: appColors.textSecondary,
                               width: 0.5,
                             ),
                           ),
@@ -101,7 +103,7 @@ class UserTilePage extends StatelessWidget {
                             "Follow",
                             style: TextStyle(
                               fontSize: 18,
-                              color: Colors.white,
+                              color: appColors.textPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
