@@ -1,5552 +1,723 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Post 帖子 API",
-    "version": "0.1.0"
+  "common": {
+    "response_wrapper": "{ code: int, msg: string, data: T }",
+    "pagination": "{ total: int, page: int, size: int, items: T[] }",
+    "auth_header": "Authorization: string (大部分接口必传)",
+    "device_header": "device-os: string (可选)"
   },
-  "paths": {
-    "/post/create": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "创建帖子",
-        "description": "创建帖子接口\n\n支持的功能：\n- 文字内容（最多500字符）\n- 媒体附件（最多10个，支持图片、视频、GIF、语音、文本附件）\n- 位置信息\n- 话题关联（通过topic_id或topic_name，最多1个）\n- 投票功能（2-4个选项，24小时有效期）\n- 幽灵帖（24小时后自动消失）\n- 社群发布（community_id + flair_id）\n\n限制：\n- 媒体文件最多10个\n- 投票选项2-4个\n- 内容500字符限制",
-        "operationId": "create_post_post_create_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          },
-          {
-            "name": "user-agent",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "user_agent",
-              "default": "",
-              "title": "User-Agent"
-            },
-            "description": "user_agent"
-          },
-          {
-            "name": "device-name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_name: 如ipad等",
-              "default": "",
-              "title": "Device-Name"
-            },
-            "description": "device_name: 如ipad等"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePostRequest",
-                "description": "创建帖子请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PostResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/detail/{post_id}": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "帖子详情",
-        "operationId": "get_post_detail_post_detail__post_id__get",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          },
-          {
-            "name": "user-agent",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "user_agent",
-              "default": "",
-              "title": "User-Agent"
-            },
-            "description": "user_agent"
-          },
-          {
-            "name": "device-name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_name: 如ipad等",
-              "default": "",
-              "title": "Device-Name"
-            },
-            "description": "device_name: 如ipad等"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PostResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/{post_id}": {
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "删除帖子",
-        "operationId": "delete_post_post__post_id__delete",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+  "endpoints": [
+    {
+      "name": "创建帖子",
+      "method": "POST",
+      "path": "/post/create",
+      "auth": true,
+      "desc": "创建帖子接口 支持的功能： - 文字内容（最多500字符） - 媒体附件（最多10个，支持图片、视频、GIF、语音、文本附件） - 位置信息 - 话题关联（通过topic_id或topic_name，最多1个） - 投票功能（2-4个选项，24小时有效期） - 幽灵帖（24小时后自动消失） - 社群发布（community_id + flair_id） 限制： - 媒体文件最多10个 - 投票选项2-4个 - 内容500字符限制",
+      "request": {
+        "content": "string, max 500, 帖子内容, optional",
+        "media_urls": "string[], 媒体URL列表, default: [], optional",
+        "media_types": "int[], 媒体类型列表：1=图片，2=视频，3=GIF，4=语音，5=文本附件, default: [], optional",
+        "reply_type": "int, 回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页, default: 1, optional",
+        "need_review": "int, 是否需要审核回复：0=否，1=是, default: 0, optional",
+        "location": "string, max 100, 定位信息, optional",
+        "latitude": "float?, 纬度, optional",
+        "longitude": "float?, 经度, optional",
+        "topic_id": "int?, 话题ID（最多添加1个话题）, optional",
+        "topic_name": "string?, 话题名称（与topic_id互斥，优先使用topic_id）, optional",
+        "is_repost": "int, 是否纯转发：0=否，1=是, default: 0, optional",
+        "repost_parent_id": "int?, 纯转发原帖ID, optional",
+        "is_guest_post": "int, 是否幽灵帖：0=否，1=是, default: 0, optional",
+        "guest_expire_time": "string?, 幽灵帖过期时间, optional",
+        "poll_options": "string[], 投票选项列表（2-4个）, default: [], optional",
+        "quote_post_id": "int?, 引用的帖子ID, optional",
+        "thread_posts": "ThreadPostData[], 添加到帖子的帖子数据列表, default: [], optional",
+        "is_edited": "int, 是否已编辑：0=否，1=是, default: 0, optional",
+        "is_sensitive": "int, 是否敏感内容：0=否，1=是, default: 0, optional",
+        "content_warning": "string, max 200, 敏感内容警告文字, optional",
+        "alt_texts": "string[], 图片替代文本列表（与media_urls顺序对应）, default: [], optional",
+        "is_ai_generated": "int, 是否AI生成内容：0=否，1=是, default: 0, optional",
+        "scheduled_publish_time": "string?, 预设发布时间, optional"
       },
-      "put": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "编辑帖子",
-        "description": "编辑帖子接口\n\n仅在帖子发布后15分钟内允许编辑，最多编辑5次。",
-        "operationId": "edit_post_post__post_id__put",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EditPostRequest",
-                "description": "编辑帖子请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PostResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "PostResponse?"
     },
-    "/post/{post_id}/edit-history": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "帖子编辑历史",
-        "description": "获取帖子编辑历史",
-        "operationId": "get_edit_history_post__post_id__edit_history_get",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_list_EditHistoryResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/like/{post_id}": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "点赞帖子",
-        "operationId": "like_post_post_like__post_id__post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "帖子详情",
+      "method": "GET",
+      "path": "/post/detail/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
       },
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "取消点赞",
-        "operationId": "unlike_post_post_like__post_id__delete",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "PostResponse?"
     },
-    "/post/repost/{post_id}": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "转发帖子",
-        "operationId": "repost_post_post_repost__post_id__post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RepostRequest",
-                "description": "转发请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/share/{post_id}": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "分享帖子",
-        "description": "分享帖子接口\n\n记录分享并增加帖子的 shares_count。",
-        "operationId": "share_post_post_share__post_id__post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/report": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "举报内容",
-        "description": "举报内容接口\n\n对帖子、回复等违规内容进行举报。\n同一用户对同一内容只能举报一次。",
-        "operationId": "report_content_post_report_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReportRequest",
-                "description": "举报请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_ReportResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/save/{post_id}": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "收藏帖子",
-        "operationId": "save_post_post_save__post_id__post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "保存草稿",
+      "method": "POST",
+      "path": "/post/draft",
+      "auth": true,
+      "desc": "保存草稿接口 保存用户的帖子草稿，支持以下功能： - 文字内容（最多500字符） - 媒体附件（最多10个） - 回复权限设置 - 幽灵帖设置 - 位置信息 - 话题关联 - 投票功能 - 引用转发 - 添加到帖子 - AI标签",
+      "request": {
+        "content": "string, max 500, 草稿内容, optional",
+        "media_urls": "string[], 媒体URL列表, default: [], optional",
+        "media_types": "int[], 媒体类型列表：1=图片，2=视频，3=GIF，4=语音，5=文本附件, default: [], optional",
+        "reply_type": "int, 回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页, default: 1, optional",
+        "need_review": "int, 是否需要审核回复：0=否，1=是, default: 0, optional",
+        "is_guest_post": "int, 是否幽灵帖：0=否，1=是, default: 0, optional",
+        "location": "string, max 100, 定位信息, optional",
+        "latitude": "float?, 纬度, optional",
+        "longitude": "float?, 经度, optional",
+        "topic_id": "int?, 话题ID, optional",
+        "topic_name": "string?, 话题名称（与topic_id互斥，优先使用topic_id）, optional",
+        "poll_options": "string[], 投票选项列表, default: [], optional",
+        "quote_post_id": "int?, 引用帖子ID, optional",
+        "thread_posts": "ThreadPostData[], 添加到帖子的帖子数据列表, default: [], optional",
+        "is_ai_generated": "int, 是否AI生成内容：0=否，1=是, default: 0, optional"
       },
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "取消收藏",
-        "operationId": "unsave_post_post_save__post_id__delete",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "DraftResponse?"
     },
-    "/post/pin/{post_id}": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "置顶帖子",
-        "description": "置顶帖子（仅帖子作者可操作）",
-        "operationId": "pin_post_post_pin__post_id__post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "草稿列表",
+      "method": "GET",
+      "path": "/post/draft/list",
+      "auth": true,
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100"
       },
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "取消置顶帖子",
-        "description": "取消置顶帖子（仅帖子作者可操作）",
-        "operationId": "unpin_post_post_pin__post_id__delete",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "Page<DraftResponse>?"
     },
-    "/post/reply": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "创建回复",
-        "operationId": "create_reply_post_reply_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReplyRequest",
-                "description": "创建回复请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_ReplyResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/reply/list/{post_id}": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "帖子回复列表",
-        "description": "帖子回复列表接口\n\n获取指定帖子的回复列表，支持分页和父子回复筛选\n\nArgs:\n    post_id: 帖子ID\n    page: 页码，默认1\n    size: 每页数量，默认20，最大100\n    parent_id: 父回复ID（None获取一级回复，否则获取子回复）\n    sort_by: 排序方式：'relevant'=最相关（按热度），'recent'=最近（按时间）\n    me: 当前登录用户（可选）\n\nReturns:\n    分页的回复列表",
-        "operationId": "get_reply_list_post_reply_list__post_id__get",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "parent_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "父回复ID",
-              "title": "Parent Id"
-            },
-            "description": "父回复ID"
-          },
-          {
-            "name": "sort_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "排序方式：relevant=最相关，recent=最近",
-              "default": "recent",
-              "title": "Sort By"
-            },
-            "description": "排序方式：relevant=最相关，recent=最近"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PageMeta_ReplyResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/reply/like/{reply_id}": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "点赞回复",
-        "operationId": "like_reply_post_reply_like__reply_id__post",
-        "parameters": [
-          {
-            "name": "reply_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Reply Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "草稿详情",
+      "method": "GET",
+      "path": "/post/draft/{draft_id}",
+      "auth": true,
+      "path_params": {
+        "draft_id": "int"
       },
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "取消点赞回复",
-        "operationId": "unlike_reply_post_reply_like__reply_id__delete",
-        "parameters": [
-          {
-            "name": "reply_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Reply Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "DraftResponse?"
     },
-    "/post/reply/pin/{reply_id}": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "置顶回复",
-        "description": "置顶回复（仅帖子作者可操作）",
-        "operationId": "pin_reply_post_reply_pin__reply_id__post",
-        "parameters": [
-          {
-            "name": "reply_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Reply Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "删除草稿",
+      "method": "DELETE",
+      "path": "/post/draft/{draft_id}",
+      "auth": true,
+      "path_params": {
+        "draft_id": "int"
       },
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "取消置顶回复",
-        "description": "取消置顶回复（仅帖子作者可操作）",
-        "operationId": "unpin_reply_post_reply_pin__reply_id__delete",
-        "parameters": [
-          {
-            "name": "reply_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Reply Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "OKResponse?"
     },
-    "/post/reply/hide/{reply_id}": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "隐藏回复",
-        "description": "隐藏回复（帖子作者或回复作者可操作）",
-        "operationId": "hide_reply_post_reply_hide__reply_id__post",
-        "parameters": [
-          {
-            "name": "reply_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Reply Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "首页信息流",
+      "method": "GET",
+      "path": "/post/feed",
+      "auth": true,
+      "desc": "首页信息流接口 支持两种信息流类型： - feed_type=1（For You 推荐流）：基于互动热度的推荐内容 - feed_type=2（Following 关注流）：关注用户发布的内容，按时间倒序",
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100",
+        "feed_type": "int, 信息流类型：1=推荐(For You)，2=关注(Following), default: 1, min: 1, max: 2"
       },
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "取消隐藏回复",
-        "description": "取消隐藏回复（帖子作者或回复作者可操作）",
-        "operationId": "unhide_reply_post_reply_hide__reply_id__delete",
-        "parameters": [
-          {
-            "name": "reply_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Reply Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "Page<PostResponse>?"
     },
-    "/post/reply/pending/{post_id}": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "待审核回复列表",
-        "description": "获取帖子的待审核回复列表接口\n\n只有帖子作者可以查看待审核的回复列表",
-        "operationId": "get_pending_replies_post_reply_pending__post_id__get",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_list_ReplyResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/reply/pending/{post_id}/approve": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "审批待审核回复",
-        "description": "审批待审核回复接口\n\n只有帖子作者可以审批待审核回复\n审批通过后，回复将正常显示",
-        "operationId": "approve_pending_reply_post_reply_pending__post_id__approve_post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApprovePendingReplyRequest",
-                "description": "审批请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/reply/pending/{post_id}/reject": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "拒绝待审核回复",
-        "description": "拒绝待审核回复接口\n\n只有帖子作者可以拒绝待审核回复\n拒绝后，回复将被隐藏或删除",
-        "operationId": "reject_pending_reply_post_reply_pending__post_id__reject_post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectPendingReplyRequest",
-                "description": "拒绝请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/poll/{post_id}/vote": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "投票",
-        "description": "投票接口\n\n用户对帖子的投票选项进行投票。\n- 每个用户对同一个投票只能投一次\n- 投票过期后不能再投",
-        "operationId": "vote_poll_post_poll__post_id__vote_post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VotePollRequest",
-                "description": "投票请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PollResultResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/poll/{post_id}": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "获取投票结果",
-        "description": "获取投票结果接口\n\n获取帖子的投票选项列表、当前票数分布以及当前用户的投票状态。",
-        "operationId": "get_poll_result_post_poll__post_id__get",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PollResultResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/nearby": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "附近位置帖子数量",
-        "description": "附近位置帖子数量接口\n\n接收前端地图 SDK 获取的 POI 位置列表，返回每个 POI 附近的帖子数量。\n前端直接将返回数据按索引匹配到 POI 列表，标注帖子数量热点 badge。",
-        "operationId": "get_nearby_locations_post_nearby_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NearbyPostsRequest",
-                "description": "附近位置请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_NearbyPostsResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/feed": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "首页信息流",
-        "description": "首页信息流接口\n\n支持两种信息流类型：\n- feed_type=1（For You 推荐流）：基于互动热度的推荐内容\n- feed_type=2（Following 关注流）：关注用户发布的内容，按时间倒序",
-        "operationId": "get_feed_post_feed_get",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "feed_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 2,
-              "minimum": 1,
-              "description": "信息流类型：1=推荐(For You)，2=关注(Following)",
-              "default": 1,
-              "title": "Feed Type"
-            },
-            "description": "信息流类型：1=推荐(For You)，2=关注(Following)"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PageMeta_PostResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/user/{user_id}/posts": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "用户帖子列表",
-        "operationId": "get_user_posts_post_user__user_id__posts_get",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "User Id"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PageMeta_PostResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/saved": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "收藏列表",
-        "operationId": "get_saved_posts_post_saved_get",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PageMeta_PostResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/scheduled": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "定时帖子列表",
-        "description": "定时帖子列表接口\n\n获取当前用户所有定时待发布的帖子（status=4）。\n按预设发布时间升序排列，最先发布的排在最前。",
-        "operationId": "get_scheduled_posts_post_scheduled_get",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PageMeta_PostResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/{post_id}/schedule": {
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "取消定时发布",
-        "description": "取消定时发布接口\n\n将定时待发布的帖子直接删除（标记为已删除）。\n只有帖子作者可以取消，且帖子必须处于 status=4（定时待发布）状态。",
-        "operationId": "cancel_scheduled_post_post__post_id__schedule_delete",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/guest-reply-request": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "申请回复幽灵帖",
-        "description": "申请回复幽灵帖接口\n\n当用户不是幽灵帖作者的的关注者时，可以提交回复申请\n只有幽灵帖需要申请回复，普通帖子按reply_type权限直接判断",
-        "operationId": "create_guest_post_reply_request_post_guest_reply_request_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateGuestPostReplyRequest",
-                "description": "创建幽灵帖回复申请请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_GuestPostReplyRequestResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/guest-reply-request/{post_id}/approve": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "审批幽灵帖回复申请",
-        "description": "审批幽灵帖回复申请接口\n\n只有帖子作者可以审批回复申请",
-        "operationId": "approve_guest_post_reply_request_post_guest_reply_request__post_id__approve_post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApproveGuestPostReplyRequest",
-                "description": "审批请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/guest-reply-request/{post_id}/reject": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "拒绝幽灵帖回复申请",
-        "description": "拒绝幽灵帖回复申请接口\n\n只有帖子作者可以拒绝回复申请",
-        "operationId": "reject_guest_post_reply_request_post_guest_reply_request__post_id__reject_post",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectGuestPostReplyRequest",
-                "description": "拒绝请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/guest-reply-request/{post_id}/pending": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "获取幽灵帖待审批申请列表",
-        "description": "获取幽灵帖待审批申请列表\n\n只有帖子作者可以查看待审批的申请列表",
-        "operationId": "get_pending_guest_post_reply_requests_post_guest_reply_request__post_id__pending_get",
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Post Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_list_GuestPostReplyRequestResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/draft": {
-      "post": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "保存草稿",
-        "description": "保存草稿接口\n\n保存用户的帖子草稿，支持以下功能：\n- 文字内容（最多500字符）\n- 媒体附件（最多10个）\n- 回复权限设置\n- 幽灵帖设置\n- 位置信息\n- 话题关联\n- 投票功能\n- 引用转发\n- 添加到帖子\n- AI标签",
-        "operationId": "save_draft_post_draft_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SaveDraftRequest",
-                "description": "保存草稿请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_DraftResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/draft/list": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "草稿列表",
-        "description": "获取草稿列表接口",
-        "operationId": "get_draft_list_post_draft_list_get",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PageMeta_DraftResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/draft/{draft_id}": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "草稿详情",
-        "description": "获取草稿详情接口",
-        "operationId": "get_draft_detail_post_draft__draft_id__get",
-        "parameters": [
-          {
-            "name": "draft_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Draft Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_DraftResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "申请回复幽灵帖",
+      "method": "POST",
+      "path": "/post/guest-reply-request",
+      "auth": true,
+      "desc": "申请回复幽灵帖接口 当用户不是幽灵帖作者的的关注者时，可以提交回复申请 只有幽灵帖需要申请回复，普通帖子按reply_type权限直接判断",
+      "request": {
+        "post_id": "int, 帖子ID",
+        "content": "string, max 200, 申请理由, optional"
       },
-      "delete": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "删除草稿",
-        "description": "删除草稿接口",
-        "operationId": "delete_draft_post_draft__draft_id__delete",
-        "parameters": [
-          {
-            "name": "draft_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Draft Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "GuestPostReplyRequestResponse?"
     },
-    "/post/oembed": {
-      "get": {
-        "tags": [
-          "帖子"
-        ],
-        "summary": "帖子嵌入（oEmbed）",
-        "description": "oEmbed 端点\n\n符合 oEmbed 标准的帖子嵌入接口，第三方可通过 iframe 嵌入帖子。\n从 URL 中提取 short_code 并查找对应的帖子，返回标准的 oEmbed JSON 响应。\n\n调用示例:\n    GET /oembed?url=https://example.com/t/1a2B3c&format=json",
-        "operationId": "oembed_post_oembed_get",
-        "parameters": [
-          {
-            "name": "url",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "帖子URL，格式: https://domain/t/{short_code}",
-              "title": "Url"
-            },
-            "description": "帖子URL，格式: https://domain/t/{short_code}"
-          },
-          {
-            "name": "format",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "响应格式（json）",
-              "default": "json",
-              "title": "Format"
-            },
-            "description": "响应格式（json）"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "审批幽灵帖回复申请",
+      "method": "POST",
+      "path": "/post/guest-reply-request/{post_id}/approve",
+      "auth": true,
+      "desc": "审批幽灵帖回复申请接口 只有帖子作者可以审批回复申请",
+      "path_params": {
+        "post_id": "int"
+      },
+      "request": {
+        "request_id": "int, 申请ID"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "获取幽灵帖待审批申请列表",
+      "method": "GET",
+      "path": "/post/guest-reply-request/{post_id}/pending",
+      "auth": true,
+      "desc": "获取幽灵帖待审批申请列表 只有帖子作者可以查看待审批的申请列表",
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "List<GuestPostReplyRequestResponse>?"
+    },
+    {
+      "name": "拒绝幽灵帖回复申请",
+      "method": "POST",
+      "path": "/post/guest-reply-request/{post_id}/reject",
+      "auth": true,
+      "desc": "拒绝幽灵帖回复申请接口 只有帖子作者可以拒绝回复申请",
+      "path_params": {
+        "post_id": "int"
+      },
+      "request": {
+        "request_id": "int, 申请ID"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "点赞帖子",
+      "method": "POST",
+      "path": "/post/like/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "取消点赞",
+      "method": "DELETE",
+      "path": "/post/like/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "附近位置帖子数量",
+      "method": "POST",
+      "path": "/post/nearby",
+      "auth": true,
+      "desc": "附近位置帖子数量接口 接收前端地图 SDK 获取的 POI 位置列表，返回每个 POI 附近的帖子数量。 前端直接将返回数据按索引匹配到 POI 列表，标注帖子数量热点 badge。",
+      "request": {
+        "locations": "NearbyLocationInput[], POI 位置列表（由前端地图 SDK 获取）",
+        "radius": "int, 每个POI的帖子搜索半径（米），默认500, default: 500, optional"
+      },
+      "response": "NearbyPostsResponse?"
+    },
+    {
+      "name": "帖子嵌入（oEmbed）",
+      "method": "GET",
+      "path": "/post/oembed",
+      "desc": "oEmbed 端点 符合 oEmbed 标准的帖子嵌入接口，第三方可通过 iframe 嵌入帖子。 从 URL 中提取 short_code 并查找对应的帖子，返回标准的 oEmbed JSON 响应。 调用示例: GET /oembed?url=https://example.com/t/1a2B3c&format=json",
+      "query": {
+        "url": "string, 帖子URL，格式: https://domain/t/{short_code}",
+        "format": "string, 响应格式（json）, default: json"
+      },
+      "response": "void"
+    },
+    {
+      "name": "置顶帖子",
+      "method": "POST",
+      "path": "/post/pin/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "取消置顶帖子",
+      "method": "DELETE",
+      "path": "/post/pin/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "获取投票结果",
+      "method": "GET",
+      "path": "/post/poll/{post_id}",
+      "auth": true,
+      "desc": "获取投票结果接口 获取帖子的投票选项列表、当前票数分布以及当前用户的投票状态。",
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "PollResultResponse?"
+    },
+    {
+      "name": "投票",
+      "method": "POST",
+      "path": "/post/poll/{post_id}/vote",
+      "auth": true,
+      "desc": "投票接口 用户对帖子的投票选项进行投票。 - 每个用户对同一个投票只能投一次 - 投票过期后不能再投",
+      "path_params": {
+        "post_id": "int"
+      },
+      "request": {
+        "option_id": "int, 投票选项ID"
+      },
+      "response": "PollResultResponse?"
+    },
+    {
+      "name": "创建回复",
+      "method": "POST",
+      "path": "/post/reply",
+      "auth": true,
+      "request": {
+        "post_id": "int, 帖子ID",
+        "content": "string, max 500, 回复内容, optional",
+        "media_urls": "string[], 媒体URL列表, default: [], optional",
+        "parent_id": "int?, 父回复ID, optional",
+        "is_private": "int, 是否私密回复：0=否，1=是, default: 0, optional",
+        "mentioned_user_ids": "int[], @提及的用户ID列表, default: [], optional"
+      },
+      "response": "ReplyResponse?"
+    },
+    {
+      "name": "隐藏回复",
+      "method": "POST",
+      "path": "/post/reply/hide/{reply_id}",
+      "auth": true,
+      "desc": "隐藏回复（帖子作者或回复作者可操作）",
+      "path_params": {
+        "reply_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "取消隐藏回复",
+      "method": "DELETE",
+      "path": "/post/reply/hide/{reply_id}",
+      "auth": true,
+      "desc": "取消隐藏回复（帖子作者或回复作者可操作）",
+      "path_params": {
+        "reply_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "点赞回复",
+      "method": "POST",
+      "path": "/post/reply/like/{reply_id}",
+      "auth": true,
+      "path_params": {
+        "reply_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "取消点赞回复",
+      "method": "DELETE",
+      "path": "/post/reply/like/{reply_id}",
+      "auth": true,
+      "path_params": {
+        "reply_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "帖子回复列表",
+      "method": "GET",
+      "path": "/post/reply/list/{post_id}",
+      "auth": true,
+      "desc": "帖子回复列表接口 获取指定帖子的回复列表，支持分页和父子回复筛选 Args: post_id: 帖子ID page: 页码，默认1 size: 每页数量，默认20，最大100 parent_id: 父回复ID（None获取一级回复，否则获取子回复） sort_by: 排序方式：'relevant'=最相关（按热度），'recent'=最近（按时间） me: 当前登录用户（可选） Returns: 分页的回复列表",
+      "path_params": {
+        "post_id": "int"
+      },
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100",
+        "parent_id": "string, 父回复ID",
+        "sort_by": "string, 排序方式：relevant=最相关，recent=最近, default: recent"
+      },
+      "response": "Page<ReplyResponse>?"
+    },
+    {
+      "name": "待审核回复列表",
+      "method": "GET",
+      "path": "/post/reply/pending/{post_id}",
+      "auth": true,
+      "desc": "获取帖子的待审核回复列表接口 只有帖子作者可以查看待审核的回复列表",
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "List<ReplyResponse>?"
+    },
+    {
+      "name": "审批待审核回复",
+      "method": "POST",
+      "path": "/post/reply/pending/{post_id}/approve",
+      "auth": true,
+      "desc": "审批待审核回复接口 只有帖子作者可以审批待审核回复 审批通过后，回复将正常显示",
+      "path_params": {
+        "post_id": "int"
+      },
+      "request": {
+        "reply_id": "int, 回复ID"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "拒绝待审核回复",
+      "method": "POST",
+      "path": "/post/reply/pending/{post_id}/reject",
+      "auth": true,
+      "desc": "拒绝待审核回复接口 只有帖子作者可以拒绝待审核回复 拒绝后，回复将被隐藏或删除",
+      "path_params": {
+        "post_id": "int"
+      },
+      "request": {
+        "reply_id": "int, 回复ID",
+        "reject_reason": "string, max 500, 拒绝原因, optional"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "置顶回复",
+      "method": "POST",
+      "path": "/post/reply/pin/{reply_id}",
+      "auth": true,
+      "path_params": {
+        "reply_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "取消置顶回复",
+      "method": "DELETE",
+      "path": "/post/reply/pin/{reply_id}",
+      "auth": true,
+      "path_params": {
+        "reply_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "举报内容",
+      "method": "POST",
+      "path": "/post/report",
+      "auth": true,
+      "desc": "举报内容接口 对帖子、回复等违规内容进行举报。 同一用户对同一内容只能举报一次。",
+      "request": {
+        "target_type": "int, 举报目标类型：1=帖子，2=回复，3=用户，4=私信",
+        "target_id": "int, 举报目标ID",
+        "report_type": "int, 举报类型：1=垃圾信息，2=骚扰，3=仇恨言论，4=自残，5=暴力，6=隐私侵犯，7=虚假信息，8=知识产权，9=其他",
+        "description": "string, max 500, 举报补充描述, optional"
+      },
+      "response": "ReportResponse?"
+    },
+    {
+      "name": "转发帖子",
+      "method": "POST",
+      "path": "/post/repost/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
+      },
+      "request": {
+        "repost_type": "int, 转发类型：1=纯转发（仅写入post_repost表），2=引用转发（生成新帖子）, default: 1, optional",
+        "content": "string, 引用转发时的评论, optional"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "收藏帖子",
+      "method": "POST",
+      "path": "/post/save/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "取消收藏",
+      "method": "DELETE",
+      "path": "/post/save/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "收藏列表",
+      "method": "GET",
+      "path": "/post/saved",
+      "auth": true,
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100"
+      },
+      "response": "Page<PostResponse>?"
+    },
+    {
+      "name": "定时帖子列表",
+      "method": "GET",
+      "path": "/post/scheduled",
+      "auth": true,
+      "desc": "定时帖子列表接口 获取当前用户所有定时待发布的帖子（status=4）。 按预设发布时间升序排列，最先发布的排在最前。",
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100"
+      },
+      "response": "Page<PostResponse>?"
+    },
+    {
+      "name": "分享帖子",
+      "method": "POST",
+      "path": "/post/share/{post_id}",
+      "auth": true,
+      "desc": "分享帖子接口 记录分享并增加帖子的 shares_count。",
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "用户帖子列表",
+      "method": "GET",
+      "path": "/post/user/{user_id}/posts",
+      "auth": true,
+      "path_params": {
+        "user_id": "int"
+      },
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100"
+      },
+      "response": "Page<PostResponse>?"
+    },
+    {
+      "name": "编辑帖子",
+      "method": "PUT",
+      "path": "/post/{post_id}",
+      "auth": true,
+      "desc": "编辑帖子接口 仅在帖子发布后15分钟内允许编辑，最多编辑5次。",
+      "path_params": {
+        "post_id": "int"
+      },
+      "request": {
+        "content": "string, max 500, 帖子内容, optional",
+        "is_sensitive": "int, 是否敏感内容：0=否，1=是, default: 0, optional",
+        "content_warning": "string, max 200, 敏感内容警告文字, optional"
+      },
+      "response": "PostResponse?"
+    },
+    {
+      "name": "删除帖子",
+      "method": "DELETE",
+      "path": "/post/{post_id}",
+      "auth": true,
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "帖子编辑历史",
+      "method": "GET",
+      "path": "/post/{post_id}/edit-history",
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "List<EditHistoryResponse>?"
+    },
+    {
+      "name": "取消定时发布",
+      "method": "DELETE",
+      "path": "/post/{post_id}/schedule",
+      "auth": true,
+      "desc": "取消定时发布接口 将定时待发布的帖子直接删除（标记为已删除）。 只有帖子作者可以取消，且帖子必须处于 status=4（定时待发布）状态。",
+      "path_params": {
+        "post_id": "int"
+      },
+      "response": "OKResponse?"
     }
-  },
-  "components": {
-    "schemas": {
-      "ApproveGuestPostReplyRequest": {
-        "properties": {
-          "request_id": {
-            "type": "integer",
-            "title": "Request Id",
-            "description": "申请ID"
-          }
-        },
-        "type": "object",
-        "required": [
-          "request_id"
-        ],
-        "title": "ApproveGuestPostReplyRequest",
-        "description": "审批幽灵帖回复申请请求模型"
-      },
-      "ApprovePendingReplyRequest": {
-        "properties": {
-          "reply_id": {
-            "type": "integer",
-            "title": "Reply Id",
-            "description": "回复ID"
-          }
-        },
-        "type": "object",
-        "required": [
-          "reply_id"
-        ],
-        "title": "ApprovePendingReplyRequest",
-        "description": "审批待审核回复请求模型"
-      },
-      "CreateGuestPostReplyRequest": {
-        "properties": {
-          "post_id": {
-            "type": "integer",
-            "title": "Post Id",
-            "description": "帖子ID"
-          },
-          "content": {
-            "type": "string",
-            "maxLength": 200,
-            "title": "Content",
-            "description": "申请理由",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "required": [
-          "post_id"
-        ],
-        "title": "CreateGuestPostReplyRequest",
-        "description": "创建幽灵帖回复申请请求模型"
-      },
-      "CreatePostRequest": {
-        "properties": {
-          "content": {
-            "type": "string",
-            "maxLength": 500,
-            "title": "Content",
-            "description": "帖子内容",
-            "default": ""
-          },
-          "media_urls": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Media Urls",
-            "description": "媒体URL列表",
-            "default": []
-          },
-          "media_types": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Media Types",
-            "description": "媒体类型列表：1=图片，2=视频，3=GIF，4=语音，5=文本附件",
-            "default": []
-          },
-          "reply_type": {
-            "type": "integer",
-            "title": "Reply Type",
-            "description": "回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页",
-            "default": 1
-          },
-          "need_review": {
-            "type": "integer",
-            "title": "Need Review",
-            "description": "是否需要审核回复：0=否，1=是",
-            "default": 0
-          },
-          "location": {
-            "type": "string",
-            "maxLength": 100,
-            "title": "Location",
-            "description": "定位信息",
-            "default": ""
-          },
-          "latitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude",
-            "description": "纬度"
-          },
-          "longitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude",
-            "description": "经度"
-          },
-          "topic_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Topic Id",
-            "description": "话题ID（最多添加1个话题）"
-          },
-          "topic_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Topic Name",
-            "description": "话题名称（与topic_id互斥，优先使用topic_id）"
-          },
-          "is_repost": {
-            "type": "integer",
-            "title": "Is Repost",
-            "description": "是否纯转发：0=否，1=是",
-            "default": 0
-          },
-          "repost_parent_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Repost Parent Id",
-            "description": "纯转发原帖ID"
-          },
-          "is_guest_post": {
-            "type": "integer",
-            "title": "Is Guest Post",
-            "description": "是否幽灵帖：0=否，1=是",
-            "default": 0
-          },
-          "guest_expire_time": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Guest Expire Time",
-            "description": "幽灵帖过期时间"
-          },
-          "poll_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Poll Options",
-            "description": "投票选项列表（2-4个）",
-            "default": []
-          },
-          "quote_post_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Quote Post Id",
-            "description": "引用的帖子ID"
-          },
-          "thread_posts": {
-            "items": {
-              "$ref": "#/components/schemas/ThreadPostData"
-            },
-            "type": "array",
-            "title": "Thread Posts",
-            "description": "添加到帖子的帖子数据列表",
-            "default": []
-          },
-          "is_edited": {
-            "type": "integer",
-            "title": "Is Edited",
-            "description": "是否已编辑：0=否，1=是",
-            "default": 0
-          },
-          "is_sensitive": {
-            "type": "integer",
-            "title": "Is Sensitive",
-            "description": "是否敏感内容：0=否，1=是",
-            "default": 0
-          },
-          "content_warning": {
-            "type": "string",
-            "maxLength": 200,
-            "title": "Content Warning",
-            "description": "敏感内容警告文字",
-            "default": ""
-          },
-          "alt_texts": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Alt Texts",
-            "description": "图片替代文本列表（与media_urls顺序对应）",
-            "default": []
-          },
-          "is_ai_generated": {
-            "type": "integer",
-            "title": "Is Ai Generated",
-            "description": "是否AI生成内容：0=否，1=是",
-            "default": 0
-          },
-          "scheduled_publish_time": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scheduled Publish Time",
-            "description": "预设发布时间"
-          }
-        },
-        "type": "object",
-        "title": "CreatePostRequest",
-        "description": "创建帖子请求模型\n\n至少需要填写以下之一：content、media_urls、poll_options 或 quote_post_id"
-      },
-      "CreateReplyRequest": {
-        "properties": {
-          "post_id": {
-            "type": "integer",
-            "title": "Post Id",
-            "description": "帖子ID"
-          },
-          "content": {
-            "type": "string",
-            "maxLength": 500,
-            "title": "Content",
-            "description": "回复内容",
-            "default": ""
-          },
-          "media_urls": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Media Urls",
-            "description": "媒体URL列表",
-            "default": []
-          },
-          "parent_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Id",
-            "description": "父回复ID"
-          },
-          "is_private": {
-            "type": "integer",
-            "title": "Is Private",
-            "description": "是否私密回复：0=否，1=是",
-            "default": 0
-          },
-          "mentioned_user_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Mentioned User Ids",
-            "description": "@提及的用户ID列表",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "post_id"
-        ],
-        "title": "CreateReplyRequest",
-        "description": "创建回复请求模型"
-      },
-      "CreateReportRequest": {
-        "properties": {
-          "target_type": {
-            "type": "integer",
-            "maximum": 4.0,
-            "minimum": 1.0,
-            "title": "Target Type",
-            "description": "举报目标类型：1=帖子，2=回复，3=用户，4=私信"
-          },
-          "target_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "Target Id",
-            "description": "举报目标ID"
-          },
-          "report_type": {
-            "type": "integer",
-            "maximum": 9.0,
-            "minimum": 1.0,
-            "title": "Report Type",
-            "description": "举报类型：1=垃圾信息，2=骚扰，3=仇恨言论，4=自残，5=暴力，6=隐私侵犯，7=虚假信息，8=知识产权，9=其他"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 500,
-            "title": "Description",
-            "description": "举报补充描述",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "required": [
-          "target_type",
-          "target_id",
-          "report_type"
-        ],
-        "title": "CreateReportRequest",
-        "description": "创建举报请求模型"
-      },
-      "DraftResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "草稿ID",
-            "default": 0
-          },
-          "content": {
-            "type": "string",
-            "title": "Content",
-            "description": "草稿内容",
-            "default": ""
-          },
-          "media_list": {
-            "items": {
-              "$ref": "#/components/schemas/MediaItem"
-            },
-            "type": "array",
-            "title": "Media List",
-            "description": "媒体列表",
-            "default": []
-          },
-          "media_count": {
-            "type": "integer",
-            "title": "Media Count",
-            "description": "媒体数量",
-            "default": 0
-          },
-          "reply_type": {
-            "type": "integer",
-            "title": "Reply Type",
-            "description": "回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页",
-            "default": 1
-          },
-          "need_review": {
-            "type": "boolean",
-            "title": "Need Review",
-            "description": "是否需要审核回复",
-            "default": false
-          },
-          "is_guest_post": {
-            "type": "integer",
-            "title": "Is Guest Post",
-            "description": "是否幽灵帖：0=否，1=是",
-            "default": 0
-          },
-          "location": {
-            "type": "string",
-            "title": "Location",
-            "description": "定位信息",
-            "default": ""
-          },
-          "latitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude",
-            "description": "纬度"
-          },
-          "longitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude",
-            "description": "经度"
-          },
-          "topic_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Topic Id",
-            "description": "话题ID"
-          },
-          "topic_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Topic Name",
-            "description": "话题名称"
-          },
-          "poll_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Poll Options",
-            "description": "投票选项",
-            "default": []
-          },
-          "quote_post_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Quote Post Id",
-            "description": "引用帖子ID"
-          },
-          "thread_posts": {
-            "items": {
-              "$ref": "#/components/schemas/ThreadPostData"
-            },
-            "type": "array",
-            "title": "Thread Posts",
-            "description": "添加到帖子的帖子数据列表",
-            "default": []
-          },
-          "is_ai_generated": {
-            "type": "boolean",
-            "title": "Is Ai Generated",
-            "description": "是否AI生成内容：0=否，1=是",
-            "default": false
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "创建时间",
-            "default": ""
-          },
-          "update_time": {
-            "type": "string",
-            "title": "Update Time",
-            "description": "更新时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "DraftResponse",
-        "description": "草稿响应模型"
-      },
-      "EditHistoryResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "编辑记录ID",
-            "default": 0
-          },
-          "post_id": {
-            "type": "integer",
-            "title": "Post Id",
-            "description": "帖子ID",
-            "default": 0
-          },
-          "old_content": {
-            "type": "string",
-            "title": "Old Content",
-            "description": "编辑前内容",
-            "default": ""
-          },
-          "new_content": {
-            "type": "string",
-            "title": "New Content",
-            "description": "编辑后内容",
-            "default": ""
-          },
-          "edit_count": {
-            "type": "integer",
-            "title": "Edit Count",
-            "description": "第几次编辑",
-            "default": 0
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "编辑时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "EditHistoryResponse",
-        "description": "帖子编辑历史响应模型"
-      },
-      "EditPostRequest": {
-        "properties": {
-          "content": {
-            "type": "string",
-            "maxLength": 500,
-            "title": "Content",
-            "description": "帖子内容",
-            "default": ""
-          },
-          "is_sensitive": {
-            "type": "integer",
-            "title": "Is Sensitive",
-            "description": "是否敏感内容：0=否，1=是",
-            "default": 0
-          },
-          "content_warning": {
-            "type": "string",
-            "maxLength": 200,
-            "title": "Content Warning",
-            "description": "敏感内容警告文字",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "EditPostRequest",
-        "description": "编辑帖子请求模型\n\n帖子发布后15分钟内可编辑，最多编辑5次"
-      },
-      "GuestPostReplyRequestResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "申请ID",
-            "default": 0
-          },
-          "post_id": {
-            "type": "integer",
-            "title": "Post Id",
-            "description": "帖子ID",
-            "default": 0
-          },
-          "applicant_user_id": {
-            "type": "integer",
-            "title": "Applicant User Id",
-            "description": "申请人ID",
-            "default": 0
-          },
-          "applicant_user": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserBasicInfo"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "申请人信息"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content",
-            "description": "申请理由",
-            "default": ""
-          },
-          "status": {
-            "type": "integer",
-            "title": "Status",
-            "description": "状态：1=待审批，2=已同意，3=已拒绝",
-            "default": 1
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "申请时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "GuestPostReplyRequestResponse",
-        "description": "幽灵帖回复申请响应模型"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "MediaItem": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "媒体ID",
-            "default": 0
-          },
-          "media_type": {
-            "type": "integer",
-            "title": "Media Type",
-            "description": "媒体类型：1=图片，2=视频，3=GIF，4=语音，5=文本附件",
-            "default": 1
-          },
-          "url": {
-            "type": "string",
-            "title": "Url",
-            "description": "媒体URL",
-            "default": ""
-          },
-          "thumb_url": {
-            "type": "string",
-            "title": "Thumb Url",
-            "description": "缩略图URL",
-            "default": ""
-          },
-          "width": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Width",
-            "description": "宽度"
-          },
-          "height": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Height",
-            "description": "高度"
-          },
-          "duration": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Duration",
-            "description": "视频/语音时长"
-          },
-          "transcription": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Transcription",
-            "description": "语音转录文本"
-          },
-          "text_content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text Content",
-            "description": "文本附件内容"
-          },
-          "alt_text": {
-            "type": "string",
-            "title": "Alt Text",
-            "description": "图片替代文本（无障碍）",
-            "default": ""
-          },
-          "display_order": {
-            "type": "integer",
-            "title": "Display Order",
-            "description": "显示顺序",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "MediaItem",
-        "description": "媒体项模型（图片/视频/GIF/语音/文本附件）"
-      },
-      "NearbyLocationInput": {
-        "properties": {
-          "location": {
-            "type": "string",
-            "title": "Location",
-            "description": "位置名称",
-            "default": ""
-          },
-          "latitude": {
-            "type": "number",
-            "title": "Latitude",
-            "description": "纬度"
-          },
-          "longitude": {
-            "type": "number",
-            "title": "Longitude",
-            "description": "经度"
-          }
-        },
-        "type": "object",
-        "required": [
-          "latitude",
-          "longitude"
-        ],
-        "title": "NearbyLocationInput",
-        "description": "附近位置输入模型"
-      },
-      "NearbyLocationItem": {
-        "properties": {
-          "location": {
-            "type": "string",
-            "title": "Location",
-            "description": "位置名称",
-            "default": ""
-          },
-          "latitude": {
-            "type": "number",
-            "title": "Latitude",
-            "description": "纬度"
-          },
-          "longitude": {
-            "type": "number",
-            "title": "Longitude",
-            "description": "经度"
-          },
-          "post_count": {
-            "type": "integer",
-            "title": "Post Count",
-            "description": "该位置附近的帖子数量",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "latitude",
-          "longitude"
-        ],
-        "title": "NearbyLocationItem",
-        "description": "附近位置响应模型"
-      },
-      "NearbyPostsRequest": {
-        "properties": {
-          "locations": {
-            "items": {
-              "$ref": "#/components/schemas/NearbyLocationInput"
-            },
-            "type": "array",
-            "maxItems": 100,
-            "minItems": 1,
-            "title": "Locations",
-            "description": "POI 位置列表（由前端地图 SDK 获取）"
-          },
-          "radius": {
-            "type": "integer",
-            "maximum": 2000.0,
-            "minimum": 100.0,
-            "title": "Radius",
-            "description": "每个POI的帖子搜索半径（米），默认500",
-            "default": 500
-          }
-        },
-        "type": "object",
-        "required": [
-          "locations"
-        ],
-        "title": "NearbyPostsRequest",
-        "description": "附近帖子请求模型"
-      },
-      "NearbyPostsResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/NearbyLocationItem"
-            },
-            "type": "array",
-            "title": "Items",
-            "description": "附近位置列表",
-            "default": []
-          }
-        },
-        "type": "object",
-        "title": "NearbyPostsResponse",
-        "description": "附近帖子响应模型"
-      },
-      "OKResponse": {
-        "properties": {},
-        "type": "object",
-        "title": "OKResponse",
-        "description": "ok响应类"
-      },
-      "PageMeta_DraftResponse_": {
-        "properties": {
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "size": {
-            "type": "integer",
-            "title": "Size"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/DraftResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "total",
-          "page",
-          "size",
-          "items"
-        ],
-        "title": "PageMeta[DraftResponse]"
-      },
-      "PageMeta_PostResponse_": {
-        "properties": {
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "size": {
-            "type": "integer",
-            "title": "Size"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/PostResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "total",
-          "page",
-          "size",
-          "items"
-        ],
-        "title": "PageMeta[PostResponse]"
-      },
-      "PageMeta_ReplyResponse_": {
-        "properties": {
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "size": {
-            "type": "integer",
-            "title": "Size"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/ReplyResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "total",
-          "page",
-          "size",
-          "items"
-        ],
-        "title": "PageMeta[ReplyResponse]"
-      },
-      "PollOptionResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "选项ID",
-            "default": 0
-          },
-          "option_text": {
-            "type": "string",
-            "title": "Option Text",
-            "description": "选项内容",
-            "default": ""
-          },
-          "votes_count": {
-            "type": "integer",
-            "title": "Votes Count",
-            "description": "投票数",
-            "default": 0
-          },
-          "display_order": {
-            "type": "integer",
-            "title": "Display Order",
-            "description": "显示顺序",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "PollOptionResponse",
-        "description": "投票选项响应模型"
-      },
-      "PollResultResponse": {
-        "properties": {
-          "poll_id": {
-            "type": "integer",
-            "title": "Poll Id",
-            "description": "投票ID",
-            "default": 0
-          },
-          "post_id": {
-            "type": "integer",
-            "title": "Post Id",
-            "description": "帖子ID",
-            "default": 0
-          },
-          "options": {
-            "items": {
-              "$ref": "#/components/schemas/PollOptionResponse"
-            },
-            "type": "array",
-            "title": "Options",
-            "description": "投票选项列表",
-            "default": []
-          },
-          "total_votes": {
-            "type": "integer",
-            "title": "Total Votes",
-            "description": "总投票数",
-            "default": 0
-          },
-          "expire_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expire Time",
-            "description": "投票过期时间"
-          },
-          "is_expired": {
-            "type": "boolean",
-            "title": "Is Expired",
-            "description": "投票是否已过期",
-            "default": false
-          },
-          "user_voted_option_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "User Voted Option Id",
-            "description": "当前用户已投票的选项ID"
-          }
-        },
-        "type": "object",
-        "title": "PollResultResponse",
-        "description": "投票结果响应模型"
-      },
-      "PostResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "帖子ID",
-            "default": 0
-          },
-          "user": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserBasicInfo"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "用户信息"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content",
-            "description": "帖子内容",
-            "default": ""
-          },
-          "media_list": {
-            "items": {
-              "$ref": "#/components/schemas/MediaItem"
-            },
-            "type": "array",
-            "title": "Media List",
-            "description": "媒体列表",
-            "default": []
-          },
-          "media_count": {
-            "type": "integer",
-            "title": "Media Count",
-            "description": "媒体数量",
-            "default": 0
-          },
-          "content_character_count": {
-            "type": "integer",
-            "title": "Content Character Count",
-            "description": "内容字符数",
-            "default": 0
-          },
-          "content_remaining_chars": {
-            "type": "integer",
-            "title": "Content Remaining Chars",
-            "description": "剩余可输入字符数",
-            "default": 500
-          },
-          "reply_type": {
-            "type": "integer",
-            "title": "Reply Type",
-            "description": "回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页",
-            "default": 1
-          },
-          "need_review": {
-            "type": "boolean",
-            "title": "Need Review",
-            "description": "是否需要审核回复",
-            "default": false
-          },
-          "is_guest_post": {
-            "type": "integer",
-            "title": "Is Guest Post",
-            "description": "是否幽灵帖：0=否，1=是",
-            "default": 0
-          },
-          "is_archived": {
-            "type": "integer",
-            "title": "Is Archived",
-            "description": "是否已存入私密文档：0=否，1=是",
-            "default": 0
-          },
-          "location": {
-            "type": "string",
-            "title": "Location",
-            "description": "定位信息",
-            "default": ""
-          },
-          "latitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude",
-            "description": "纬度"
-          },
-          "longitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude",
-            "description": "经度"
-          },
-          "quote_post_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Quote Post Id",
-            "description": "引用帖子ID"
-          },
-          "quote_content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Quote Content",
-            "description": "引用内容"
-          },
-          "quote_post": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PostResponse"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "引用的帖子"
-          },
-          "thread_post_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Thread Post Ids",
-            "description": "添加到帖子的帖子ID列表",
-            "default": []
-          },
-          "thread_posts": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/PostResponse"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Thread Posts",
-            "description": "添加到帖子的帖子列表"
-          },
-          "poll_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Poll Id",
-            "description": "投票ID"
-          },
-          "poll_options": {
-            "items": {
-              "$ref": "#/components/schemas/PollOptionResponse"
-            },
-            "type": "array",
-            "title": "Poll Options",
-            "description": "投票选项",
-            "default": []
-          },
-          "poll_total_votes": {
-            "type": "integer",
-            "title": "Poll Total Votes",
-            "description": "投票总人数",
-            "default": 0
-          },
-          "poll_expire_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Poll Expire Time",
-            "description": "投票过期时间（24小时后）"
-          },
-          "poll_user_voted_option_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Poll User Voted Option Id",
-            "description": "用户已投票选项ID"
-          },
-          "is_edited": {
-            "type": "boolean",
-            "title": "Is Edited",
-            "description": "是否已编辑",
-            "default": false
-          },
-          "is_ai_generated": {
-            "type": "boolean",
-            "title": "Is Ai Generated",
-            "description": "是否AI生成内容：0=否，1=是",
-            "default": false
-          },
-          "scheduled_publish_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scheduled Publish Time",
-            "description": "预设发布时间"
-          },
-          "views_count": {
-            "type": "integer",
-            "title": "Views Count",
-            "description": "观看数",
-            "default": 0
-          },
-          "likes_count": {
-            "type": "integer",
-            "title": "Likes Count",
-            "description": "点赞数",
-            "default": 0
-          },
-          "replies_count": {
-            "type": "integer",
-            "title": "Replies Count",
-            "description": "回复数",
-            "default": 0
-          },
-          "reposts_count": {
-            "type": "integer",
-            "title": "Reposts Count",
-            "description": "转发数",
-            "default": 0
-          },
-          "quotes_count": {
-            "type": "integer",
-            "title": "Quotes Count",
-            "description": "引用数",
-            "default": 0
-          },
-          "shares_count": {
-            "type": "integer",
-            "title": "Shares Count",
-            "description": "分享数",
-            "default": 0
-          },
-          "is_repost": {
-            "type": "boolean",
-            "title": "Is Repost",
-            "description": "是否纯转发",
-            "default": false
-          },
-          "repost_parent_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Repost Parent Id",
-            "description": "纯转发原帖ID"
-          },
-          "language": {
-            "type": "string",
-            "title": "Language",
-            "description": "帖子语言代码",
-            "default": ""
-          },
-          "is_sensitive": {
-            "type": "boolean",
-            "title": "Is Sensitive",
-            "description": "是否敏感内容",
-            "default": false
-          },
-          "content_warning": {
-            "type": "string",
-            "title": "Content Warning",
-            "description": "敏感内容警告文字",
-            "default": ""
-          },
-          "edit_count": {
-            "type": "integer",
-            "title": "Edit Count",
-            "description": "编辑次数",
-            "default": 0
-          },
-          "last_edit_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Edit Time",
-            "description": "最后编辑时间"
-          },
-          "short_code": {
-            "type": "string",
-            "title": "Short Code",
-            "description": "帖子短码",
-            "default": ""
-          },
-          "link_preview_url": {
-            "type": "string",
-            "title": "Link Preview Url",
-            "description": "链接预览URL",
-            "default": ""
-          },
-          "link_preview_title": {
-            "type": "string",
-            "title": "Link Preview Title",
-            "description": "链接预览标题",
-            "default": ""
-          },
-          "link_preview_image": {
-            "type": "string",
-            "title": "Link Preview Image",
-            "description": "链接预览缩略图URL",
-            "default": ""
-          },
-          "is_liked": {
-            "type": "boolean",
-            "title": "Is Liked",
-            "description": "是否已点赞",
-            "default": false
-          },
-          "is_reposted": {
-            "type": "boolean",
-            "title": "Is Reposted",
-            "description": "是否已转发",
-            "default": false
-          },
-          "is_saved": {
-            "type": "boolean",
-            "title": "Is Saved",
-            "description": "是否已收藏",
-            "default": false
-          },
-          "is_pinned": {
-            "type": "boolean",
-            "title": "Is Pinned",
-            "description": "是否置顶",
-            "default": false
-          },
-          "can_reply": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Reply",
-            "description": "当前用户是否可以回复（幽灵帖特有）"
-          },
-          "guest_reply_request_status": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Guest Reply Request Status",
-            "description": "幽灵帖回复申请状态：1=待审批，2=已同意，3=已拒绝，None=无申请"
-          },
-          "topic_list": {
-            "items": {
-              "$ref": "#/components/schemas/TopicResponse"
-            },
-            "type": "array",
-            "title": "Topic List",
-            "description": "话题列表",
-            "default": []
-          },
-          "community_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Community Id",
-            "description": "社群ID"
-          },
-          "community_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Community Name",
-            "description": "社群名称"
-          },
-          "flair_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flair Id",
-            "description": "flair标签ID"
-          },
-          "flair_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Flair Name",
-            "description": "flair标签名称"
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "创建时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "PostResponse",
-        "description": "帖子响应模型"
-      },
-      "RejectGuestPostReplyRequest": {
-        "properties": {
-          "request_id": {
-            "type": "integer",
-            "title": "Request Id",
-            "description": "申请ID"
-          }
-        },
-        "type": "object",
-        "required": [
-          "request_id"
-        ],
-        "title": "RejectGuestPostReplyRequest",
-        "description": "拒绝幽灵帖回复申请请求模型"
-      },
-      "RejectPendingReplyRequest": {
-        "properties": {
-          "reply_id": {
-            "type": "integer",
-            "title": "Reply Id",
-            "description": "回复ID"
-          },
-          "reject_reason": {
-            "type": "string",
-            "maxLength": 500,
-            "title": "Reject Reason",
-            "description": "拒绝原因",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "required": [
-          "reply_id"
-        ],
-        "title": "RejectPendingReplyRequest",
-        "description": "拒绝待审核回复请求模型"
-      },
-      "ReplyResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "回复ID",
-            "default": 0
-          },
-          "user": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserBasicInfo"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "用户信息"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content",
-            "description": "回复内容",
-            "default": ""
-          },
-          "media_list": {
-            "items": {
-              "$ref": "#/components/schemas/MediaItem"
-            },
-            "type": "array",
-            "title": "Media List",
-            "description": "媒体列表",
-            "default": []
-          },
-          "is_private": {
-            "type": "boolean",
-            "title": "Is Private",
-            "description": "是否私密回复",
-            "default": false
-          },
-          "is_pinned": {
-            "type": "boolean",
-            "title": "Is Pinned",
-            "description": "是否置顶",
-            "default": false
-          },
-          "likes_count": {
-            "type": "integer",
-            "title": "Likes Count",
-            "description": "点赞数",
-            "default": 0
-          },
-          "replies_count": {
-            "type": "integer",
-            "title": "Replies Count",
-            "description": "子回复数",
-            "default": 0
-          },
-          "is_edited": {
-            "type": "boolean",
-            "title": "Is Edited",
-            "description": "是否已编辑",
-            "default": false
-          },
-          "edit_count": {
-            "type": "integer",
-            "title": "Edit Count",
-            "description": "编辑次数",
-            "default": 0
-          },
-          "last_edit_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Edit Time",
-            "description": "最后编辑时间"
-          },
-          "review_status": {
-            "type": "integer",
-            "title": "Review Status",
-            "description": "审核状态：1=无需审核，2=审核中，3=通过，4=拒绝",
-            "default": 1
-          },
-          "is_liked": {
-            "type": "boolean",
-            "title": "Is Liked",
-            "description": "是否已点赞",
-            "default": false
-          },
-          "parent_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Id",
-            "description": "父回复ID"
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "创建时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "ReplyResponse",
-        "description": "回复响应模型"
-      },
-      "ReportResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "举报ID",
-            "default": 0
-          },
-          "reporter_id": {
-            "type": "integer",
-            "title": "Reporter Id",
-            "description": "举报者用户ID",
-            "default": 0
-          },
-          "target_type": {
-            "type": "integer",
-            "title": "Target Type",
-            "description": "举报目标类型",
-            "default": 0
-          },
-          "target_id": {
-            "type": "integer",
-            "title": "Target Id",
-            "description": "举报目标ID",
-            "default": 0
-          },
-          "report_type": {
-            "type": "integer",
-            "title": "Report Type",
-            "description": "举报类型",
-            "default": 0
-          },
-          "description": {
-            "type": "string",
-            "title": "Description",
-            "description": "举报补充描述",
-            "default": ""
-          },
-          "status": {
-            "type": "integer",
-            "title": "Status",
-            "description": "状态：1=待审核，2=审核中，3=已处理，4=已驳回",
-            "default": 1
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "举报时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "ReportResponse",
-        "description": "举报响应模型"
-      },
-      "RepostRequest": {
-        "properties": {
-          "repost_type": {
-            "type": "integer",
-            "title": "Repost Type",
-            "description": "转发类型：1=纯转发（仅写入post_repost表），2=引用转发（生成新帖子）",
-            "default": 1
-          },
-          "content": {
-            "type": "string",
-            "title": "Content",
-            "description": "引用转发时的评论",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "RepostRequest",
-        "description": "转发请求模型"
-      },
-      "ResponseModel_DraftResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DraftResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[DraftResponse]"
-      },
-      "ResponseModel_GuestPostReplyRequestResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/GuestPostReplyRequestResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[GuestPostReplyRequestResponse]"
-      },
-      "ResponseModel_NearbyPostsResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/NearbyPostsResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[NearbyPostsResponse]"
-      },
-      "ResponseModel_OKResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OKResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[OKResponse]"
-      },
-      "ResponseModel_PageMeta_DraftResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PageMeta_DraftResponse_"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[PageMeta[DraftResponse]]"
-      },
-      "ResponseModel_PageMeta_PostResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PageMeta_PostResponse_"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[PageMeta[PostResponse]]"
-      },
-      "ResponseModel_PageMeta_ReplyResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PageMeta_ReplyResponse_"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[PageMeta[ReplyResponse]]"
-      },
-      "ResponseModel_PollResultResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PollResultResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[PollResultResponse]"
-      },
-      "ResponseModel_PostResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PostResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[PostResponse]"
-      },
-      "ResponseModel_ReplyResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReplyResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[ReplyResponse]"
-      },
-      "ResponseModel_ReportResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReportResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[ReportResponse]"
-      },
-      "ResponseModel_list_EditHistoryResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/EditHistoryResponse"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[list[EditHistoryResponse]]"
-      },
-      "ResponseModel_list_GuestPostReplyRequestResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/GuestPostReplyRequestResponse"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[list[GuestPostReplyRequestResponse]]"
-      },
-      "ResponseModel_list_ReplyResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ReplyResponse"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[list[ReplyResponse]]"
-      },
-      "SaveDraftRequest": {
-        "properties": {
-          "content": {
-            "type": "string",
-            "maxLength": 500,
-            "title": "Content",
-            "description": "草稿内容",
-            "default": ""
-          },
-          "media_urls": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Media Urls",
-            "description": "媒体URL列表",
-            "default": []
-          },
-          "media_types": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Media Types",
-            "description": "媒体类型列表：1=图片，2=视频，3=GIF，4=语音，5=文本附件",
-            "default": []
-          },
-          "reply_type": {
-            "type": "integer",
-            "title": "Reply Type",
-            "description": "回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页",
-            "default": 1
-          },
-          "need_review": {
-            "type": "integer",
-            "title": "Need Review",
-            "description": "是否需要审核回复：0=否，1=是",
-            "default": 0
-          },
-          "is_guest_post": {
-            "type": "integer",
-            "title": "Is Guest Post",
-            "description": "是否幽灵帖：0=否，1=是",
-            "default": 0
-          },
-          "location": {
-            "type": "string",
-            "maxLength": 100,
-            "title": "Location",
-            "description": "定位信息",
-            "default": ""
-          },
-          "latitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude",
-            "description": "纬度"
-          },
-          "longitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude",
-            "description": "经度"
-          },
-          "topic_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Topic Id",
-            "description": "话题ID"
-          },
-          "topic_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Topic Name",
-            "description": "话题名称（与topic_id互斥，优先使用topic_id）"
-          },
-          "poll_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Poll Options",
-            "description": "投票选项列表",
-            "default": []
-          },
-          "quote_post_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Quote Post Id",
-            "description": "引用帖子ID"
-          },
-          "thread_posts": {
-            "items": {
-              "$ref": "#/components/schemas/ThreadPostData"
-            },
-            "type": "array",
-            "title": "Thread Posts",
-            "description": "添加到帖子的帖子数据列表",
-            "default": []
-          },
-          "is_ai_generated": {
-            "type": "integer",
-            "title": "Is Ai Generated",
-            "description": "是否AI生成内容：0=否，1=是",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "SaveDraftRequest",
-        "description": "保存草稿请求模型"
-      },
-      "ThreadPostData": {
-        "properties": {
-          "content": {
-            "type": "string",
-            "maxLength": 500,
-            "title": "Content",
-            "description": "帖子内容",
-            "default": ""
-          },
-          "media_urls": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Media Urls",
-            "description": "媒体URL列表",
-            "default": []
-          },
-          "media_types": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Media Types",
-            "description": "媒体类型列表：1=图片，2=视频，3=GIF，4=语音，5=文本附件",
-            "default": []
-          }
-        },
-        "type": "object",
-        "title": "ThreadPostData",
-        "description": "添加到帖子的数据模型\n\n每个添加到主帖子的帖子都有独立的内容和媒体"
-      },
-      "TopicResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "话题ID",
-            "default": 0
-          },
-          "name": {
-            "type": "string",
-            "title": "Name",
-            "description": "话题名称",
-            "default": ""
-          },
-          "description": {
-            "type": "string",
-            "title": "Description",
-            "description": "话题描述",
-            "default": ""
-          },
-          "cover_url": {
-            "type": "string",
-            "title": "Cover Url",
-            "description": "话题封面",
-            "default": ""
-          },
-          "posts_count": {
-            "type": "integer",
-            "title": "Posts Count",
-            "description": "帖子数量",
-            "default": 0
-          },
-          "participants_count": {
-            "type": "integer",
-            "title": "Participants Count",
-            "description": "参与者数量",
-            "default": 0
-          },
-          "is_trending": {
-            "type": "boolean",
-            "title": "Is Trending",
-            "description": "是否热门",
-            "default": false
-          },
-          "is_followed": {
-            "type": "boolean",
-            "title": "Is Followed",
-            "description": "是否已关注",
-            "default": false
-          },
-          "is_muted": {
-            "type": "boolean",
-            "title": "Is Muted",
-            "description": "是否已静音",
-            "default": false
-          },
-          "source_type": {
-            "type": "integer",
-            "title": "Source Type",
-            "description": "话题来源：1=用户自动创建，2=平台预置",
-            "default": 1
-          }
-        },
-        "type": "object",
-        "title": "TopicResponse",
-        "description": "话题响应模型"
-      },
-      "UserBasicInfo": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "用户ID",
-            "default": 0
-          },
-          "username": {
-            "type": "string",
-            "title": "Username",
-            "description": "用户名",
-            "default": ""
-          },
-          "avatar": {
-            "type": "string",
-            "title": "Avatar",
-            "description": "头像",
-            "default": ""
-          },
-          "display_name": {
-            "type": "string",
-            "title": "Display Name",
-            "description": "显示名称",
-            "default": ""
-          },
-          "is_verified": {
-            "type": "integer",
-            "title": "Is Verified",
-            "description": "是否认证：0=否，1=是",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "UserBasicInfo",
-        "description": "用户基本信息模型"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      },
-      "VotePollRequest": {
-        "properties": {
-          "option_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "Option Id",
-            "description": "投票选项ID"
-          }
-        },
-        "type": "object",
-        "required": [
-          "option_id"
-        ],
-        "title": "VotePollRequest",
-        "description": "投票请求模型"
-      }
+  ],
+  "schemas": {
+    "DraftResponse": {
+      "id": "int, 草稿ID, default: 0, optional",
+      "content": "string, 草稿内容, optional",
+      "media_list": "MediaItem[], 媒体列表, default: [], optional",
+      "media_count": "int, 媒体数量, default: 0, optional",
+      "reply_type": "int, 回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页, default: 1, optional",
+      "need_review": "bool, 是否需要审核回复, default: False, optional",
+      "is_guest_post": "int, 是否幽灵帖：0=否，1=是, default: 0, optional",
+      "location": "string, 定位信息, optional",
+      "latitude": "float?, 纬度, optional",
+      "longitude": "float?, 经度, optional",
+      "topic_id": "int?, 话题ID, optional",
+      "topic_name": "string?, 话题名称, optional",
+      "poll_options": "string[], 投票选项, default: [], optional",
+      "quote_post_id": "int?, 引用帖子ID, optional",
+      "thread_posts": "ThreadPostData[], 添加到帖子的帖子数据列表, default: [], optional",
+      "is_ai_generated": "bool, 是否AI生成内容：0=否，1=是, default: False, optional",
+      "create_time": "string, 创建时间, optional",
+      "update_time": "string, 更新时间, optional"
+    },
+    "EditHistoryResponse": {
+      "id": "int, 编辑记录ID, default: 0, optional",
+      "post_id": "int, 帖子ID, default: 0, optional",
+      "old_content": "string, 编辑前内容, optional",
+      "new_content": "string, 编辑后内容, optional",
+      "edit_count": "int, 第几次编辑, default: 0, optional",
+      "create_time": "string, 编辑时间, optional"
+    },
+    "GuestPostReplyRequestResponse": {
+      "id": "int, 申请ID, default: 0, optional",
+      "post_id": "int, 帖子ID, default: 0, optional",
+      "applicant_user_id": "int, 申请人ID, default: 0, optional",
+      "applicant_user": "UserBasicInfo?, 申请人信息, optional",
+      "content": "string, 申请理由, optional",
+      "status": "int, 状态：1=待审批，2=已同意，3=已拒绝, default: 1, optional",
+      "create_time": "string, 申请时间, optional"
+    },
+    "MediaItem": {
+      "id": "int, 媒体ID, default: 0, optional",
+      "media_type": "int, 媒体类型：1=图片，2=视频，3=GIF，4=语音，5=文本附件, default: 1, optional",
+      "url": "string, 媒体URL, optional",
+      "thumb_url": "string, 缩略图URL, optional",
+      "width": "int?, 宽度, optional",
+      "height": "int?, 高度, optional",
+      "duration": "int?, 视频/语音时长, optional",
+      "transcription": "string?, 语音转录文本, optional",
+      "text_content": "string?, 文本附件内容, optional",
+      "alt_text": "string, 图片替代文本（无障碍）, optional",
+      "source_url": "string, 来源URL（GIF引用时为Giphy原始URL）, optional",
+      "display_order": "int, 显示顺序, default: 0, optional"
+    },
+    "NearbyLocationItem": {
+      "location": "string, 位置名称, optional",
+      "latitude": "float, 纬度",
+      "longitude": "float, 经度",
+      "post_count": "int, 该位置附近的帖子数量, default: 0, optional"
+    },
+    "NearbyPostsResponse": {
+      "items": "NearbyLocationItem[], 附近位置列表, default: [], optional"
+    },
+    "PollOptionResponse": {
+      "id": "int, 选项ID, default: 0, optional",
+      "option_text": "string, 选项内容, optional",
+      "votes_count": "int, 投票数, default: 0, optional",
+      "display_order": "int, 显示顺序, default: 0, optional"
+    },
+    "PollResultResponse": {
+      "poll_id": "int, 投票ID, default: 0, optional",
+      "post_id": "int, 帖子ID, default: 0, optional",
+      "options": "PollOptionResponse[], 投票选项列表, default: [], optional",
+      "total_votes": "int, 总投票数, default: 0, optional",
+      "expire_time": "string?, 投票过期时间, optional",
+      "is_expired": "bool, 投票是否已过期, default: False, optional",
+      "user_voted_option_id": "int?, 当前用户已投票的选项ID, optional"
+    },
+    "PostResponse": {
+      "id": "int, 帖子ID, default: 0, optional",
+      "user": "UserBasicInfo?, 用户信息, optional",
+      "content": "string, 帖子内容, optional",
+      "media_list": "MediaItem[], 媒体列表, default: [], optional",
+      "media_count": "int, 媒体数量, default: 0, optional",
+      "content_character_count": "int, 内容字符数, default: 0, optional",
+      "content_remaining_chars": "int, 剩余可输入字符数, default: 500, optional",
+      "reply_type": "int, 回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页, default: 1, optional",
+      "need_review": "bool, 是否需要审核回复, default: False, optional",
+      "is_guest_post": "int, 是否幽灵帖：0=否，1=是, default: 0, optional",
+      "is_archived": "int, 是否已存入私密文档：0=否，1=是, default: 0, optional",
+      "location": "string, 定位信息, optional",
+      "latitude": "float?, 纬度, optional",
+      "longitude": "float?, 经度, optional",
+      "quote_post_id": "int?, 引用帖子ID, optional",
+      "quote_content": "string?, 引用内容, optional",
+      "quote_post": "PostResponse?, 引用的帖子, optional",
+      "thread_post_ids": "int[], 添加到帖子的帖子ID列表, default: [], optional",
+      "thread_posts": "PostResponse[]?, 添加到帖子的帖子列表, optional",
+      "poll_id": "int?, 投票ID, optional",
+      "poll_options": "PollOptionResponse[], 投票选项, default: [], optional",
+      "poll_total_votes": "int, 投票总人数, default: 0, optional",
+      "poll_expire_time": "string?, 投票过期时间（24小时后）, optional",
+      "poll_user_voted_option_id": "int?, 用户已投票选项ID, optional",
+      "is_edited": "bool, 是否已编辑, default: False, optional",
+      "is_ai_generated": "bool, 是否AI生成内容：0=否，1=是, default: False, optional",
+      "scheduled_publish_time": "string?, 预设发布时间, optional",
+      "views_count": "int, 观看数, default: 0, optional",
+      "likes_count": "int, 点赞数, default: 0, optional",
+      "replies_count": "int, 回复数, default: 0, optional",
+      "reposts_count": "int, 转发数, default: 0, optional",
+      "quotes_count": "int, 引用数, default: 0, optional",
+      "shares_count": "int, 分享数, default: 0, optional",
+      "is_repost": "bool, 是否纯转发, default: False, optional",
+      "repost_parent_id": "int?, 纯转发原帖ID, optional",
+      "language": "string, 帖子语言代码, optional",
+      "is_sensitive": "bool, 是否敏感内容, default: False, optional",
+      "content_warning": "string, 敏感内容警告文字, optional",
+      "edit_count": "int, 编辑次数, default: 0, optional",
+      "last_edit_time": "string?, 最后编辑时间, optional",
+      "short_code": "string, 帖子短码, optional",
+      "link_preview_url": "string, 链接预览URL, optional",
+      "link_preview_title": "string, 链接预览标题, optional",
+      "link_preview_image": "string, 链接预览缩略图URL, optional",
+      "is_liked": "bool, 是否已点赞, default: False, optional",
+      "is_reposted": "bool, 是否已转发, default: False, optional",
+      "is_saved": "bool, 是否已收藏, default: False, optional",
+      "is_pinned": "bool, 是否置顶, default: False, optional",
+      "can_reply": "bool?, 当前用户是否可以回复（幽灵帖特有）, optional",
+      "guest_reply_request_status": "int?, 幽灵帖回复申请状态：1=待审批，2=已同意，3=已拒绝，None=无申请, optional",
+      "topic_list": "TopicResponse[], 话题列表, default: [], optional",
+      "community_id": "int?, 社群ID, optional",
+      "community_name": "string?, 社群名称, optional",
+      "flair_id": "int?, flair标签ID, optional",
+      "flair_name": "string?, flair标签名称, optional",
+      "create_time": "string, 创建时间, optional"
+    },
+    "ReplyResponse": {
+      "id": "int, 回复ID, default: 0, optional",
+      "user": "UserBasicInfo?, 用户信息, optional",
+      "content": "string, 回复内容, optional",
+      "media_list": "MediaItem[], 媒体列表, default: [], optional",
+      "is_private": "bool, 是否私密回复, default: False, optional",
+      "is_pinned": "bool, 是否置顶, default: False, optional",
+      "likes_count": "int, 点赞数, default: 0, optional",
+      "replies_count": "int, 子回复数, default: 0, optional",
+      "is_edited": "bool, 是否已编辑, default: False, optional",
+      "edit_count": "int, 编辑次数, default: 0, optional",
+      "last_edit_time": "string?, 最后编辑时间, optional",
+      "review_status": "int, 审核状态：1=无需审核，2=审核中，3=通过，4=拒绝, default: 1, optional",
+      "is_liked": "bool, 是否已点赞, default: False, optional",
+      "parent_id": "int?, 父回复ID, optional",
+      "create_time": "string, 创建时间, optional"
+    },
+    "ReportResponse": {
+      "id": "int, 举报ID, default: 0, optional",
+      "reporter_id": "int, 举报者用户ID, default: 0, optional",
+      "target_type": "int, 举报目标类型, default: 0, optional",
+      "target_id": "int, 举报目标ID, default: 0, optional",
+      "report_type": "int, 举报类型, default: 0, optional",
+      "description": "string, 举报补充描述, optional",
+      "status": "int, 状态：1=待审核，2=审核中，3=已处理，4=已驳回, default: 1, optional",
+      "create_time": "string, 举报时间, optional"
+    },
+    "ThreadPostData": {
+      "content": "string, max 500, 帖子内容, optional",
+      "media_urls": "string[], 媒体URL列表, default: [], optional",
+      "media_types": "int[], 媒体类型列表：1=图片，2=视频，3=GIF，4=语音，5=文本附件, default: [], optional"
+    },
+    "TopicResponse": {
+      "id": "int, 话题ID, default: 0, optional",
+      "name": "string, 话题名称, optional",
+      "description": "string, 话题描述, optional",
+      "cover_url": "string, 话题封面, optional",
+      "posts_count": "int, 帖子数量, default: 0, optional",
+      "participants_count": "int, 参与者数量, default: 0, optional",
+      "is_trending": "bool, 是否热门, default: False, optional",
+      "is_followed": "bool, 是否已关注, default: False, optional",
+      "is_muted": "bool, 是否已静音, default: False, optional",
+      "source_type": "int, 话题来源：1=用户自动创建，2=平台预置, default: 1, optional"
+    },
+    "UserBasicInfo": {
+      "id": "int, 用户ID, default: 0, optional",
+      "username": "string, 用户名, optional",
+      "avatar": "string, 头像, optional",
+      "display_name": "string, 显示名称, optional",
+      "is_verified": "int, 是否认证：0=否，1=是, default: 0, optional"
     }
   }
 }

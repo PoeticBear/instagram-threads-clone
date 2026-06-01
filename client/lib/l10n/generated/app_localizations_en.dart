@@ -827,6 +827,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get draftSaveFailed => 'Failed to save draft';
 
   @override
+  String get discard => 'Discard';
+
+  @override
+  String get saveDraftHint => 'Save this post as a draft or discard it?';
+
+  @override
   String get draft => 'Draft';
 
   @override

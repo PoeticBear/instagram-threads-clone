@@ -62,6 +62,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           tab = 0;
         });
       },
+      onCancel: () {
+        setState(() {
+          tab = 0;
+        });
+      },
     );
     if (index == 3) return NotificationPage();
     if (index == 4) return MessagePage();

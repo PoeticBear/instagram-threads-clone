@@ -1,366 +1,57 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Misc 杂项 API",
-    "version": "0.1.0"
+  "common": {
+    "response_wrapper": "{ code: int, msg: string, data: T }",
+    "pagination": "{ total: int, page: int, size: int, items: T[] }",
+    "auth_header": "Authorization: string (大部分接口必传)",
+    "device_header": "device-os: string (可选)"
   },
-  "paths": {
-    "/public-key": {
-      "get": {
-        "tags": [
-          "Root"
-        ],
-        "summary": "获取RSA公钥",
-        "description": "获取RSA公钥",
-        "operationId": "response_public_key_public_key_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PublicKeyResponse_"
-                }
-              }
-            }
-          }
-        }
-      }
+  "endpoints": [
+    {
+      "name": "群聊邀请链接落地页",
+      "method": "GET",
+      "path": "/group/{invite_code}",
+      "desc": "群聊邀请链接Web落地页 用户点击邀请链接后，显示群聊信息页面 - 如果用户已登录，显示\"加入群聊\"按钮 - 如果用户未登录，显示登录/注册页面",
+      "path_params": {
+        "invite_code": "string"
+      },
+      "response": "void"
     },
-    "/moderation/callback": {
-      "post": {
-        "tags": [
-          "Root"
-        ],
-        "summary": "CI 内容审核回调",
-        "description": "接收腾讯云 CI 异步审核结果的回调\n\nCI 完成图片/视频异步审核后，通过此端点推送审核结果。\n根据审核建议更新 ContentModerationLog 及关联帖子的状态。",
-        "operationId": "moderation_callback_moderation_callback_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "CI 内容审核回调",
+      "method": "POST",
+      "path": "/moderation/callback",
+      "desc": "接收腾讯云 CI 异步审核结果的回调 CI 完成图片/视频异步审核后，通过此端点推送审核结果。 根据审核建议更新 ContentModerationLog 及关联帖子的状态。",
+      "response": "ResponseModel"
     },
-    "/group/{invite_code}": {
-      "get": {
-        "tags": [
-          "消息-Web"
-        ],
-        "summary": "群聊邀请链接落地页",
-        "description": "群聊邀请链接Web落地页\n\n用户点击邀请链接后，显示群聊信息页面\n- 如果用户已登录，显示\"加入群聊\"按钮\n- 如果用户未登录，显示登录/注册页面",
-        "operationId": "group_invite_page_group__invite_code__get",
-        "parameters": [
-          {
-            "name": "invite_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Invite Code"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "获取RSA公钥",
+      "method": "GET",
+      "path": "/public-key",
+      "response": "PublicKeyResponse?"
     },
-    "/upload/upload/presigned_url": {
-      "post": {
-        "tags": [
-          "上传"
-        ],
-        "summary": "Get Presigned Url",
-        "description": "获取 COS 预签名上传 URL\n\n上传流程：\n1. 前端选择文件后调用此接口\n   请求: {filename: \"photo.jpg\", content_type: \"image/jpeg\", file_size: 1048576}\n\n2. 后端校验文件大小，调用 COS SDK 生成预签名 PUT URL\n   返回: {upload_url: \"https://...\", cos_url: \"https://cos...\", expires_in: 600}\n\n3. 前端直接 PUT 文件到 upload_url（无需鉴权，URL 自身签名有效期内有效）\n\n4. 前端将 cos_url 存入媒体库，创建帖子/发消息时传入 media_urls",
-        "operationId": "get_presigned_url_upload_upload_presigned_url_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PresignedUrlRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PresignedUrlResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "Get Presigned Url",
+      "method": "POST",
+      "path": "/upload/upload/presigned_url",
+      "auth": true,
+      "desc": "获取 COS 预签名上传 URL 上传流程： 1. 前端选择文件后调用此接口 请求: {filename: \"photo.jpg\", content_type: \"image/jpeg\", file_size: 1048576} 2. 后端校验文件大小，调用 COS SDK 生成预签名 PUT URL 返回: {upload_url: \"https://...\", cos_url: \"https://cos...\", expires_in: 600} 3. 前端直接 PUT 文件到 upload_url（无需鉴权，URL 自身签名有效期内有效） 4. 前端将 cos_url 存入媒体库，创建帖子/发消息时传入 media_urls",
+      "request": {
+        "filename": "string, 文件名（含扩展名）",
+        "content_type": "string, MIME 类型，如 image/jpeg",
+        "file_size": "int, 文件大小（字节）"
+      },
+      "response": "PresignedUrlResponse?"
     }
-  },
-  "components": {
-    "schemas": {
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "PresignedUrlRequest": {
-        "properties": {
-          "filename": {
-            "type": "string",
-            "title": "Filename",
-            "description": "文件名（含扩展名）"
-          },
-          "content_type": {
-            "type": "string",
-            "title": "Content Type",
-            "description": "MIME 类型，如 image/jpeg"
-          },
-          "file_size": {
-            "type": "integer",
-            "title": "File Size",
-            "description": "文件大小（字节）"
-          }
-        },
-        "type": "object",
-        "required": [
-          "filename",
-          "content_type",
-          "file_size"
-        ],
-        "title": "PresignedUrlRequest",
-        "description": "预签名上传URL请求"
-      },
-      "PresignedUrlResponse": {
-        "properties": {
-          "upload_url": {
-            "type": "string",
-            "title": "Upload Url",
-            "description": "预签名上传URL（前端直接 PUT 至此地址）",
-            "default": ""
-          },
-          "cos_url": {
-            "type": "string",
-            "title": "Cos Url",
-            "description": "上传成功后的 COS 访问 URL",
-            "default": ""
-          },
-          "expires_in": {
-            "type": "integer",
-            "title": "Expires In",
-            "description": "预签名URL有效期（秒）",
-            "default": 600
-          }
-        },
-        "type": "object",
-        "title": "PresignedUrlResponse",
-        "description": "预签名上传URL响应"
-      },
-      "PublicKeyResponse": {
-        "properties": {
-          "key_type": {
-            "type": "string",
-            "title": "Key Type",
-            "description": "密钥类型",
-            "default": "RSA"
-          },
-          "public_key": {
-            "type": "string",
-            "title": "Public Key",
-            "description": "公钥",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "PublicKeyResponse",
-        "description": "获取RSA公钥应答对象"
-      },
-      "ResponseModel": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel"
-      },
-      "ResponseModel_PresignedUrlResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PresignedUrlResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[PresignedUrlResponse]"
-      },
-      "ResponseModel_PublicKeyResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PublicKeyResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[PublicKeyResponse]"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      }
+  ],
+  "schemas": {
+    "PresignedUrlResponse": {
+      "upload_url": "string, 预签名上传URL（前端直接 PUT 至此地址）, optional",
+      "cos_url": "string, 上传成功后的 COS 访问 URL, optional",
+      "expires_in": "int, 预签名URL有效期（秒）, default: 600, optional"
+    },
+    "PublicKeyResponse": {
+      "key_type": "string, 密钥类型, default: RSA, optional",
+      "public_key": "string, 公钥, optional"
     }
   }
 }

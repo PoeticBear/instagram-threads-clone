@@ -153,13 +153,13 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
 
     return GestureDetector(
       onTap: () {
+        final postState = Provider.of<PostState>(context, listen: false);
         Navigator.push(
           context,
           CupertinoPageRoute(
             builder: (_) => ComposePost(
               onPostSuccess: () {
-                final state = Provider.of<PostState>(context, listen: false);
-                state.getDataFromDatabase();
+                postState.getDataFromDatabase();
               },
             ),
           ),

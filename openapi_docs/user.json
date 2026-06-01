@@ -1,3193 +1,380 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "User 用户 API",
-    "version": "0.1.0"
+  "common": {
+    "response_wrapper": "{ code: int, msg: string, data: T }",
+    "pagination": "{ total: int, page: int, size: int, items: T[] }",
+    "auth_header": "Authorization: string (大部分接口必传)",
+    "device_header": "device-os: string (可选)"
   },
-  "paths": {
-    "/user/register": {
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "用户名注册",
-        "description": "用户名注册",
-        "operationId": "register_user_register_post",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "user_agent",
-              "default": "",
-              "title": "User-Agent"
-            },
-            "description": "user_agent"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          },
-          {
-            "name": "device-name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_name: 如ipad等",
-              "default": "",
-              "title": "Device-Name"
-            },
-            "description": "device_name: 如ipad等"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UsernameRegisterRequest",
-                "description": "注册请求对象"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+  "endpoints": [
+    {
+      "name": "账号状态",
+      "method": "GET",
+      "path": "/user/account-status",
+      "auth": true,
+      "response": "dict?"
     },
-    "/user/signin": {
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "用户名登录",
-        "description": "用户名登录",
-        "operationId": "signin_user_signin_post",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "user_agent",
-              "default": "",
-              "title": "User-Agent"
-            },
-            "description": "user_agent"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          },
-          {
-            "name": "device-name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_name: 如ipad等",
-              "default": "",
-              "title": "Device-Name"
-            },
-            "description": "device_name: 如ipad等"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UsernameSigninRequest",
-                "description": "用户名登录请求对象"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_SigninResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/token/refresh": {
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "刷新令牌",
-        "description": "刷新令牌",
-        "operationId": "refresh_token_user_token_refresh_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshTokenRequest",
-                "description": "刷新令牌请求对象"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_RefreshTokenResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/logout": {
-      "delete": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "退出登录",
-        "description": "退出登录",
-        "operationId": "logout_user_logout_delete",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/modify_password": {
-      "put": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "修改密码",
-        "description": "修改密码",
-        "operationId": "update_user_modify_password_put",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ModifyPasswordRequest",
-                "description": "输入参数"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/me": {
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "我的信息",
-        "description": "我的信息",
-        "operationId": "me_user_me_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_MeUserResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/device-token/register": {
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "注册设备令牌",
-        "description": "注册设备令牌",
-        "operationId": "device_token_register_user_device_token_register_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          },
-          {
-            "name": "user-agent",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "user_agent",
-              "default": "",
-              "title": "User-Agent"
-            },
-            "description": "user_agent"
-          },
-          {
-            "name": "device-name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_name: 如ipad等",
-              "default": "",
-              "title": "Device-Name"
-            },
-            "description": "device_name: 如ipad等"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeviceTokenRegisterRequest",
-                "description": "注册设备令牌请求对象"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/device-token/deregister": {
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "注销设备令牌",
-        "description": "注销设备令牌",
-        "operationId": "device_token_deregister_user_device_token_deregister_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeviceTokenRegisterRequest",
-                "description": "注销设备令牌请求对象"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/profile/{user_id}": {
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "获取用户资料",
-        "description": "获取指定用户的资料",
-        "operationId": "get_user_profile_user_profile__user_id__get",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "User Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_UserProfileResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/profile": {
-      "put": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "更新用户资料",
-        "description": "更新当前用户的个人资料",
-        "operationId": "update_profile_user_profile_put",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProfileRequest",
-                "description": "更新资料请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/settings": {
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "获取用户设置",
-        "description": "获取当前用户的设置",
-        "operationId": "get_settings_user_settings_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_SettingsResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "注销设备令牌",
+      "method": "POST",
+      "path": "/user/device-token/deregister",
+      "auth": true,
+      "request": {
+        "device_token": "string, max 100, 设备令牌"
       },
-      "put": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "更新用户设置",
-        "description": "更新当前用户的设置（通知偏好等）",
-        "operationId": "update_settings_user_settings_put",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSettingsRequest",
-                "description": "更新设置请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "OKResponse?"
     },
-    "/user/follow-requests/pending": {
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "获取待审批的关注请求",
-        "description": "获取当前用户收到的待审批关注请求列表（私密账号）",
-        "operationId": "get_pending_follow_requests_user_follow_requests_pending_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_list_FollowRequestResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/follow-requests/{request_id}/approve": {
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "审批关注请求",
-        "description": "批准或拒绝关注请求（仅私密账号用户可操作）",
-        "operationId": "approve_follow_request_user_follow_requests__request_id__approve_post",
-        "parameters": [
-          {
-            "name": "request_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Request Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApproveFollowRequest",
-                "description": "审批请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/relation-control": {
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "添加关系管控",
-        "description": "添加关系管控（静音/限制/拉黑）",
-        "operationId": "add_relation_control_user_relation_control_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RelationControlRequest",
-                "description": "关系管控请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/relation-control/{target_user_id}": {
-      "delete": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "移除关系管控",
-        "description": "移除对指定用户的关系管控",
-        "operationId": "remove_relation_control_user_relation_control__target_user_id__delete",
-        "parameters": [
-          {
-            "name": "target_user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Target User Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/save-collections": {
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "创建收藏夹",
-        "description": "创建收藏夹",
-        "operationId": "create_save_collection_user_save_collections_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSaveCollectionRequest",
-                "description": "创建收藏夹请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_SaveCollectionResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "注册设备令牌",
+      "method": "POST",
+      "path": "/user/device-token/register",
+      "auth": true,
+      "request": {
+        "device_token": "string, max 100, 设备令牌"
       },
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "收藏夹列表",
-        "description": "获取当前用户的收藏夹列表",
-        "operationId": "get_save_collections_user_save_collections_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_list_SaveCollectionResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "OKResponse?"
     },
-    "/user/save-collections/{collection_id}": {
-      "delete": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "删除收藏夹",
-        "description": "删除收藏夹（软删除）",
-        "operationId": "delete_save_collection_user_save_collections__collection_id__delete",
-        "parameters": [
-          {
-            "name": "collection_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Collection Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "获取待审批的关注请求",
+      "method": "GET",
+      "path": "/user/follow-requests/pending",
+      "auth": true,
+      "desc": "获取当前用户收到的待审批关注请求列表（私密账号）",
+      "response": "List<FollowRequestResponse>?"
     },
-    "/user/hidden-words": {
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "隐藏词列表",
-        "operationId": "get_hidden_words_user_hidden_words_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_list_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "审批关注请求",
+      "method": "POST",
+      "path": "/user/follow-requests/{request_id}/approve",
+      "auth": true,
+      "desc": "批准或拒绝关注请求（仅私密账号用户可操作）",
+      "path_params": {
+        "request_id": "int"
       },
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "添加隐藏词",
-        "operationId": "add_hidden_word_user_hidden_words_post",
-        "parameters": [
-          {
-            "name": "word_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "description": "1=关键词 2=短语 3=emoji",
-              "default": 1,
-              "title": "Word Type"
-            },
-            "description": "1=关键词 2=短语 3=emoji"
-          },
-          {
-            "name": "content",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "内容",
-              "title": "Content"
-            },
-            "description": "内容"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/hidden-words/{word_id}": {
-      "delete": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "删除隐藏词",
-        "operationId": "delete_hidden_word_user_hidden_words__word_id__delete",
-        "parameters": [
-          {
-            "name": "word_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Word Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/links": {
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "链接列表",
-        "operationId": "get_links_user_links_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_list_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+      "request": {
+        "action": "int, 操作：1=批准，2=拒绝"
       },
-      "post": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "添加链接",
-        "operationId": "add_link_user_links_post",
-        "parameters": [
-          {
-            "name": "title",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "标题",
-              "title": "Title"
-            },
-            "description": "标题"
-          },
-          {
-            "name": "url",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "URL",
-              "title": "Url"
-            },
-            "description": "URL"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "OKResponse?"
     },
-    "/user/links/{link_id}": {
-      "put": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "更新链接",
-        "operationId": "update_link_user_links__link_id__put",
-        "parameters": [
-          {
-            "name": "link_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Link Id"
-            }
-          },
-          {
-            "name": "title",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Title"
-            }
-          },
-          {
-            "name": "url",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Url"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+    {
+      "name": "隐藏词列表",
+      "method": "GET",
+      "path": "/user/hidden-words",
+      "auth": true,
+      "response": "List<object>?"
+    },
+    {
+      "name": "添加隐藏词",
+      "method": "POST",
+      "path": "/user/hidden-words",
+      "auth": true,
+      "query": {
+        "word_type": "int, 1=关键词 2=短语 3=emoji, default: 1",
+        "content": "string, 内容"
       },
-      "delete": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "删除链接",
-        "operationId": "delete_link_user_links__link_id__delete",
-        "parameters": [
-          {
-            "name": "link_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Link Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "response": "OKResponse?"
     },
-    "/user/relation-control/list": {
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "关系管控列表",
-        "operationId": "get_relation_control_list_user_relation_control_list_get",
-        "parameters": [
-          {
-            "name": "control_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "1=静音 2=限制 3=拉黑",
-              "title": "Control Type"
-            },
-            "description": "1=静音 2=限制 3=拉黑"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_list_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "删除隐藏词",
+      "method": "DELETE",
+      "path": "/user/hidden-words/{word_id}",
+      "auth": true,
+      "path_params": {
+        "word_id": "int"
+      },
+      "response": "OKResponse?"
     },
-    "/user/account-status": {
-      "get": {
-        "tags": [
-          "用户"
-        ],
-        "summary": "账号状态",
-        "operationId": "get_account_status_user_account_status_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_dict_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "链接列表",
+      "method": "GET",
+      "path": "/user/links",
+      "auth": true,
+      "response": "List<object>?"
+    },
+    {
+      "name": "添加链接",
+      "method": "POST",
+      "path": "/user/links",
+      "auth": true,
+      "query": {
+        "title": "string, 标题",
+        "url": "string, URL"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "更新链接",
+      "method": "PUT",
+      "path": "/user/links/{link_id}",
+      "auth": true,
+      "path_params": {
+        "link_id": "int"
+      },
+      "query": {
+        "title": "string",
+        "url": "string"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "删除链接",
+      "method": "DELETE",
+      "path": "/user/links/{link_id}",
+      "auth": true,
+      "path_params": {
+        "link_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "退出登录",
+      "method": "DELETE",
+      "path": "/user/logout",
+      "auth": true,
+      "response": "OKResponse?"
+    },
+    {
+      "name": "我的信息",
+      "method": "GET",
+      "path": "/user/me",
+      "auth": true,
+      "response": "MeUserResponse?"
+    },
+    {
+      "name": "修改密码",
+      "method": "PUT",
+      "path": "/user/modify_password",
+      "auth": true,
+      "request": {
+        "old_password": "string, max 50, 密码",
+        "password": "string, max 50, 密码",
+        "confirm_password": "string, max 50, 确认密码"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "更新用户资料",
+      "method": "PUT",
+      "path": "/user/profile",
+      "auth": true,
+      "request": {
+        "display_name": "string, max 100?, 显示名称, optional",
+        "avatar_url": "string?, 头像URL, optional",
+        "bio": "string, max 500?, 个人简介, optional",
+        "pronouns": "string, max 50?, 人称代词, optional",
+        "gender": "int?, 性别：1=未设置，2=男，3=女，4=其他, optional",
+        "location": "string, max 100?, 所在地, optional",
+        "website_url": "string, max 500?, 个人网站, optional",
+        "is_private": "int?, 是否私密账号：0=否，1=是, optional",
+        "account_type": "int?, 账号类型：1=个人，2=创作者，3=商业, optional"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "获取用户资料",
+      "method": "GET",
+      "path": "/user/profile/{user_id}",
+      "path_params": {
+        "user_id": "int"
+      },
+      "response": "UserProfileResponse?"
+    },
+    {
+      "name": "用户名注册",
+      "method": "POST",
+      "path": "/user/register",
+      "request": {
+        "username": "string, max 50, 用户名",
+        "password": "string, max 50, 密码",
+        "confirm_password": "string, max 50, 确认密码"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "添加关系管控",
+      "method": "POST",
+      "path": "/user/relation-control",
+      "auth": true,
+      "request": {
+        "target_user_id": "int, 目标用户ID",
+        "control_type": "int, 管控类型：1=静音，2=限制，3=拉黑, default: 3, optional",
+        "reason": "string, max 255, 原因, optional"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "关系管控列表",
+      "method": "GET",
+      "path": "/user/relation-control/list",
+      "auth": true,
+      "query": {
+        "control_type": "string, 1=静音 2=限制 3=拉黑"
+      },
+      "response": "List<object>?"
+    },
+    {
+      "name": "移除关系管控",
+      "method": "DELETE",
+      "path": "/user/relation-control/{target_user_id}",
+      "auth": true,
+      "path_params": {
+        "target_user_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "收藏夹列表",
+      "method": "GET",
+      "path": "/user/save-collections",
+      "auth": true,
+      "response": "List<SaveCollectionResponse>?"
+    },
+    {
+      "name": "创建收藏夹",
+      "method": "POST",
+      "path": "/user/save-collections",
+      "auth": true,
+      "request": {
+        "name": "string, max 100, 收藏夹名称"
+      },
+      "response": "SaveCollectionResponse?"
+    },
+    {
+      "name": "删除收藏夹",
+      "method": "DELETE",
+      "path": "/user/save-collections/{collection_id}",
+      "auth": true,
+      "path_params": {
+        "collection_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "获取用户设置",
+      "method": "GET",
+      "path": "/user/settings",
+      "auth": true,
+      "response": "SettingsResponse?"
+    },
+    {
+      "name": "更新用户设置",
+      "method": "PUT",
+      "path": "/user/settings",
+      "auth": true,
+      "request": {
+        "reply_allow_type": "int?, 回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页, optional",
+        "mention_allow_type": "int?, 提及权限：1=所有人，2=你关注的用户，3=仅互关, optional",
+        "notify_likes": "int?, 点赞通知：0=关闭，1=开启, optional",
+        "notify_replies": "int?, 回复通知：0=关闭，1=开启, optional",
+        "notify_mentions": "int?, 提及通知：0=关闭，1=开启, optional",
+        "notify_follows": "int?, 关注通知：0=关闭，1=开启, optional",
+        "notify_quotes": "int?, 引用转发通知：0=关闭，1=开启, optional",
+        "notify_reposts": "int?, 纯转发通知：0=关闭，1=开启, optional",
+        "notify_polls": "int?, 投票结果通知：0=关闭，1=开启, optional",
+        "notify_communities": "int?, 社群动态通知：0=关闭，1=开启, optional",
+        "show_read_receipts": "int?, 显示已读回执：0=关闭，1=开启, optional",
+        "show_online_status": "int?, 显示在线状态：0=否，1=是, optional",
+        "allow_recommend": "int?, 允许推荐：0=否，1=是, optional",
+        "hide_likes_count": "int?, 隐藏点赞数：0=显示，1=隐藏, optional",
+        "interaction_restriction_type": "int?, 互动限制：1=无限制，2=关注超过1周，3=仅互关, optional",
+        "content_rating": "int?, 内容分级：1=全部，2=青少年，3=成人, optional"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "用户名登录",
+      "method": "POST",
+      "path": "/user/signin",
+      "request": {
+        "username": "string, max 50, 用户名",
+        "password": "string, max 50, 密码"
+      },
+      "response": "SigninResponse?"
+    },
+    {
+      "name": "刷新令牌",
+      "method": "POST",
+      "path": "/user/token/refresh",
+      "request": {
+        "refresh_token": "string, 刷新令牌, optional"
+      },
+      "response": "RefreshTokenResponse?"
     }
-  },
-  "components": {
-    "schemas": {
-      "ApproveFollowRequest": {
-        "properties": {
-          "action": {
-            "type": "integer",
-            "title": "Action",
-            "description": "操作：1=批准，2=拒绝"
-          }
-        },
-        "type": "object",
-        "required": [
-          "action"
-        ],
-        "title": "ApproveFollowRequest",
-        "description": "审批关注请求模型"
-      },
-      "CreateSaveCollectionRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "maxLength": 100,
-            "title": "Name",
-            "description": "收藏夹名称"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name"
-        ],
-        "title": "CreateSaveCollectionRequest",
-        "description": "创建收藏夹请求模型"
-      },
-      "DeviceTokenRegisterRequest": {
-        "properties": {
-          "device_token": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 5,
-            "title": "Device Token",
-            "description": "设备令牌"
-          }
-        },
-        "type": "object",
-        "required": [
-          "device_token"
-        ],
-        "title": "DeviceTokenRegisterRequest",
-        "description": "注册设备令牌请求对象"
-      },
-      "FollowRequestResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "请求ID",
-            "default": 0
-          },
-          "user_id": {
-            "type": "integer",
-            "title": "User Id",
-            "description": "被关注者ID",
-            "default": 0
-          },
-          "requester_id": {
-            "type": "integer",
-            "title": "Requester Id",
-            "description": "请求者ID",
-            "default": 0
-          },
-          "requester_username": {
-            "type": "string",
-            "title": "Requester Username",
-            "description": "请求者用户名",
-            "default": ""
-          },
-          "requester_avatar": {
-            "type": "string",
-            "title": "Requester Avatar",
-            "description": "请求者头像",
-            "default": ""
-          },
-          "requester_display_name": {
-            "type": "string",
-            "title": "Requester Display Name",
-            "description": "请求者显示名称",
-            "default": ""
-          },
-          "status": {
-            "type": "integer",
-            "title": "Status",
-            "description": "状态：1=待审批，2=已批准，3=已拒绝",
-            "default": 1
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "请求时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "FollowRequestResponse",
-        "description": "关注请求响应模型"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "MeUserResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "Id",
-            "description": "用户ID",
-            "default": 0
-          },
-          "username": {
-            "type": "string",
-            "maxLength": 32,
-            "title": "Username",
-            "description": "用户名",
-            "default": ""
-          },
-          "avatar": {
-            "type": "string",
-            "maxLength": 32,
-            "title": "Avatar",
-            "description": "头像",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "MeUserResponse",
-        "description": "我的应答对象"
-      },
-      "ModifyPasswordRequest": {
-        "properties": {
-          "old_password": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 5,
-            "title": "Old Password",
-            "description": "密码"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 5,
-            "title": "Password",
-            "description": "密码"
-          },
-          "confirm_password": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 5,
-            "title": "Confirm Password",
-            "description": "确认密码"
-          }
-        },
-        "type": "object",
-        "required": [
-          "old_password",
-          "password",
-          "confirm_password"
-        ],
-        "title": "ModifyPasswordRequest",
-        "description": "修改密码请求对象"
-      },
-      "OKResponse": {
-        "properties": {},
-        "type": "object",
-        "title": "OKResponse",
-        "description": "ok响应类"
-      },
-      "RefreshTokenRequest": {
-        "properties": {
-          "refresh_token": {
-            "type": "string",
-            "title": "Refresh Token",
-            "description": "刷新令牌",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "RefreshTokenRequest",
-        "description": "刷新令牌请求对象请求对象"
-      },
-      "RefreshTokenResponse": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token",
-            "description": "访问令牌",
-            "default": ""
-          },
-          "refresh_token": {
-            "type": "string",
-            "title": "Refresh Token",
-            "description": "刷新令牌",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "RefreshTokenResponse",
-        "description": "刷新令牌请求对象应答对象"
-      },
-      "RelationControlRequest": {
-        "properties": {
-          "target_user_id": {
-            "type": "integer",
-            "title": "Target User Id",
-            "description": "目标用户ID"
-          },
-          "control_type": {
-            "type": "integer",
-            "title": "Control Type",
-            "description": "管控类型：1=静音，2=限制，3=拉黑",
-            "default": 3
-          },
-          "reason": {
-            "type": "string",
-            "maxLength": 255,
-            "title": "Reason",
-            "description": "原因",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "required": [
-          "target_user_id"
-        ],
-        "title": "RelationControlRequest",
-        "description": "添加关系管控请求模型"
-      },
-      "ResponseModel_MeUserResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/MeUserResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[MeUserResponse]"
-      },
-      "ResponseModel_OKResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OKResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[OKResponse]"
-      },
-      "ResponseModel_RefreshTokenResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RefreshTokenResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[RefreshTokenResponse]"
-      },
-      "ResponseModel_SaveCollectionResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SaveCollectionResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[SaveCollectionResponse]"
-      },
-      "ResponseModel_SettingsResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SettingsResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[SettingsResponse]"
-      },
-      "ResponseModel_SigninResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SigninResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[SigninResponse]"
-      },
-      "ResponseModel_UserProfileResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserProfileResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[UserProfileResponse]"
-      },
-      "ResponseModel_dict_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[dict]"
-      },
-      "ResponseModel_list_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {},
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[list]"
-      },
-      "ResponseModel_list_FollowRequestResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/FollowRequestResponse"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[list[FollowRequestResponse]]"
-      },
-      "ResponseModel_list_SaveCollectionResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SaveCollectionResponse"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[list[SaveCollectionResponse]]"
-      },
-      "SaveCollectionResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "收藏夹ID",
-            "default": 0
-          },
-          "name": {
-            "type": "string",
-            "title": "Name",
-            "description": "收藏夹名称",
-            "default": ""
-          },
-          "is_default": {
-            "type": "boolean",
-            "title": "Is Default",
-            "description": "是否默认收藏夹",
-            "default": false
-          },
-          "save_count": {
-            "type": "integer",
-            "title": "Save Count",
-            "description": "收藏帖子数量",
-            "default": 0
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "创建时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "SaveCollectionResponse",
-        "description": "收藏夹响应模型"
-      },
-      "SettingsResponse": {
-        "properties": {
-          "reply_allow_type": {
-            "type": "integer",
-            "title": "Reply Allow Type",
-            "description": "回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页",
-            "default": 1
-          },
-          "mention_allow_type": {
-            "type": "integer",
-            "title": "Mention Allow Type",
-            "description": "提及权限：1=所有人，2=你关注的用户，3=仅互关",
-            "default": 1
-          },
-          "message_request_enabled": {
-            "type": "integer",
-            "title": "Message Request Enabled",
-            "description": "陌生消息开关：0=关闭，1=开启",
-            "default": 1
-          },
-          "message_request_allow_type": {
-            "type": "integer",
-            "title": "Message Request Allow Type",
-            "description": "谁能发消息给你：1=仅限你关注的用户，2=任何人",
-            "default": 1
-          },
-          "notify_likes": {
-            "type": "integer",
-            "title": "Notify Likes",
-            "description": "点赞通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_replies": {
-            "type": "integer",
-            "title": "Notify Replies",
-            "description": "回复通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_mentions": {
-            "type": "integer",
-            "title": "Notify Mentions",
-            "description": "提及通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_follows": {
-            "type": "integer",
-            "title": "Notify Follows",
-            "description": "关注通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_trending": {
-            "type": "integer",
-            "title": "Notify Trending",
-            "description": "热门通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_system": {
-            "type": "integer",
-            "title": "Notify System",
-            "description": "系统通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_group_messages": {
-            "type": "integer",
-            "title": "Notify Group Messages",
-            "description": "群消息通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_quotes": {
-            "type": "integer",
-            "title": "Notify Quotes",
-            "description": "引用转发通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_reposts": {
-            "type": "integer",
-            "title": "Notify Reposts",
-            "description": "纯转发通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_polls": {
-            "type": "integer",
-            "title": "Notify Polls",
-            "description": "投票结果通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "notify_communities": {
-            "type": "integer",
-            "title": "Notify Communities",
-            "description": "社群动态通知：0=关闭，1=开启",
-            "default": 1
-          },
-          "show_read_receipts": {
-            "type": "integer",
-            "title": "Show Read Receipts",
-            "description": "显示已读回执：0=关闭，1=开启",
-            "default": 1
-          },
-          "show_online_status": {
-            "type": "integer",
-            "title": "Show Online Status",
-            "description": "显示在线状态：0=否，1=是",
-            "default": 1
-          },
-          "allow_recommend": {
-            "type": "integer",
-            "title": "Allow Recommend",
-            "description": "允许推荐：0=否，1=是",
-            "default": 1
-          },
-          "hide_likes_count": {
-            "type": "integer",
-            "title": "Hide Likes Count",
-            "description": "隐藏点赞数：0=显示，1=隐藏",
-            "default": 0
-          },
-          "interaction_restriction_type": {
-            "type": "integer",
-            "title": "Interaction Restriction Type",
-            "description": "互动限制：1=无限制，2=关注超过1周，3=仅互关",
-            "default": 1
-          },
-          "silent_mode": {
-            "type": "integer",
-            "title": "Silent Mode",
-            "description": "静默模式：0=关闭，1=开启",
-            "default": 0
-          },
-          "content_rating": {
-            "type": "integer",
-            "title": "Content Rating",
-            "description": "内容分级：1=全部，2=青少年，3=成人",
-            "default": 1
-          }
-        },
-        "type": "object",
-        "title": "SettingsResponse",
-        "description": "用户设置响应模型"
-      },
-      "SigninResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "Id",
-            "description": "用户ID",
-            "default": 0
-          },
-          "username": {
-            "type": "string",
-            "maxLength": 32,
-            "title": "Username",
-            "description": "用户名",
-            "default": ""
-          },
-          "avatar": {
-            "type": "string",
-            "maxLength": 32,
-            "title": "Avatar",
-            "description": "头像",
-            "default": ""
-          },
-          "access_token": {
-            "type": "string",
-            "title": "Access Token",
-            "description": "访问令牌",
-            "default": ""
-          },
-          "refresh_token": {
-            "type": "string",
-            "title": "Refresh Token",
-            "description": "刷新令牌",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "SigninResponse",
-        "description": "登录成功应答对象"
-      },
-      "UpdateProfileRequest": {
-        "properties": {
-          "display_name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name",
-            "description": "显示名称"
-          },
-          "avatar_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Avatar Url",
-            "description": "头像URL"
-          },
-          "bio": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 500
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bio",
-            "description": "个人简介"
-          },
-          "pronouns": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 50
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pronouns",
-            "description": "人称代词"
-          },
-          "gender": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Gender",
-            "description": "性别：1=未设置，2=男，3=女，4=其他"
-          },
-          "location": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location",
-            "description": "所在地"
-          },
-          "website_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 500
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Website Url",
-            "description": "个人网站"
-          },
-          "is_private": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Private",
-            "description": "是否私密账号：0=否，1=是"
-          },
-          "account_type": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Account Type",
-            "description": "账号类型：1=个人，2=创作者，3=商业"
-          }
-        },
-        "type": "object",
-        "title": "UpdateProfileRequest",
-        "description": "更新个人资料请求模型"
-      },
-      "UpdateSettingsRequest": {
-        "properties": {
-          "reply_allow_type": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reply Allow Type",
-            "description": "回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页"
-          },
-          "mention_allow_type": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mention Allow Type",
-            "description": "提及权限：1=所有人，2=你关注的用户，3=仅互关"
-          },
-          "notify_likes": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notify Likes",
-            "description": "点赞通知：0=关闭，1=开启"
-          },
-          "notify_replies": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notify Replies",
-            "description": "回复通知：0=关闭，1=开启"
-          },
-          "notify_mentions": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notify Mentions",
-            "description": "提及通知：0=关闭，1=开启"
-          },
-          "notify_follows": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notify Follows",
-            "description": "关注通知：0=关闭，1=开启"
-          },
-          "notify_quotes": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notify Quotes",
-            "description": "引用转发通知：0=关闭，1=开启"
-          },
-          "notify_reposts": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notify Reposts",
-            "description": "纯转发通知：0=关闭，1=开启"
-          },
-          "notify_polls": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notify Polls",
-            "description": "投票结果通知：0=关闭，1=开启"
-          },
-          "notify_communities": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notify Communities",
-            "description": "社群动态通知：0=关闭，1=开启"
-          },
-          "show_read_receipts": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Read Receipts",
-            "description": "显示已读回执：0=关闭，1=开启"
-          },
-          "show_online_status": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Online Status",
-            "description": "显示在线状态：0=否，1=是"
-          },
-          "allow_recommend": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Allow Recommend",
-            "description": "允许推荐：0=否，1=是"
-          },
-          "hide_likes_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hide Likes Count",
-            "description": "隐藏点赞数：0=显示，1=隐藏"
-          },
-          "interaction_restriction_type": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Interaction Restriction Type",
-            "description": "互动限制：1=无限制，2=关注超过1周，3=仅互关"
-          },
-          "content_rating": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content Rating",
-            "description": "内容分级：1=全部，2=青少年，3=成人"
-          }
-        },
-        "type": "object",
-        "title": "UpdateSettingsRequest",
-        "description": "更新用户设置请求模型"
-      },
-      "UserProfileResponse": {
-        "properties": {
-          "user_id": {
-            "type": "integer",
-            "title": "User Id",
-            "description": "用户ID",
-            "default": 0
-          },
-          "display_name": {
-            "type": "string",
-            "title": "Display Name",
-            "description": "显示名称",
-            "default": ""
-          },
-          "avatar_url": {
-            "type": "string",
-            "title": "Avatar Url",
-            "description": "头像URL",
-            "default": ""
-          },
-          "bio": {
-            "type": "string",
-            "title": "Bio",
-            "description": "个人简介",
-            "default": ""
-          },
-          "pronouns": {
-            "type": "string",
-            "title": "Pronouns",
-            "description": "人称代词",
-            "default": ""
-          },
-          "gender": {
-            "type": "integer",
-            "title": "Gender",
-            "description": "性别：1=未设置，2=男，3=女，4=其他",
-            "default": 1
-          },
-          "location": {
-            "type": "string",
-            "title": "Location",
-            "description": "所在地",
-            "default": ""
-          },
-          "website_url": {
-            "type": "string",
-            "title": "Website Url",
-            "description": "个人网站",
-            "default": ""
-          },
-          "is_verified": {
-            "type": "integer",
-            "title": "Is Verified",
-            "description": "是否认证：0=否，1=是",
-            "default": 0
-          },
-          "is_private": {
-            "type": "integer",
-            "title": "Is Private",
-            "description": "是否私密：0=否，1=是",
-            "default": 0
-          },
-          "account_type": {
-            "type": "integer",
-            "title": "Account Type",
-            "description": "账号类型：1=个人，2=创作者，3=商业",
-            "default": 1
-          },
-          "posts_count": {
-            "type": "integer",
-            "title": "Posts Count",
-            "description": "帖子数",
-            "default": 0
-          },
-          "followers_count": {
-            "type": "integer",
-            "title": "Followers Count",
-            "description": "粉丝数",
-            "default": 0
-          },
-          "following_count": {
-            "type": "integer",
-            "title": "Following Count",
-            "description": "关注数",
-            "default": 0
-          },
-          "last_active_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Active Time",
-            "description": "最后活跃时间"
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "注册时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "UserProfileResponse",
-        "description": "用户资料响应模型"
-      },
-      "UsernameRegisterRequest": {
-        "properties": {
-          "username": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 2,
-            "title": "Username",
-            "description": "用户名"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 5,
-            "title": "Password",
-            "description": "密码"
-          },
-          "confirm_password": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 5,
-            "title": "Confirm Password",
-            "description": "确认密码"
-          }
-        },
-        "type": "object",
-        "required": [
-          "username",
-          "password",
-          "confirm_password"
-        ],
-        "title": "UsernameRegisterRequest",
-        "description": "用户名注册请求对象"
-      },
-      "UsernameSigninRequest": {
-        "properties": {
-          "username": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 2,
-            "title": "Username",
-            "description": "用户名"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 5,
-            "title": "Password",
-            "description": "密码"
-          }
-        },
-        "type": "object",
-        "required": [
-          "username",
-          "password"
-        ],
-        "title": "UsernameSigninRequest",
-        "description": "用户名登录请求对象"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      }
+  ],
+  "schemas": {
+    "FollowRequestResponse": {
+      "id": "int, 请求ID, default: 0, optional",
+      "user_id": "int, 被关注者ID, default: 0, optional",
+      "requester_id": "int, 请求者ID, default: 0, optional",
+      "requester_username": "string, 请求者用户名, optional",
+      "requester_avatar": "string, 请求者头像, optional",
+      "requester_display_name": "string, 请求者显示名称, optional",
+      "status": "int, 状态：1=待审批，2=已批准，3=已拒绝, default: 1, optional",
+      "create_time": "string, 请求时间, optional"
+    },
+    "MeUserResponse": {
+      "id": "int, 用户ID, default: 0, optional",
+      "username": "string, max 32, 用户名, optional",
+      "avatar": "string, max 32, 头像, optional"
+    },
+    "RefreshTokenResponse": {
+      "access_token": "string, 访问令牌, optional",
+      "refresh_token": "string, 刷新令牌, optional"
+    },
+    "SaveCollectionResponse": {
+      "id": "int, 收藏夹ID, default: 0, optional",
+      "name": "string, 收藏夹名称, optional",
+      "is_default": "bool, 是否默认收藏夹, default: False, optional",
+      "save_count": "int, 收藏帖子数量, default: 0, optional",
+      "create_time": "string, 创建时间, optional"
+    },
+    "SettingsResponse": {
+      "reply_allow_type": "int, 回复权限：1=所有人，2=你的粉丝，3=你关注的主页，4=你提及的主页, default: 1, optional",
+      "mention_allow_type": "int, 提及权限：1=所有人，2=你关注的用户，3=仅互关, default: 1, optional",
+      "message_request_enabled": "int, 陌生消息开关：0=关闭，1=开启, default: 1, optional",
+      "message_request_allow_type": "int, 谁能发消息给你：1=仅限你关注的用户，2=任何人, default: 1, optional",
+      "notify_likes": "int, 点赞通知：0=关闭，1=开启, default: 1, optional",
+      "notify_replies": "int, 回复通知：0=关闭，1=开启, default: 1, optional",
+      "notify_mentions": "int, 提及通知：0=关闭，1=开启, default: 1, optional",
+      "notify_follows": "int, 关注通知：0=关闭，1=开启, default: 1, optional",
+      "notify_trending": "int, 热门通知：0=关闭，1=开启, default: 1, optional",
+      "notify_system": "int, 系统通知：0=关闭，1=开启, default: 1, optional",
+      "notify_group_messages": "int, 群消息通知：0=关闭，1=开启, default: 1, optional",
+      "notify_quotes": "int, 引用转发通知：0=关闭，1=开启, default: 1, optional",
+      "notify_reposts": "int, 纯转发通知：0=关闭，1=开启, default: 1, optional",
+      "notify_polls": "int, 投票结果通知：0=关闭，1=开启, default: 1, optional",
+      "notify_communities": "int, 社群动态通知：0=关闭，1=开启, default: 1, optional",
+      "show_read_receipts": "int, 显示已读回执：0=关闭，1=开启, default: 1, optional",
+      "show_online_status": "int, 显示在线状态：0=否，1=是, default: 1, optional",
+      "allow_recommend": "int, 允许推荐：0=否，1=是, default: 1, optional",
+      "hide_likes_count": "int, 隐藏点赞数：0=显示，1=隐藏, default: 0, optional",
+      "interaction_restriction_type": "int, 互动限制：1=无限制，2=关注超过1周，3=仅互关, default: 1, optional",
+      "silent_mode": "int, 静默模式：0=关闭，1=开启, default: 0, optional",
+      "content_rating": "int, 内容分级：1=全部，2=青少年，3=成人, default: 1, optional"
+    },
+    "SigninResponse": {
+      "id": "int, 用户ID, default: 0, optional",
+      "username": "string, max 32, 用户名, optional",
+      "avatar": "string, max 32, 头像, optional",
+      "access_token": "string, 访问令牌, optional",
+      "refresh_token": "string, 刷新令牌, optional"
+    },
+    "UserProfileResponse": {
+      "user_id": "int, 用户ID, default: 0, optional",
+      "display_name": "string, 显示名称, optional",
+      "avatar_url": "string, 头像URL, optional",
+      "bio": "string, 个人简介, optional",
+      "pronouns": "string, 人称代词, optional",
+      "gender": "int, 性别：1=未设置，2=男，3=女，4=其他, default: 1, optional",
+      "location": "string, 所在地, optional",
+      "website_url": "string, 个人网站, optional",
+      "is_verified": "int, 是否认证：0=否，1=是, default: 0, optional",
+      "is_private": "int, 是否私密：0=否，1=是, default: 0, optional",
+      "account_type": "int, 账号类型：1=个人，2=创作者，3=商业, default: 1, optional",
+      "posts_count": "int, 帖子数, default: 0, optional",
+      "followers_count": "int, 粉丝数, default: 0, optional",
+      "following_count": "int, 关注数, default: 0, optional",
+      "last_active_time": "string?, 最后活跃时间, optional",
+      "create_time": "string, 注册时间, optional"
     }
   }
 }

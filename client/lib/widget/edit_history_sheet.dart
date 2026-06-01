@@ -61,7 +61,7 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
           ),
           SizedBox(height: 8),
           Text(
-            Utility.getdob(entry.editedAt.toIso8601String()),
+            Utility.getdob(entry.editedAt.toIso8601String(), context: context),
             style: TextStyle(
               color: appColors.textHint,
               fontSize: 12,

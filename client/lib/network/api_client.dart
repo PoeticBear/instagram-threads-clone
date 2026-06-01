@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 import 'api_exception.dart';
+import 'api_logger.dart';
 
 class ApiClient {
   final http.Client _client;
@@ -81,22 +81,21 @@ class ApiClient {
     dynamic body,
     Map<String, dynamic>? queryParameters,
   }) async {
+    final stopwatch = Stopwatch()..start();
+
     try {
       Uri uri = Uri.parse('${ApiConfig.baseUrl}$path');
       if (queryParameters != null && queryParameters.isNotEmpty) {
         uri = uri.replace(queryParameters: queryParameters);
       }
 
-      // ── Request log ──
-      final stopwatch = Stopwatch()..start();
-      developer.log('');
-      developer.log('┌── HTTP Request ─────────────────────────────────');
-      developer.log('│ $method ${uri.toString()}');
-      if (body != null) {
-        developer.log('│ Body: ${_encodeBody(body)}');
-      }
-      developer.log('│ Headers: $_headers');
-      developer.log('└─────────────────────────────────────────────────');
+      // ── 打印请求日志 ──
+      ApiLogger.logRequest(
+        method: method,
+        url: uri.toString(),
+        headers: _headers,
+        body: body,
+      );
 
       http.Response response;
 
@@ -132,29 +131,51 @@ class ApiClient {
 
       stopwatch.stop();
 
-      // ── Response log ──
-      developer.log('');
-      developer.log('┌── HTTP Response ────────────────────────────────');
-      developer.log('│ $method ${uri.toString()}');
-      developer.log('│ Status: ${response.statusCode}  (${stopwatch.elapsedMilliseconds}ms)');
-      try {
-        final decoded = jsonDecode(response.body);
-        final pretty = const JsonEncoder.withIndent('  ').convert(decoded);
-        for (final line in pretty.split('\n')) {
-          developer.log('│ $line');
-        }
-      } catch (_) {
-        developer.log('│ Body: ${response.body}');
-      }
-      developer.log('└─────────────────────────────────────────────────');
-      developer.log('');
+      // ── 打印响应日志 ──
+      ApiLogger.logResponse(
+        method: method,
+        url: uri.toString(),
+        statusCode: response.statusCode,
+        body: response.body,
+        elapsedMs: stopwatch.elapsedMilliseconds,
+      );
 
       return _handleResponse(response);
-    } on SocketException {
+    } on SocketException catch (e) {
+      ApiLogger.logError(
+        method: method,
+        url: '${ApiConfig.baseUrl}$path',
+        statusCode: null,
+        error: '网络连接失败: $e',
+        elapsedMs: 0,
+      );
       throw NetworkException(message: '网络连接失败，请检查网络');
-    } on http.ClientException {
+    } on http.ClientException catch (e) {
+      ApiLogger.logError(
+        method: method,
+        url: '${ApiConfig.baseUrl}$path',
+        statusCode: null,
+        error: '网络请求异常: $e',
+        elapsedMs: 0,
+      );
       throw NetworkException(message: '网络请求失败');
+    } on ApiException catch (e) {
+      ApiLogger.logError(
+        method: method,
+        url: '${ApiConfig.baseUrl}$path',
+        statusCode: e.statusCode,
+        error: e.message,
+        elapsedMs: stopwatch.elapsedMilliseconds,
+      );
+      rethrow;
     } catch (e) {
+      ApiLogger.logError(
+        method: method,
+        url: '${ApiConfig.baseUrl}$path',
+        statusCode: null,
+        error: '请求失败: $e',
+        elapsedMs: 0,
+      );
       if (e is ApiException) rethrow;
       throw ApiException(message: '请求失败: $e');
     }

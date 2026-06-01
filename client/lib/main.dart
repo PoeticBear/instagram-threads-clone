@@ -5,6 +5,7 @@ import 'package:threads/common/locator.dart';
 import 'package:threads/common/splash.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/network/api_client.dart';
+import 'package:threads/network/api_logger.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/locale.state.dart';
@@ -41,6 +42,9 @@ void main() async {
   // Initialize API client
   final apiClient = ApiClient();
   getIt.registerSingleton<ApiClient>(apiClient);
+
+  // Initialize file logger
+  ApiLogger.init();
 
   runApp(MyApp(
     sharedPreferences: sharedPreferences,

@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 
 class Utility {
   static String getUserName({
@@ -17,13 +18,32 @@ class Utility {
     return userName;
   }
 
-  static String getdob(String? date) {
+  static String getdob(String? date, {BuildContext? context}) {
     if (date == null || date.isEmpty) {
       return '';
     }
     var dt = DateTime.parse(date).toLocal();
-    var dat = DateFormat.yMMMd().format(dt);
-    return dat;
+    final now = DateTime.now();
+    final difference = now.difference(dt);
+
+    final l10n = context != null ? AppLocalizations.of(context) : null;
+
+    if (l10n == null) {
+      return DateFormat.yMMMd().format(dt);
+    }
+
+    if (difference.inMinutes < 1) {
+      return l10n.justNow;
+    } else if (difference.inMinutes < 60) {
+      return l10n.minutesAgo(difference.inMinutes);
+    } else if (difference.inHours < 24) {
+      return l10n.hoursAgo(difference.inHours);
+    } else if (difference.inDays < 7) {
+      return l10n.daysAgo(difference.inDays);
+    } else {
+      final locale = Localizations.localeOf(context!).toString();
+      return DateFormat.yMMMd(locale).format(dt);
+    }
   }
 
   static bool validateCredentials(BuildContext context,

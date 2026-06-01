@@ -32,16 +32,18 @@ class DraftState extends ChangeNotifier {
     required String content,
     List<String>? mediaUrls,
     List<String>? pollOptions,
-    List<int>? topicIds,
-    int? replySettings,
+    int? topicId,
+    int? replyType,
+    String? location,
   }) async {
     try {
       final draft = await postService.saveDraft(
         content: content,
         mediaUrls: mediaUrls,
         pollOptions: pollOptions,
-        topicIds: topicIds,
-        replySettings: replySettings,
+        topicId: topicId,
+        replyType: replyType,
+        location: location,
       );
       _drafts.insert(0, draft);
       notifyListeners();

@@ -288,6 +288,8 @@
   "noThreadsYetOthers": "No threads yet.",
   "nothingToSaveDraft": "Nothing to save as draft",
   "draftSaveFailed": "Failed to save draft",
+  "discard": "Discard",
+  "saveDraftHint": "Save this post as a draft or discard it?",
   "draft": "Draft",
   "replyCount": "{count} replies",
   "@replyCount": {

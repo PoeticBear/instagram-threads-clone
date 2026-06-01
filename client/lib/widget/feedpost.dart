@@ -29,14 +29,53 @@ class FeedPostWidget extends StatefulWidget {
 }
 
 class _FeedPostWidgetState extends State<FeedPostWidget> {
+  PostModel? _fetchedQuotePost;
+  bool _isFetchingQuote = false;
+
+  /// 被引用帖子的有效数据：优先用已有 quotePost，否则用兜底拉取的
+  PostModel? get _effectiveQuotePost =>
+      widget.postModel.quotePost ?? _fetchedQuotePost;
+
+  @override
+  void initState() {
+    super.initState();
+    _maybeFetchQuotePost();
+  }
+
+  /// 当 quote_post_id 有值但 quotePost 为空时，拉取被引用帖子的详情
+  void _maybeFetchQuotePost() {
+    final post = widget.postModel;
+    if (post.quotePost != null) return; // 已有数据，无需拉取
+    final qid = post.quoteRepostId;
+    if (qid == null) return;
+    if (_isFetchingQuote) return;
+
+    _isFetchingQuote = true;
+    final postState = Provider.of<PostState>(context, listen: false);
+    postState.fetchQuotePostDetail(qid).then((quotePost) {
+      if (quotePost != null && mounted) {
+        setState(() {
+          _fetchedQuotePost = quotePost;
+        });
+      }
+    }).catchError((_) {
+      // 静默失败，卡片显示"不可用"
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.postModel.user;
     final profilePic = user?.profilePic ?? '';
-    final displayName = user?.displayName ?? 'Unknown';
+    final displayName = user?.displayName?.isNotEmpty == true
+        ? user!.displayName!
+        : (user?.userName?.isNotEmpty == true ? user!.userName! : 'User${user?.userId ?? ''}');
     final hasImage = widget.postModel.imagePath != null &&
         widget.postModel.imagePath!.isNotEmpty;
     final hasPoll = widget.postModel.pollData != null;
+    final hasQuoteId = widget.postModel.quoteRepostId != null;
+    final quotePost = _effectiveQuotePost;
+
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
 
     Widget avatar(String url, double size) {
@@ -61,7 +100,9 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       );
     }
 
-    return Container(
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
         color: appColors.background,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +110,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           children: [
             Container(
               height: 0.2,
-              width: MediaQuery.of(context).size.width,
+              width: double.infinity,
               color: appColors.divider,
             ),
             Container(
@@ -97,7 +138,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                   ),
                 ),
                 Text(
-                  Utility.getdob(widget.postModel.createdAt),
+                  Utility.getdob(widget.postModel.createdAt, context: context),
                   style: TextStyle(color: appColors.textMuted),
                 ),
                 Container(width: 5),
@@ -120,6 +161,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 ),
               ),
             ),
+            // ── 引用帖子预览卡片 ──
+            if (hasQuoteId) ...[
+              Container(height: 8),
+              Padding(
+                padding: EdgeInsets.only(left: 55, right: 10),
+                child: _buildQuoteCard(
+                  context: context,
+                  quotePost: quotePost,
+                  appColors: appColors,
+                  avatar: avatar,
+                ),
+              ),
+            ],
             GestureDetector(
               onTap: () => _navigateToPostDetail(context),
               child: hasPoll
@@ -128,30 +182,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     pollData: widget.postModel.pollData!,
                   )
                 : !hasImage
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 12,
-                          ),
-                          Column(
-                            children: [
-                              Container(
-                                width: 2,
-                                height: 30,
-                                color: appColors.divider,
-                              ),
-                              Container(
-                                height: 5,
-                          ),
-                              avatar(profilePic, 15),
-                            ],
-                          ),
-                          Padding(
-                              padding: EdgeInsets.only(left: 20, right: 10),
-                              child: SizedBox.shrink()),
-                        ],
-                      )
+                    ? SizedBox.shrink()
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -171,18 +202,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                               avatar(profilePic, 15),
                             ],
                           ),
-                          Padding(
+                          Flexible(
+                            child: Padding(
                               padding: EdgeInsets.only(left: 48, right: 10),
                               child: ClipRRect(
                                       borderRadius: BorderRadius.circular(20),
                                       child: CachedNetworkImage(
                                           height: 300,
-                                          width: 290,
+                                          width: 280,
                                           fit: BoxFit.cover,
                                           imageUrl: widget.postModel.imagePath!,
                                           placeholder: (context, url) => Container(
                                             height: 300,
-                                            width: 290,
+                                            width: 280,
                                             color: appColors.surface,
                                             child: Center(
                                               child: CircularProgressIndicator(
@@ -193,11 +225,12 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                                           ),
                                           errorWidget: (context, url, error) => Container(
                                             height: 300,
-                                            width: 290,
+                                            width: 280,
                                             color: appColors.surface,
                                             child: Icon(Icons.broken_image, color: appColors.textSecondary),
                                           ),
                                       ))),
+                            ),
                         ],
                       ),
             ),
@@ -284,7 +317,149 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               height: 15,
             ),
           ],
-        ));
+        ),
+      ),
+    );
+  }
+
+  // ────────────────── 引用帖子卡片 ──────────────────
+
+  Widget _buildQuoteCard({
+    required BuildContext context,
+    required PostModel? quotePost,
+    required AppColors appColors,
+    required Widget Function(String, double) avatar,
+  }) {
+    // 情况 1: 有完整的被引用帖子数据
+    if (quotePost != null) {
+      final qUser = quotePost.user;
+      final qDisplayName = qUser?.displayName?.isNotEmpty == true
+          ? qUser!.displayName!
+          : (qUser?.userName?.isNotEmpty == true ? qUser!.userName! : '');
+      final qAvatar = qUser?.profilePic ?? '';
+      final qContent = quotePost.bio ?? '';
+      final qHasImage = quotePost.imagePath != null && quotePost.imagePath!.isNotEmpty;
+
+      return GestureDetector(
+        onTap: () => _navigateToQuotedPostDetail(context, quotePost),
+        child: Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: appColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: appColors.border, width: 0.5),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 作者信息行
+              if (qDisplayName.isNotEmpty) ...[
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _navigateToQuotedUserProfile(context, quotePost),
+                      child: avatar(qAvatar, 20),
+                    ),
+                    Container(width: 6),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _navigateToQuotedUserProfile(context, quotePost),
+                        child: Text(
+                          qDisplayName,
+                          style: TextStyle(
+                            color: appColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Container(height: 6),
+              ],
+              // 正文
+              if (qContent.isNotEmpty)
+                Text(
+                  qContent,
+                  style: TextStyle(
+                    color: appColors.textSecondary,
+                    fontSize: 14,
+                  ),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              // 图片
+              if (qHasImage) ...[
+                Container(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CachedNetworkImage(
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    imageUrl: quotePost.imagePath!,
+                    placeholder: (context, url) => Container(
+                      height: 150,
+                      color: appColors.surface,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: appColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => SizedBox.shrink(),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 情况 2: 正在加载
+    if (_isFetchingQuote) {
+      return Container(
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: appColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: appColors.border, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: appColors.textSecondary),
+            ),
+            Container(width: 10),
+            Text(
+              'Loading...',
+              style: TextStyle(color: appColors.textMuted, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 情况 3: 加载失败或原帖不可用
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: appColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: appColors.border, width: 0.5),
+      ),
+      child: Text(
+        'This post is unavailable',
+        style: TextStyle(color: appColors.textMuted, fontSize: 13),
+      ),
+    );
   }
 
   // ==================== Navigation ====================
@@ -306,6 +481,28 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           postId: widget.postModel.id,
           postModel: widget.postModel,
         ),
+      ),
+    );
+  }
+
+  void _navigateToQuotedPostDetail(BuildContext context, PostModel quotePost) {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => PostDetailPage(
+          postId: quotePost.id,
+          postModel: quotePost,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToQuotedUserProfile(BuildContext context, PostModel quotePost) {
+    if (quotePost.user == null) return;
+    Navigator.push(
+      context,
+      ProfilePage.getRoute(
+        profileId: quotePost.user!.userId.toString(),
       ),
     );
   }
@@ -345,6 +542,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   void _showRepostSheet(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isReposted = widget.postModel.isReposted == true;
+    final postId = widget.postModel.id;
+    final postState = Provider.of<PostState>(context, listen: false);
 
     showModalBottomSheet(
       context: context,
@@ -352,7 +551,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -361,9 +560,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               _buildSheetOption(
                 label: 'Repost',
                 onTap: () {
-                  Navigator.pop(context);
-                  final state = Provider.of<PostState>(context, listen: false);
-                  state.repost(widget.postModel.id);
+                  Navigator.pop(sheetContext);
+                  postState.repost(postId);
                 },
               ),
               _buildSheetDivider(),
@@ -371,7 +569,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             _buildSheetOption(
               label: AppLocalizations.of(context)!.quote,
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 _showQuoteSheet(context);
               },
             ),
@@ -381,9 +579,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 label: 'Undo Repost',
                 textColor: appColors.destructive,
                 onTap: () {
-                  Navigator.pop(context);
-                  final state = Provider.of<PostState>(context, listen: false);
-                  state.unrepost(widget.postModel.id);
+                  Navigator.pop(sheetContext);
+                  postState.unrepost(postId);
                 },
               ),
             ],
@@ -496,7 +693,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     final authState = Provider.of<AuthState>(context, listen: false);
                     final postModel = PostModel(
                       user: UserModel(
-                        userId: authState.userId != null ? int.tryParse(authState.userId!) : null,
+                        userId: int.tryParse(authState.userId),
                         userName: authState.userModel?.userName ?? '',
                         displayName: authState.userModel?.displayName ?? '',
                         profilePic: authState.userModel?.profilePic,
@@ -525,6 +722,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   void _showShareSheet(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final postId = widget.postModel.id;
+    final postState = Provider.of<PostState>(context, listen: false);
 
     showModalBottomSheet(
       context: context,
@@ -532,7 +730,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -540,7 +738,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             _buildSheetOption(
               label: 'Copy Link',
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 Clipboard.setData(ClipboardData(
                   text: '${ApiConfig.baseUrl}t/$postId',
                 ));
@@ -557,9 +755,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             _buildSheetOption(
               label: 'Share',
               onTap: () {
-                Navigator.pop(context);
-                final state = Provider.of<PostState>(context, listen: false);
-                state.sharePost(postId);
+                Navigator.pop(sheetContext);
+                postState.sharePost(postId);
               },
             ),
           ],
@@ -581,7 +778,9 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     final authState = Provider.of<AuthState>(context, listen: false);
     final currentUserId = authState.userId;
     final postUserId = widget.postModel.user?.userId?.toString();
-    final isOwnPost = currentUserId != null && postUserId != null && currentUserId == postUserId;
+    final isOwnPost = postUserId != null && currentUserId == postUserId;
+
+    final postState = Provider.of<PostState>(context, listen: false);
 
     showModalBottomSheet(
       context: context,
@@ -589,7 +788,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -598,14 +797,13 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               _buildSheetOption(
                 label: l10n.editPost,
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => ComposePost(
                         onPostSuccess: () {
-                          final state = Provider.of<PostState>(context, listen: false);
-                          state.getDataFromDatabase();
+                          postState.getDataFromDatabase();
                         },
                       ),
                     ),
@@ -617,7 +815,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 label: l10n.deletePost,
                 textColor: appColors.destructive,
                 onTap: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
@@ -637,8 +835,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     ),
                   );
                   if (confirmed == true) {
-                    final state = Provider.of<PostState>(context, listen: false);
-                    final success = await state.deletePost(postId);
+                    final success = await postState.deletePost(postId);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -655,12 +852,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               _buildSheetOption(
                 label: isPinned ? l10n.unpinPost : l10n.pinPost,
                 onTap: () {
-                  Navigator.pop(context);
-                  final state = Provider.of<PostState>(context, listen: false);
+                  Navigator.pop(sheetContext);
                   if (isPinned) {
-                    state.unpinPost(postId);
+                    postState.unpinPost(postId);
                   } else {
-                    state.pinPost(postId);
+                    postState.pinPost(postId);
                   }
                 },
               ),
@@ -669,12 +865,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             _buildSheetOption(
               label: isSaved ? l10n.unsave : l10n.save,
               onTap: () {
-                Navigator.pop(context);
-                final state = Provider.of<PostState>(context, listen: false);
+                Navigator.pop(sheetContext);
                 if (isSaved) {
-                  state.unsavePost(postId);
+                  postState.unsavePost(postId);
                 } else {
-                  state.savePost(postId);
+                  postState.savePost(postId);
                 }
               },
             ),
@@ -684,9 +879,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 label: l10n.report,
                 textColor: appColors.destructive,
                 onTap: () {
-                  Navigator.pop(context);
-                  final state = Provider.of<PostState>(context, listen: false);
-                  state.reportPost(postId, reason: 'Inappropriate content');
+                  Navigator.pop(sheetContext);
+                  postState.reportPost(postId, reason: 'Inappropriate content');
                 },
               ),
               _buildSheetDivider(),
@@ -694,7 +888,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             _buildSheetOption(
               label: l10n.editHistory,
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
@@ -707,7 +901,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             _buildSheetOption(
               label: l10n.notInterested,
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
               },
             ),
           ],

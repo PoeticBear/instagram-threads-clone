@@ -184,7 +184,7 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      Utility.getdob(reply.createdAt.toIso8601String()),
+                      Utility.getdob(reply.createdAt.toIso8601String(), context: context),
                       style: TextStyle(
                         color: appColors.textHint,
                         fontSize: 12,

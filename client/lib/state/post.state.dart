@@ -54,6 +54,47 @@ class PostState extends AppStates {
     return _uploadService!;
   }
 
+  /// Convert API Post to UI PostModel, preserving all quote/repost/thread data.
+  PostModel _apiPostToModel(Post apiPost) {
+    return PostModel(
+      key: apiPost.id,
+      postId: apiPost.id,
+      bio: apiPost.content,
+      createdAt: apiPost.createdAt.toIso8601String(),
+      imagePath: apiPost.imageUrl,
+      user: UserModel(
+        userId: apiPost.userId,
+        userName: apiPost.username,
+        displayName: apiPost.displayName,
+        profilePic: apiPost.profilePic,
+      ),
+      likesCount: apiPost.likesCount,
+      repliesCount: apiPost.repliesCount,
+      repostsCount: apiPost.repostsCount,
+      sharesCount: apiPost.sharesCount,
+      isLiked: apiPost.isLiked,
+      isSaved: apiPost.isSaved,
+      isReposted: apiPost.isReposted,
+      pollData: apiPost.pollData,
+      location: apiPost.location,
+      isGhost: apiPost.isGhost,
+      communityId: apiPost.communityId,
+      replySettings: apiPost.replySettings,
+      quoteRepostId: apiPost.quoteRepostId,
+      isPinned: apiPost.isPinned,
+      scheduledTime: apiPost.scheduledTime,
+      isAi: apiPost.isAi,
+      // Quote / Repost / Thread fields
+      quoteContent: apiPost.quoteContent,
+      quotePost: apiPost.quotePost != null ? _apiPostToModel(apiPost.quotePost!) : null,
+      isRepost: apiPost.isRepost,
+      repostParentId: apiPost.repostParentId,
+      threadPosts: apiPost.threadPosts.map((tp) => _apiPostToModel(tp)).toList(),
+      threadPostIds: apiPost.threadPostIds,
+      quotesCount: apiPost.quotesCount,
+    );
+  }
+
   Future<String?> createPost(
     PostModel model, {
     List<File>? imageFiles,
@@ -202,27 +243,9 @@ class PostState extends AppStates {
 
       final posts = await postService.getFeed();
 
-      _feedlist = posts.map((apiPost) => PostModel(
-        key: apiPost.id,
-        postId: apiPost.id,
-        bio: apiPost.content,
-        createdAt: apiPost.createdAt.toIso8601String(),
-        imagePath: apiPost.imageUrl,
-        user: UserModel(
-          userId: apiPost.user.userId,
-          userName: apiPost.user.userName,
-          displayName: apiPost.user.displayName,
-          profilePic: apiPost.user.profilePic,
-        ),
-        likesCount: apiPost.likesCount,
-        repliesCount: apiPost.repliesCount,
-        repostsCount: apiPost.repostsCount,
-        sharesCount: apiPost.sharesCount,
-        isLiked: apiPost.isLiked,
-        isSaved: apiPost.isSaved,
-        isReposted: apiPost.isReposted,
-        pollData: apiPost.pollData,
-      )).toList();
+      _feedlist = posts.map((apiPost) {
+        return _apiPostToModel(apiPost);
+      }).toList();
 
       // Sort by createdAt descending
       _feedlist!.sort((x, y) => DateTime.parse(y.createdAt)
@@ -231,9 +254,7 @@ class PostState extends AppStates {
       isBusy = false;
       notifyListeners();
     } catch (error) {
-      // API failed, load mock data as fallback
       developer.log('>>> getDataFromDatabase FAILED: $error', name: 'PostState');
-      _loadMockData();
       isBusy = false;
       notifyListeners();
     }
@@ -283,27 +304,7 @@ class PostState extends AppStates {
       if (posts.isEmpty) {
         _hasMore = false;
       } else {
-        final newPosts = posts.map((apiPost) => PostModel(
-          key: apiPost.id,
-          postId: apiPost.id,
-          bio: apiPost.content,
-          createdAt: apiPost.createdAt.toIso8601String(),
-          imagePath: apiPost.imageUrl,
-          user: UserModel(
-            userId: apiPost.user.userId,
-            userName: apiPost.user.userName,
-            displayName: apiPost.user.displayName,
-            profilePic: apiPost.user.profilePic,
-          ),
-          likesCount: apiPost.likesCount,
-          repliesCount: apiPost.repliesCount,
-          repostsCount: apiPost.repostsCount,
-          sharesCount: apiPost.sharesCount,
-          isLiked: apiPost.isLiked,
-          isSaved: apiPost.isSaved,
-          isReposted: apiPost.isReposted,
-          pollData: apiPost.pollData,
-        )).toList();
+        final newPosts = posts.map((apiPost) => _apiPostToModel(apiPost)).toList();
 
         _feedlist!.addAll(newPosts);
         _feedlist!.sort((x, y) => DateTime.parse(y.createdAt)
@@ -316,167 +317,12 @@ class PostState extends AppStates {
     notifyListeners();
   }
 
-  void _loadMockData() {
-    final now = DateTime.now();
-
-    final mockUsers = [
-      UserModel(
-        userId: 1,
-        userName: 'zhangsan',
-        displayName: '张三',
-        profilePic: 'https://i.pravatar.cc/150?img=1',
-      ),
-      UserModel(
-        userId: 2,
-        userName: 'lisi_dev',
-        displayName: '李四',
-        profilePic: 'https://i.pravatar.cc/150?img=2',
-      ),
-      UserModel(
-        userId: 3,
-        userName: 'wangwu_photo',
-        displayName: '王五',
-        profilePic: 'https://i.pravatar.cc/150?img=3',
-      ),
-      UserModel(
-        userId: 4,
-        userName: 'zhaoliu_tech',
-        displayName: '赵六',
-        profilePic: 'https://i.pravatar.cc/150?img=4',
-      ),
-      UserModel(
-        userId: 5,
-        userName: 'sunqi_travel',
-        displayName: '孙七',
-        profilePic: 'https://i.pravatar.cc/150?img=5',
-      ),
-    ];
-
-    _feedlist = [
-      PostModel(
-        key: 'mock_1',
-        postId: 'mock_1',
-        bio: '今天上线了一个新功能，支持用户注册和登录了！欢迎大家来体验 🎉',
-        createdAt: now.subtract(const Duration(minutes: 5)).toIso8601String(),
-        user: mockUsers[0],
-        likesCount: 42,
-        repliesCount: 7,
-        repostsCount: 3,
-        isLiked: false,
-        isSaved: false,
-      ),
-      PostModel(
-        key: 'mock_2',
-        postId: 'mock_2',
-        bio: '分享一下最近在用的 Flutter 状态管理方案，Provider + ChangeNotifier 真的很轻量好用',
-        createdAt: now.subtract(const Duration(minutes: 30)).toIso8601String(),
-        user: mockUsers[1],
-        likesCount: 128,
-        repliesCount: 23,
-        repostsCount: 15,
-        isLiked: true,
-        isSaved: false,
-      ),
-      PostModel(
-        key: 'mock_3',
-        postId: 'mock_3',
-        bio: '今天天气真好，拍了张照片 📷',
-        createdAt: now.subtract(const Duration(hours: 2)).toIso8601String(),
-        imagePath: 'https://picsum.photos/seed/threads1/600/400',
-        user: mockUsers[2],
-        likesCount: 256,
-        repliesCount: 18,
-        repostsCount: 8,
-        isLiked: false,
-        isSaved: true,
-      ),
-      PostModel(
-        key: 'mock_4',
-        postId: 'mock_4',
-        bio: ' Threads 的 UI 设计真的很简洁，暗色主题看着很舒服。有没有人想一起做一个开源 clone？',
-        createdAt: now.subtract(const Duration(hours: 5)).toIso8601String(),
-        user: mockUsers[3],
-        likesCount: 89,
-        repliesCount: 34,
-        repostsCount: 12,
-        isLiked: false,
-        isSaved: false,
-      ),
-      PostModel(
-        key: 'mock_5',
-        postId: 'mock_5',
-        bio: '刚从日本回来，东京的夜景真的太美了，下次想去北海道 🗻',
-        createdAt: now.subtract(const Duration(hours: 8)).toIso8601String(),
-        imagePath: 'https://picsum.photos/seed/tokyo/600/400',
-        user: mockUsers[4],
-        likesCount: 512,
-        repliesCount: 45,
-        repostsCount: 29,
-        isLiked: true,
-        isSaved: false,
-      ),
-      PostModel(
-        key: 'mock_6',
-        postId: 'mock_6',
-        bio: '推荐一个很好用的 API 调试工具，比 Postman 轻量多了',
-        createdAt: now.subtract(const Duration(days: 1)).toIso8601String(),
-        user: mockUsers[0],
-        likesCount: 67,
-        repliesCount: 12,
-        repostsCount: 5,
-        isLiked: false,
-        isSaved: false,
-      ),
-      PostModel(
-        key: 'mock_7',
-        postId: 'mock_7',
-        bio: '周末去爬山了，空气特别好，远离代码一天的感觉也不错 ⛰️',
-        createdAt: now.subtract(const Duration(days: 1, hours: 6)).toIso8601String(),
-        imagePath: 'https://picsum.photos/seed/mountain/600/400',
-        user: mockUsers[1],
-        likesCount: 198,
-        repliesCount: 21,
-        repostsCount: 7,
-        isLiked: false,
-        isSaved: true,
-      ),
-      PostModel(
-        key: 'mock_8',
-        postId: 'mock_8',
-        bio: '在学 Dart 的 Isolate，并发编程的思想跟 JavaScript 完全不一样，需要适应一下',
-        createdAt: now.subtract(const Duration(days: 2)).toIso8601String(),
-        user: mockUsers[3],
-        likesCount: 34,
-        repliesCount: 8,
-        repostsCount: 2,
-        isLiked: false,
-        isSaved: false,
-      ),
-    ];
-  }
+  // ==================== User Posts ====================
 
   Future<List<PostModel>> getUserPosts(int userId) async {
     try {
       final posts = await postService.getUserPosts(userId);
-      return posts.map((apiPost) => PostModel(
-        key: apiPost.id,
-        postId: apiPost.id,
-        bio: apiPost.content,
-        createdAt: apiPost.createdAt.toIso8601String(),
-        imagePath: apiPost.imageUrl,
-        user: apiPost.user != null ? UserModel(
-          userId: apiPost.user!.userId,
-          userName: apiPost.user!.userName,
-          displayName: apiPost.user!.displayName,
-          profilePic: apiPost.user!.profilePic,
-        ) : null,
-        likesCount: apiPost.likesCount,
-        repliesCount: apiPost.repliesCount,
-        repostsCount: apiPost.repostsCount,
-        isLiked: apiPost.isLiked,
-        isSaved: apiPost.isSaved,
-        isReposted: apiPost.isReposted,
-      )).toList();
+      return posts.map((apiPost) => _apiPostToModel(apiPost)).toList();
     } catch (error) {
       return [];
     }
@@ -531,34 +377,40 @@ class PostState extends AppStates {
     }
   }
 
+  // ==================== Quote Post Detail ====================
+
+  /// Fetch a single post by ID (used when list API omits quote_post).
+  Future<PostModel?> fetchQuotePostDetail(int quotePostId) async {
+    try {
+      final apiPost = await postService.getPostDetail(quotePostId.toString());
+      return _apiPostToModel(apiPost);
+    } catch (error) {
+      developer.log('fetchQuotePostDetail failed for id=$quotePostId: $error', name: 'PostState');
+      return null;
+    }
+  }
+
   // ==================== Repost ====================
 
   /// Repost a post with optimistic update.
   /// Sets isReposted=true and increments repostsCount immediately,
-  /// then calls the API. Rolls back on failure.
+  /// then calls the API. If the API fails because already reposted,
+  /// keeps the local state as reposted (idempotent).
   Future<void> repost(String postId, {String? content}) async {
     _updatePostRepostStatus(postId, true);
     try {
       await postService.repost(postId, content: content);
     } catch (error) {
-      developer.log('repost failed, rolling back: $error', name: 'PostState');
-      _updatePostRepostStatus(postId, false);
+      // Don't rollback — the server may reject because already reposted
+      // (e.g. after a local-only unrepost). The local state is correct.
+      developer.log('repost API error (kept local state): $error', name: 'PostState');
     }
   }
 
-  /// Unrepost a post with optimistic update.
-  /// Sets isReposted=false and decrements repostsCount immediately.
-  /// Since PostService does not have a dedicated unrepost endpoint,
-  /// we call repost again to toggle the state (the backend treats it as a toggle).
-  /// Rolls back on failure.
-  Future<void> unrepost(String postId, {String? content}) async {
+  /// Unrepost a post (local-only until backend adds DELETE /post/repost/{id}).
+  /// Sets isReposted=false and decrements repostsCount in the local list.
+  Future<void> unrepost(String postId) async {
     _updatePostRepostStatus(postId, false);
-    try {
-      await postService.repost(postId, content: content);
-    } catch (error) {
-      developer.log('unrepost failed, rolling back: $error', name: 'PostState');
-      _updatePostRepostStatus(postId, true);
-    }
   }
 
   void _updatePostRepostStatus(String postId, bool isReposted) {
@@ -727,6 +579,21 @@ class PostState extends AppStates {
     notifyListeners();
   }
 
+  /// Increment repliesCount for a post (called after a successful reply).
+  void incrementReplyCount(String postId) {
+    for (final list in [_feedlist, _userPosts]) {
+      if (list == null) continue;
+      final index = list.indexWhere((p) => p.id == postId || p.key == postId || p.postId == postId);
+      if (index != -1) {
+        final post = list[index];
+        list[index] = post.copyWith(
+          repliesCount: (post.repliesCount ?? 0) + 1,
+        );
+      }
+    }
+    notifyListeners();
+  }
+
   void _updatePostInList(String postId, PostModel updated) {
     for (final list in [_feedlist, _userPosts]) {
       if (list == null) continue;
@@ -753,26 +620,10 @@ class PostState extends AppStates {
     notifyListeners();
     try {
       final posts = await postService.getSavedPosts(page: page, pageSize: pageSize);
-      _savedPosts = posts.map((apiPost) => PostModel(
-        key: apiPost.id,
-        postId: apiPost.id,
-        bio: apiPost.content,
-        createdAt: apiPost.createdAt.toIso8601String(),
-        imagePath: apiPost.imageUrl,
-        user: UserModel(
-          userId: apiPost.user.userId,
-          userName: apiPost.user.userName,
-          displayName: apiPost.user.displayName,
-          profilePic: apiPost.user.profilePic,
-        ),
-        likesCount: apiPost.likesCount,
-        repliesCount: apiPost.repliesCount,
-        repostsCount: apiPost.repostsCount,
-        sharesCount: apiPost.sharesCount,
-        isLiked: apiPost.isLiked,
-        isSaved: true,
-        isReposted: apiPost.isReposted,
-      )).toList();
+      _savedPosts = posts.map((apiPost) {
+        final model = _apiPostToModel(apiPost);
+        return model.copyWith(isSaved: true);
+      }).toList();
     } catch (_) {
       _savedPosts = [];
     }
@@ -792,20 +643,7 @@ class PostState extends AppStates {
     notifyListeners();
     try {
       final posts = await postService.getScheduledPosts(page: page, size: size);
-      _scheduledPosts = posts.map((apiPost) => PostModel(
-        key: apiPost.id,
-        postId: apiPost.id,
-        bio: apiPost.content,
-        createdAt: apiPost.createdAt.toIso8601String(),
-        imagePath: apiPost.imageUrl,
-        scheduledTime: apiPost.scheduledTime,
-        user: UserModel(
-          userId: apiPost.user.userId,
-          userName: apiPost.user.userName,
-          displayName: apiPost.user.displayName,
-          profilePic: apiPost.user.profilePic,
-        ),
-      )).toList();
+      _scheduledPosts = posts.map((apiPost) => _apiPostToModel(apiPost)).toList();
     } catch (_) {
       _scheduledPosts = [];
     }

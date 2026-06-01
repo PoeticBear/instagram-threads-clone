@@ -76,6 +76,8 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
       );
       print('🔵 _postReply 成功: replyId=${newReply.id}');
       if (mounted) {
+        Provider.of<PostState>(context, listen: false)
+            .incrementReplyCount(widget.postId);
         setState(() {
           _replies.insert(0, newReply);
           _replyController.clear();
@@ -298,7 +300,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                       ),
                       SizedBox(width: 8),
                       Text(
-                        Utility.getdob(reply.createdAt.toIso8601String()),
+                        Utility.getdob(reply.createdAt.toIso8601String(), context: context),
                         style: TextStyle(
                           color: appColors.textHint,
                           fontSize: 12,

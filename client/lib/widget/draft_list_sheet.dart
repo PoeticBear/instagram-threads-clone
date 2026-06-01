@@ -102,7 +102,7 @@ class DraftListSheet extends StatelessWidget {
               ),
               SizedBox(height: 4),
               Text(
-                draft.createdAt,
+                draft.createTime,
                 style: TextStyle(color: appColors.textSecondary, fontSize: 13),
               ),
             ],

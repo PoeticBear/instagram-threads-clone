@@ -1,1213 +1,167 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Follow 关注 API",
-    "version": "0.1.0"
+  "common": {
+    "response_wrapper": "{ code: int, msg: string, data: T }",
+    "pagination": "{ total: int, page: int, size: int, items: T[] }",
+    "auth_header": "Authorization: string (大部分接口必传)",
+    "device_header": "device-os: string (可选)"
   },
-  "paths": {
-    "/follow/{user_id}": {
-      "post": {
-        "tags": [
-          "关注"
-        ],
-        "summary": "关注用户",
-        "description": "关注指定用户\n\n- 用户不能关注自己\n- 已关注会返回错误\n- 关注成功后自动更新关注数和粉丝数",
-        "operationId": "follow_user_follow__user_id__post",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "用户ID",
-              "title": "User Id"
-            },
-            "description": "用户ID"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+  "endpoints": [
+    {
+      "name": "获取粉丝列表",
+      "method": "GET",
+      "path": "/follow/followers/{user_id}",
+      "auth": true,
+      "desc": "获取指定用户的粉丝列表 - 支持分页 - 支持按关键词搜索 - 返回粉丝用户的基本信息和关注状态",
+      "path_params": {
+        "user_id": "int, 用户ID"
       },
-      "delete": {
-        "tags": [
-          "关注"
-        ],
-        "summary": "取消关注",
-        "description": "取消关注指定用户\n\n- 取消成功后自动更新关注数和粉丝数",
-        "operationId": "unfollow_user_follow__user_id__delete",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "用户ID",
-              "title": "User Id"
-            },
-            "description": "用户ID"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100",
+        "keyword": "string, 搜索关键词"
+      },
+      "response": "FollowerListResponse?"
     },
-    "/follow/{user_id}/stats": {
-      "get": {
-        "tags": [
-          "关注"
-        ],
-        "summary": "获取用户关注统计",
-        "description": "获取指定用户的关注统计数据\n\n- 返回粉丝数、关注数\n- 如果当前用户已登录，返回与该用户的关注关系状态",
-        "operationId": "get_follow_stats_follow__user_id__stats_get",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "用户ID",
-              "title": "User Id"
-            },
-            "description": "用户ID"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_FollowStatsResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "获取关注列表",
+      "method": "GET",
+      "path": "/follow/following/{user_id}",
+      "auth": true,
+      "desc": "获取指定用户的关注列表 - 支持分页 - 支持按关键词搜索 - 返回关注用户的基本信息和关注状态",
+      "path_params": {
+        "user_id": "int, 用户ID"
+      },
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100",
+        "keyword": "string, 搜索关键词"
+      },
+      "response": "FollowListResponse?"
     },
-    "/follow/following/{user_id}": {
-      "get": {
-        "tags": [
-          "关注"
-        ],
-        "summary": "获取关注列表",
-        "description": "获取指定用户的关注列表\n\n- 支持分页\n- 支持按关键词搜索\n- 返回关注用户的基本信息和关注状态",
-        "operationId": "get_following_list_follow_following__user_id__get",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "用户ID",
-              "title": "User Id"
-            },
-            "description": "用户ID"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "搜索关键词",
-              "title": "Keyword"
-            },
-            "description": "搜索关键词"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_FollowListResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "获取相互关注列表",
+      "method": "GET",
+      "path": "/follow/mutual/{user_id}",
+      "auth": true,
+      "desc": "获取与指定用户的相互关注列表 - 仅返回互相关注的用户 - 支持分页",
+      "path_params": {
+        "user_id": "int, 用户ID"
+      },
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100"
+      },
+      "response": "MutualFollowListResponse?"
     },
-    "/follow/followers/{user_id}": {
-      "get": {
-        "tags": [
-          "关注"
-        ],
-        "summary": "获取粉丝列表",
-        "description": "获取指定用户的粉丝列表\n\n- 支持分页\n- 支持按关键词搜索\n- 返回粉丝用户的基本信息和关注状态",
-        "operationId": "get_followers_list_follow_followers__user_id__get",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "用户ID",
-              "title": "User Id"
-            },
-            "description": "用户ID"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "搜索关键词",
-              "title": "Keyword"
-            },
-            "description": "搜索关键词"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_FollowerListResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "获取推荐关注",
+      "method": "GET",
+      "path": "/follow/recommend",
+      "auth": true,
+      "desc": "获取推荐关注的用户列表 - 基于共同关注、热门用户等算法推荐 - 不包含已关注和已屏蔽的用户",
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100"
+      },
+      "response": "RecommendFollowListResponse?"
     },
-    "/follow/mutual/{user_id}": {
-      "get": {
-        "tags": [
-          "关注"
-        ],
-        "summary": "获取相互关注列表",
-        "description": "获取与指定用户的相互关注列表\n\n- 仅返回互相关注的用户\n- 支持分页",
-        "operationId": "get_mutual_followers_list_follow_mutual__user_id__get",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "用户ID",
-              "title": "User Id"
-            },
-            "description": "用户ID"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_MutualFollowListResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "关注用户",
+      "method": "POST",
+      "path": "/follow/{user_id}",
+      "auth": true,
+      "desc": "关注指定用户 - 用户不能关注自己 - 已关注会返回错误 - 关注成功后自动更新关注数和粉丝数",
+      "path_params": {
+        "user_id": "int, 用户ID"
+      },
+      "response": "OKResponse?"
     },
-    "/follow/recommend": {
-      "get": {
-        "tags": [
-          "关注"
-        ],
-        "summary": "获取推荐关注",
-        "description": "获取推荐关注的用户列表\n\n- 基于共同关注、热门用户等算法推荐\n- 不包含已关注和已屏蔽的用户",
-        "operationId": "get_recommend_follows_follow_recommend_get",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_RecommendFollowListResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "取消关注",
+      "method": "DELETE",
+      "path": "/follow/{user_id}",
+      "auth": true,
+      "desc": "取消关注指定用户 - 取消成功后自动更新关注数和粉丝数",
+      "path_params": {
+        "user_id": "int, 用户ID"
+      },
+      "response": "OKResponse?"
+    },
+    {
+      "name": "获取用户关注统计",
+      "method": "GET",
+      "path": "/follow/{user_id}/stats",
+      "auth": true,
+      "desc": "获取指定用户的关注统计数据 - 返回粉丝数、关注数 - 如果当前用户已登录，返回与该用户的关注关系状态",
+      "path_params": {
+        "user_id": "int, 用户ID"
+      },
+      "response": "FollowStatsResponse?"
     }
-  },
-  "components": {
-    "schemas": {
-      "FollowListResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/FollowUserItem"
-            },
-            "type": "array",
-            "title": "Items",
-            "description": "关注列表"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total",
-            "description": "总数量",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "FollowListResponse",
-        "description": "关注列表响应"
-      },
-      "FollowStatsResponse": {
-        "properties": {
-          "followers_count": {
-            "type": "integer",
-            "title": "Followers Count",
-            "description": "粉丝数量",
-            "default": 0
-          },
-          "following_count": {
-            "type": "integer",
-            "title": "Following Count",
-            "description": "关注数量",
-            "default": 0
-          },
-          "is_following": {
-            "type": "integer",
-            "title": "Is Following",
-            "description": "当前用户是否已关注此人：0=否，1=是",
-            "default": 0
-          },
-          "is_followed_by_me": {
-            "type": "integer",
-            "title": "Is Followed By Me",
-            "description": "此人是否已关注当前用户：0=否，1=是",
-            "default": 0
-          },
-          "is_mutual": {
-            "type": "integer",
-            "title": "Is Mutual",
-            "description": "是否互相关注：0=否，1=是",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "FollowStatsResponse",
-        "description": "关注统计数据响应"
-      },
-      "FollowUserItem": {
-        "properties": {
-          "user_id": {
-            "type": "integer",
-            "title": "User Id",
-            "description": "用户ID",
-            "default": 0
-          },
-          "username": {
-            "type": "string",
-            "title": "Username",
-            "description": "用户名",
-            "default": ""
-          },
-          "display_name": {
-            "type": "string",
-            "title": "Display Name",
-            "description": "显示名称",
-            "default": ""
-          },
-          "avatar_url": {
-            "type": "string",
-            "title": "Avatar Url",
-            "description": "头像URL",
-            "default": ""
-          },
-          "bio": {
-            "type": "string",
-            "title": "Bio",
-            "description": "个人简介",
-            "default": ""
-          },
-          "is_verified": {
-            "type": "integer",
-            "title": "Is Verified",
-            "description": "是否认证账号：0=否，1=是",
-            "default": 0
-          },
-          "is_following": {
-            "type": "integer",
-            "title": "Is Following",
-            "description": "当前用户是否已关注此人：0=否，1=是",
-            "default": 0
-          },
-          "is_mutual": {
-            "type": "integer",
-            "title": "Is Mutual",
-            "description": "是否互相关注：0=否，1=是",
-            "default": 0
-          },
-          "follow_time": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Follow Time",
-            "description": "关注时间"
-          },
-          "posts_count": {
-            "type": "integer",
-            "title": "Posts Count",
-            "description": "帖子数量",
-            "default": 0
-          },
-          "followers_count": {
-            "type": "integer",
-            "title": "Followers Count",
-            "description": "粉丝数量",
-            "default": 0
-          },
-          "following_count": {
-            "type": "integer",
-            "title": "Following Count",
-            "description": "关注数量",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "FollowUserItem",
-        "description": "关注的用户项（用于列表展示）"
-      },
-      "FollowerItem": {
-        "properties": {
-          "user_id": {
-            "type": "integer",
-            "title": "User Id",
-            "description": "用户ID",
-            "default": 0
-          },
-          "username": {
-            "type": "string",
-            "title": "Username",
-            "description": "用户名",
-            "default": ""
-          },
-          "display_name": {
-            "type": "string",
-            "title": "Display Name",
-            "description": "显示名称",
-            "default": ""
-          },
-          "avatar_url": {
-            "type": "string",
-            "title": "Avatar Url",
-            "description": "头像URL",
-            "default": ""
-          },
-          "bio": {
-            "type": "string",
-            "title": "Bio",
-            "description": "个人简介",
-            "default": ""
-          },
-          "is_verified": {
-            "type": "integer",
-            "title": "Is Verified",
-            "description": "是否认证账号：0=否，1=是",
-            "default": 0
-          },
-          "is_following": {
-            "type": "integer",
-            "title": "Is Following",
-            "description": "当前用户是否已关注此人：0=否，1=是",
-            "default": 0
-          },
-          "is_mutual": {
-            "type": "integer",
-            "title": "Is Mutual",
-            "description": "是否互相关注：0=否，1=是",
-            "default": 0
-          },
-          "follow_time": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Follow Time",
-            "description": "关注时间"
-          },
-          "posts_count": {
-            "type": "integer",
-            "title": "Posts Count",
-            "description": "帖子数量",
-            "default": 0
-          },
-          "followers_count": {
-            "type": "integer",
-            "title": "Followers Count",
-            "description": "粉丝数量",
-            "default": 0
-          },
-          "following_count": {
-            "type": "integer",
-            "title": "Following Count",
-            "description": "关注数量",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "FollowerItem",
-        "description": "粉丝项（用于列表展示，继承自FollowUserItem）"
-      },
-      "FollowerListResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/FollowerItem"
-            },
-            "type": "array",
-            "title": "Items",
-            "description": "粉丝列表"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total",
-            "description": "总数量",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "FollowerListResponse",
-        "description": "粉丝列表响应"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "MutualFollowListResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/FollowUserItem"
-            },
-            "type": "array",
-            "title": "Items",
-            "description": "相互关注列表"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total",
-            "description": "总数量",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "MutualFollowListResponse",
-        "description": "相互关注列表响应"
-      },
-      "OKResponse": {
-        "properties": {},
-        "type": "object",
-        "title": "OKResponse",
-        "description": "ok响应类"
-      },
-      "RecommendFollowListResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/RecommendUserItem"
-            },
-            "type": "array",
-            "title": "Items",
-            "description": "推荐关注列表"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total",
-            "description": "总数量",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "RecommendFollowListResponse",
-        "description": "推荐关注列表响应"
-      },
-      "RecommendUserItem": {
-        "properties": {
-          "user_id": {
-            "type": "integer",
-            "title": "User Id",
-            "description": "用户ID",
-            "default": 0
-          },
-          "username": {
-            "type": "string",
-            "title": "Username",
-            "description": "用户名",
-            "default": ""
-          },
-          "display_name": {
-            "type": "string",
-            "title": "Display Name",
-            "description": "显示名称",
-            "default": ""
-          },
-          "avatar_url": {
-            "type": "string",
-            "title": "Avatar Url",
-            "description": "头像URL",
-            "default": ""
-          },
-          "bio": {
-            "type": "string",
-            "title": "Bio",
-            "description": "个人简介",
-            "default": ""
-          },
-          "is_verified": {
-            "type": "integer",
-            "title": "Is Verified",
-            "description": "是否认证账号：0=否，1=是",
-            "default": 0
-          },
-          "is_following": {
-            "type": "integer",
-            "title": "Is Following",
-            "description": "当前用户是否已关注此人：0=否，1=是",
-            "default": 0
-          },
-          "is_mutual": {
-            "type": "integer",
-            "title": "Is Mutual",
-            "description": "是否互相关注：0=否，1=是",
-            "default": 0
-          },
-          "reason": {
-            "type": "string",
-            "title": "Reason",
-            "description": "推荐原因",
-            "default": ""
-          },
-          "common_followers_count": {
-            "type": "integer",
-            "title": "Common Followers Count",
-            "description": "共同粉丝数量",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "RecommendUserItem",
-        "description": "推荐关注的用户项"
-      },
-      "ResponseModel_FollowListResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FollowListResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[FollowListResponse]"
-      },
-      "ResponseModel_FollowStatsResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FollowStatsResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[FollowStatsResponse]"
-      },
-      "ResponseModel_FollowerListResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FollowerListResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[FollowerListResponse]"
-      },
-      "ResponseModel_MutualFollowListResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/MutualFollowListResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[MutualFollowListResponse]"
-      },
-      "ResponseModel_OKResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OKResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[OKResponse]"
-      },
-      "ResponseModel_RecommendFollowListResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RecommendFollowListResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[RecommendFollowListResponse]"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      }
+  ],
+  "schemas": {
+    "FollowListResponse": {
+      "items": "FollowUserItem[], 关注列表, optional",
+      "total": "int, 总数量, default: 0, optional"
+    },
+    "FollowStatsResponse": {
+      "followers_count": "int, 粉丝数量, default: 0, optional",
+      "following_count": "int, 关注数量, default: 0, optional",
+      "is_following": "int, 当前用户是否已关注此人：0=否，1=是, default: 0, optional",
+      "is_followed_by_me": "int, 此人是否已关注当前用户：0=否，1=是, default: 0, optional",
+      "is_mutual": "int, 是否互相关注：0=否，1=是, default: 0, optional"
+    },
+    "FollowUserItem": {
+      "user_id": "int, 用户ID, default: 0, optional",
+      "username": "string, 用户名, optional",
+      "display_name": "string, 显示名称, optional",
+      "avatar_url": "string, 头像URL, optional",
+      "bio": "string, 个人简介, optional",
+      "is_verified": "int, 是否认证账号：0=否，1=是, default: 0, optional",
+      "is_following": "int, 当前用户是否已关注此人：0=否，1=是, default: 0, optional",
+      "is_mutual": "int, 是否互相关注：0=否，1=是, default: 0, optional",
+      "follow_time": "string?, 关注时间, optional",
+      "posts_count": "int, 帖子数量, default: 0, optional",
+      "followers_count": "int, 粉丝数量, default: 0, optional",
+      "following_count": "int, 关注数量, default: 0, optional"
+    },
+    "FollowerItem": {
+      "user_id": "int, 用户ID, default: 0, optional",
+      "username": "string, 用户名, optional",
+      "display_name": "string, 显示名称, optional",
+      "avatar_url": "string, 头像URL, optional",
+      "bio": "string, 个人简介, optional",
+      "is_verified": "int, 是否认证账号：0=否，1=是, default: 0, optional",
+      "is_following": "int, 当前用户是否已关注此人：0=否，1=是, default: 0, optional",
+      "is_mutual": "int, 是否互相关注：0=否，1=是, default: 0, optional",
+      "follow_time": "string?, 关注时间, optional",
+      "posts_count": "int, 帖子数量, default: 0, optional",
+      "followers_count": "int, 粉丝数量, default: 0, optional",
+      "following_count": "int, 关注数量, default: 0, optional"
+    },
+    "FollowerListResponse": {
+      "items": "FollowerItem[], 粉丝列表, optional",
+      "total": "int, 总数量, default: 0, optional"
+    },
+    "MutualFollowListResponse": {
+      "items": "FollowUserItem[], 相互关注列表, optional",
+      "total": "int, 总数量, default: 0, optional"
+    },
+    "RecommendFollowListResponse": {
+      "items": "RecommendUserItem[], 推荐关注列表, optional",
+      "total": "int, 总数量, default: 0, optional"
+    },
+    "RecommendUserItem": {
+      "user_id": "int, 用户ID, default: 0, optional",
+      "username": "string, 用户名, optional",
+      "display_name": "string, 显示名称, optional",
+      "avatar_url": "string, 头像URL, optional",
+      "bio": "string, 个人简介, optional",
+      "is_verified": "int, 是否认证账号：0=否，1=是, default: 0, optional",
+      "is_following": "int, 当前用户是否已关注此人：0=否，1=是, default: 0, optional",
+      "is_mutual": "int, 是否互相关注：0=否，1=是, default: 0, optional",
+      "reason": "string, 推荐原因, optional",
+      "common_followers_count": "int, 共同粉丝数量, default: 0, optional"
     }
   }
 }

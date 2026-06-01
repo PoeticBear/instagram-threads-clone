@@ -288,6 +288,8 @@
   "noThreadsYetOthers": "暂无帖子",
   "nothingToSaveDraft": "没有可保存的草稿",
   "draftSaveFailed": "草稿保存失败",
+  "discard": "不保存",
+  "saveDraftHint": "将当前内容保存为草稿，还是放弃编辑？",
   "draft": "草稿",
   "replyCount": "{count} 条回复",
   "@replyCount": {

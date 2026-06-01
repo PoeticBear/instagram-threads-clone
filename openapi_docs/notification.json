@@ -1,536 +1,61 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Notification 通知 API",
-    "version": "0.1.0"
+  "common": {
+    "response_wrapper": "{ code: int, msg: string, data: T }",
+    "pagination": "{ total: int, page: int, size: int, items: T[] }",
+    "auth_header": "Authorization: string (大部分接口必传)",
+    "device_header": "device-os: string (可选)"
   },
-  "paths": {
-    "/notification/notifications": {
-      "get": {
-        "tags": [
-          "通知"
-        ],
-        "summary": "通知列表",
-        "description": "获取用户通知列表\n\n分页返回当前用户的通知记录，支持按类型筛选。",
-        "operationId": "get_notifications_notification_notifications_get",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "页码",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "页码"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "每页数量",
-              "default": 20,
-              "title": "Size"
-            },
-            "description": "每页数量"
-          },
-          {
-            "name": "notif_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "通知类型筛选（1=点赞，2=回复，3=关注，4=提及，5=转发，6=引用）",
-              "title": "Notif Type"
-            },
-            "description": "通知类型筛选（1=点赞，2=回复，3=关注，4=提及，5=转发，6=引用）"
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_PageMeta_NotificationResponse__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+  "endpoints": [
+    {
+      "name": "通知列表",
+      "method": "GET",
+      "path": "/notification/notifications",
+      "auth": true,
+      "desc": "获取用户通知列表 分页返回当前用户的通知记录，支持按类型筛选。",
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100",
+        "notif_type": "string, 通知类型筛选（1=点赞，2=回复，3=关注，4=提及，5=转发，6=引用）"
+      },
+      "response": "Page<NotificationResponse>?"
     },
-    "/notification/notifications/read": {
-      "post": {
-        "tags": [
-          "通知"
-        ],
-        "summary": "标记通知已读",
-        "description": "标记通知为已读\n\n可以标记指定通知ID列表为已读，不传ID则标记全部已读。",
-        "operationId": "mark_notifications_read_notification_notifications_read_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MarkNotificationsReadRequest",
-                "description": "标记已读请求"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_OKResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "标记通知已读",
+      "method": "POST",
+      "path": "/notification/notifications/read",
+      "auth": true,
+      "desc": "标记通知为已读 可以标记指定通知ID列表为已读，不传ID则标记全部已读。",
+      "request": {
+        "notification_ids": "int[], 要标记已读的通知ID列表，为空则标记全部已读, default: [], optional"
+      },
+      "response": "OKResponse?"
     },
-    "/notification/notifications/unread-count": {
-      "get": {
-        "tags": [
-          "通知"
-        ],
-        "summary": "未读通知数",
-        "description": "获取未读通知数量",
-        "operationId": "get_unread_notification_count_notification_notifications_unread_count_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "登录token",
-              "default": "",
-              "title": "Authorization"
-            },
-            "description": "登录token"
-          },
-          {
-            "name": "device-os",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "device_os",
-              "default": "",
-              "title": "Device-Os"
-            },
-            "description": "device_os"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResponseModel_int_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    {
+      "name": "未读通知数",
+      "method": "GET",
+      "path": "/notification/notifications/unread-count",
+      "auth": true,
+      "response": "int?"
     }
-  },
-  "components": {
-    "schemas": {
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "MarkNotificationsReadRequest": {
-        "properties": {
-          "notification_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Notification Ids",
-            "description": "要标记已读的通知ID列表，为空则标记全部已读",
-            "default": []
-          }
-        },
-        "type": "object",
-        "title": "MarkNotificationsReadRequest",
-        "description": "标记通知已读请求"
-      },
-      "NotificationResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "通知ID",
-            "default": 0
-          },
-          "type": {
-            "type": "integer",
-            "title": "Type",
-            "description": "通知类型：1=点赞，2=回复，3=关注，4=提及，5=转发，6=引用",
-            "default": 0
-          },
-          "sub_type": {
-            "type": "string",
-            "title": "Sub Type",
-            "description": "子类型",
-            "default": ""
-          },
-          "object_type": {
-            "type": "string",
-            "title": "Object Type",
-            "description": "关联对象类型：post/reply/user",
-            "default": ""
-          },
-          "object_id": {
-            "type": "integer",
-            "title": "Object Id",
-            "description": "关联对象ID",
-            "default": 0
-          },
-          "sender": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/NotificationSenderInfo"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "发送者信息"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content",
-            "description": "通知摘要文本",
-            "default": ""
-          },
-          "extra_data": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Extra Data",
-            "description": "扩展数据"
-          },
-          "is_read": {
-            "type": "boolean",
-            "title": "Is Read",
-            "description": "是否已读",
-            "default": false
-          },
-          "create_time": {
-            "type": "string",
-            "title": "Create Time",
-            "description": "创建时间",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "NotificationResponse",
-        "description": "通知响应模型"
-      },
-      "NotificationSenderInfo": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id",
-            "description": "发送者用户ID",
-            "default": 0
-          },
-          "username": {
-            "type": "string",
-            "title": "Username",
-            "description": "用户名",
-            "default": ""
-          },
-          "avatar": {
-            "type": "string",
-            "title": "Avatar",
-            "description": "头像URL",
-            "default": ""
-          },
-          "display_name": {
-            "type": "string",
-            "title": "Display Name",
-            "description": "显示名称",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "NotificationSenderInfo",
-        "description": "通知发送者基本信息"
-      },
-      "OKResponse": {
-        "properties": {},
-        "type": "object",
-        "title": "OKResponse",
-        "description": "ok响应类"
-      },
-      "PageMeta_NotificationResponse_": {
-        "properties": {
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "size": {
-            "type": "integer",
-            "title": "Size"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/NotificationResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "total",
-          "page",
-          "size",
-          "items"
-        ],
-        "title": "PageMeta[NotificationResponse]"
-      },
-      "ResponseModel_OKResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OKResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[OKResponse]"
-      },
-      "ResponseModel_PageMeta_NotificationResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PageMeta_NotificationResponse_"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[PageMeta[NotificationResponse]]"
-      },
-      "ResponseModel_int_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Msg"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "msg"
-        ],
-        "title": "ResponseModel[int]"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      }
+  ],
+  "schemas": {
+    "NotificationResponse": {
+      "id": "int, 通知ID, default: 0, optional",
+      "type": "int, 通知类型：1=点赞，2=回复，3=关注，4=提及，5=转发，6=引用, default: 0, optional",
+      "sub_type": "string, 子类型, optional",
+      "object_type": "string, 关联对象类型：post/reply/user, optional",
+      "object_id": "int, 关联对象ID, default: 0, optional",
+      "sender": "NotificationSenderInfo?, 发送者信息, optional",
+      "content": "string, 通知摘要文本, optional",
+      "extra_data": "object?, 扩展数据, optional",
+      "is_read": "bool, 是否已读, default: False, optional",
+      "create_time": "string, 创建时间, optional"
+    },
+    "NotificationSenderInfo": {
+      "id": "int, 发送者用户ID, default: 0, optional",
+      "username": "string, 用户名, optional",
+      "avatar": "string, 头像URL, optional",
+      "display_name": "string, 显示名称, optional"
     }
   }
 }

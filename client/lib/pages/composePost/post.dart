@@ -18,7 +18,8 @@ import 'package:threads/widget/draft_list_sheet.dart';
 
 class ComposePost extends StatefulWidget {
   final VoidCallback? onPostSuccess;
-  const ComposePost({Key? key, this.onPostSuccess}) : super(key: key);
+  final VoidCallback? onCancel;
+  const ComposePost({Key? key, this.onPostSuccess, this.onCancel}) : super(key: key);
 
   @override
   State<ComposePost> createState() => _ComposePostState();
@@ -74,6 +75,63 @@ class _ComposePostState extends State<ComposePost> {
   bool get _canPost {
     if (_isSubmitting) return false;
     return _hasContent;
+  }
+
+  void _handleBack(BuildContext context) {
+    if (!_hasContent) {
+      _doBack();
+      return;
+    }
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    showCupertinoDialog(
+      context: context,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: Text(AppLocalizations.of(context)!.saveDraft,
+            style: TextStyle(color: appColors.textPrimary)),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(AppLocalizations.of(context)!.saveDraftHint,
+              style: TextStyle(color: appColors.textSecondary, fontSize: 14)),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _doBack();
+            },
+            child: Text(AppLocalizations.of(context)!.discard),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await _saveCurrentDraft();
+              if (mounted) _doBack();
+            },
+            child: Text(AppLocalizations.of(context)!.save),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _doBack() {
+    _textEditingController.clear();
+    for (final c in _pollControllers) {
+      c.clear();
+    }
+    setState(() {
+      _imageFiles.clear();
+      _showPollEditor = false;
+      _replyType = 1;
+      _location = null;
+    });
+    widget.onCancel?.call();
   }
 
   void _addImage(File file) {
@@ -174,8 +232,8 @@ class _ComposePostState extends State<ComposePost> {
           }
         }
       }
-      if (draft.replySettings != null) {
-        _replyType = draft.replySettings!;
+      if (draft.replyType != null) {
+        _replyType = draft.replyType!;
       }
     });
   }
@@ -197,7 +255,8 @@ class _ComposePostState extends State<ComposePost> {
     final saved = await draftState.saveDraft(
       content: content,
       pollOptions: _getValidPollOptions(),
-      replySettings: _replyType != 1 ? _replyType : null,
+      replyType: _replyType != 1 ? _replyType : null,
+      location: _location,
     );
     if (!mounted) return;
     if (saved != null) {
@@ -442,16 +501,8 @@ class _ComposePostState extends State<ComposePost> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () {
-                    _textEditingController.clear();
-                    setState(() {
-                      _imageFiles.clear();
-                      _showPollEditor = false;
-                    });
-                    // 切回首页 — ComposePost 在 HomePage 中作为 tab 内容显示
-                    // 通过 pop 或者直接操作 HomePage state
-                  },
-                  child: Text(AppLocalizations.of(context)!.cancel,
+                  onTap: () => _handleBack(context),
+                  child: Text(AppLocalizations.of(context)!.back,
                       style: TextStyle(color: appColors.textPrimary, fontSize: 16)),
                 ),
                 Expanded(

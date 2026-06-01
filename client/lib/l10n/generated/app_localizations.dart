@@ -1706,6 +1706,18 @@ abstract class AppLocalizations {
   /// **'Failed to save draft'**
   String get draftSaveFailed;
 
+  /// No description provided for @discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
+  /// No description provided for @saveDraftHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this post as a draft or discard it?'**
+  String get saveDraftHint;
+
   /// No description provided for @draft.
   ///
   /// In en, this message translates to:

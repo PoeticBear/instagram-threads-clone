@@ -821,6 +821,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get draftSaveFailed => '草稿保存失败';
 
   @override
+  String get discard => '不保存';
+
+  @override
+  String get saveDraftHint => '将当前内容保存为草稿，还是放弃编辑？';
+
+  @override
   String get draft => '草稿';
 
   @override

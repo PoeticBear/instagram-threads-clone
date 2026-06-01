@@ -46,8 +46,8 @@ class PostService {
       if (location != null) body['location'] = location;
       if (topicIds != null && topicIds.isNotEmpty) body['topic_ids'] = topicIds;
       if (communityId != null) body['community_id'] = communityId;
-      if (quoteRepostId != null) body['quote_repost_id'] = quoteRepostId;
-      if (scheduledTime != null) body['scheduled_time'] = scheduledTime;
+      if (quoteRepostId != null) body['quote_post_id'] = quoteRepostId;
+      if (scheduledTime != null) body['scheduled_publish_time'] = scheduledTime;
 
       print('📤 createPost 请求体: ${json.encode(body)}');
       final response = await _apiClient.post('post/create', body: body);
@@ -106,11 +106,6 @@ class PostService {
         },
       );
 
-      // Print raw API response for debugging
-      developer.log('========== FEED RAW RESPONSE ==========');
-      developer.log(const JsonEncoder.withIndent('  ').convert(response));
-      developer.log('========================================');
-
       // Support both flat list and paginated response (PageMeta with 'items' key)
       final data = response['data'];
       List items;
@@ -125,16 +120,8 @@ class PostService {
       }
 
       developer.log('Feed parsed ${items.length} items');
-      if (items.isNotEmpty) {
-        developer.log('========== FIRST FEED ITEM RAW ==========');
-        developer.log(JsonEncoder.withIndent('  ').convert(items.first));
-        developer.log('==========================================');
-      }
+
       final result = items.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
-      if (result.isNotEmpty) {
-        final p = result.first;
-        developer.log('>>> PARSED Post: id=${p.id}, likes=${p.likesCount}, replies=${p.repliesCount}, reposts=${p.repostsCount}, shares=${p.sharesCount}');
-      }
       return result;
     } on ApiException {
       rethrow;
@@ -188,7 +175,10 @@ class PostService {
 
   Future<void> repost(String postId, {String? content}) async {
     try {
-      final body = content != null ? {'content': content} : null;
+      final body = <String, dynamic>{
+        'repost_type': 1,
+      };
+      if (content != null) body['content'] = content;
       await _apiClient.post('post/repost/$postId', body: body);
     } on ApiException {
       rethrow;
@@ -457,15 +447,17 @@ class PostService {
     required String content,
     List<String>? mediaUrls,
     List<String>? pollOptions,
-    List<int>? topicIds,
-    int? replySettings,
+    int? topicId,
+    int? replyType,
+    String? location,
   }) async {
     try {
       final body = <String, dynamic>{'content': content};
       if (mediaUrls != null && mediaUrls.isNotEmpty) body['media_urls'] = mediaUrls;
       if (pollOptions != null && pollOptions.isNotEmpty) body['poll_options'] = pollOptions;
-      if (topicIds != null && topicIds.isNotEmpty) body['topic_ids'] = topicIds;
-      if (replySettings != null) body['reply_settings'] = replySettings;
+      if (topicId != null) body['topic_id'] = topicId;
+      if (replyType != null) body['reply_type'] = replyType;
+      if (location != null) body['location'] = location;
 
       final response = await _apiClient.post('post/draft', body: body);
       return DraftInfo.fromJson(response['data']);
@@ -661,6 +653,14 @@ class Post {
   // P3 remaining fields
   final String? scheduledTime;
   final bool isAi;
+  // Quote / Repost / Thread fields
+  final String? quoteContent;
+  final Post? quotePost;
+  final bool isRepost;
+  final int? repostParentId;
+  final List<Post> threadPosts;
+  final List<int> threadPostIds;
+  final int quotesCount;
 
   Post({
     required this.id,
@@ -690,6 +690,13 @@ class Post {
     this.isPinned = false,
     this.scheduledTime,
     this.isAi = false,
+    this.quoteContent,
+    this.quotePost,
+    this.isRepost = false,
+    this.repostParentId,
+    this.threadPosts = const [],
+    this.threadPostIds = const [],
+    this.quotesCount = 0,
   });
 
   /// First image URL from mediaList, or null
@@ -760,6 +767,29 @@ class Post {
       topicIds = [];
     }
 
+    // Parse thread_post_ids
+    final threadPostIdsRaw = json['thread_post_ids'] ?? json['threadPostIds'];
+    final List<int> threadPostIds;
+    if (threadPostIdsRaw is List) {
+      threadPostIds = threadPostIdsRaw.map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList();
+    } else {
+      threadPostIds = [];
+    }
+
+    // Parse thread_posts
+    final threadPostsRaw = json['thread_posts'] ?? json['threadPosts'];
+    final List<Post> threadPosts;
+    if (threadPostsRaw is List) {
+      threadPosts = threadPostsRaw.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+    } else {
+      threadPosts = [];
+    }
+
+    // Parse quote_post (recursive)
+    final quotePostRaw = json['quote_post'] ?? json['quotePost'];
+    final Post? quotePost = quotePostRaw != null ? Post.fromJson(quotePostRaw as Map<String, dynamic>) : null;
+
+
     return Post(
       id: json['id']?.toString() ?? json['post_id']?.toString() ?? '',
       userId: userId,
@@ -785,10 +815,18 @@ class Post {
       isGhost: json['is_ghost'] ?? json['isGhost'] ?? false,
       communityId: json['community_id'] ?? json['communityId'],
       replySettings: json['reply_settings'] ?? json['replySettings'],
-      quoteRepostId: json['quote_repost_id'] ?? json['quoteRepostId'],
+      quoteRepostId: json['quote_repost_id'] ?? json['quoteRepostId'] ?? json['quote_post_id'] ?? json['quotePostId'],
       isPinned: json['is_pinned'] ?? json['isPinned'] ?? false,
       scheduledTime: json['scheduled_time'] ?? json['scheduledTime'],
       isAi: json['is_ai'] ?? json['isAi'] ?? false,
+      // Quote / Repost / Thread fields
+      quoteContent: json['quote_content'] ?? json['quoteContent'],
+      quotePost: quotePost,
+      isRepost: json['is_repost'] ?? json['isRepost'] ?? false,
+      repostParentId: json['repost_parent_id'] ?? json['repostParentId'],
+      threadPosts: threadPosts,
+      threadPostIds: threadPostIds,
+      quotesCount: json['quotes_count'] ?? json['quotesCount'] ?? 0,
     );
   }
 
