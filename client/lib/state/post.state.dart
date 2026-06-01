@@ -296,7 +296,6 @@ class PostState extends AppStates {
   Future<void> loadMore() async {
     if (_isLoadingMore || !_hasMore || _feedlist == null) return;
     _isLoadingMore = true;
-    notifyListeners();
 
     try {
       _currentPage++;
@@ -312,6 +311,7 @@ class PostState extends AppStates {
       }
     } catch (_) {
       _currentPage--;
+      _hasMore = false;
     }
     _isLoadingMore = false;
     notifyListeners();

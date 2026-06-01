@@ -31,13 +31,13 @@
 		<string>_dart.debugger</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Votre message d'autorisation ici</string>
+	<string>Threads needs access to your camera to take photos for your posts.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>threads t'indiquera qui dans tes contacs est déjà sur threads. Tes contacts ne seront pas enregistrés ni partagés avec personne.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app needs local network access to connect to the development server for debugging.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Votre message d'autorisation pour l'accès au microphone ici</string>
+	<string>Threads needs access to your microphone for recording.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to allow you to select and upload photos for sharing with your friends.</string>
 	<key>UIApplicationSceneManifest</key>

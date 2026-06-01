@@ -2,9 +2,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/pages/message/message_page.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/theme/app_colors.dart';
@@ -50,35 +51,31 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
     return Scaffold(
       extendBody: true,
       backgroundColor: appColors.background,
-      appBar: AppBar(
-        leading: Container(),
-        centerTitle: true,
-        title: Consumer<PostState>(
-          builder: (_, state, __) {
-            if (state.isBusy) {
-              return Lottie.network(
-                "https://assets3.lottiefiles.com/packages/lf20_Ht77kFLXYw.json",
-                height: 50,
-                repeat: true,
-                animate: true,
-              );
-            }
-            return SizedBox(
-              height: 30,
-              child: Lottie.network(
-                "https://assets3.lottiefiles.com/packages/lf20_Ht77kFLXYw.json",
-                height: 30,
-                repeat: false,
-                animate: false,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Top bar with message icon
+            Container(
+              padding: EdgeInsets.only(top: 4, right: 16, bottom: 4),
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(builder: (_) => MessagePage()),
+                  );
+                },
+                child: Icon(
+                  Iconsax.message,
+                  size: 28,
+                  color: appColors.textPrimary,
+                ),
               ),
-            );
-          },
-        ),
-        toolbarHeight: 37,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: Consumer<PostState>(builder: (context, state, child) {
+            ),
+            // Feed list
+            Expanded(
+              child: Consumer<PostState>(builder: (context, state, child) {
         if (state.isBusy) {
           return Center(
             child: CircularProgressIndicator(color: appColors.textPrimary),
@@ -93,9 +90,20 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
           );
         }
 
+        // 内容未填满视口时，自动触发加载下一页
+        if (state.hasMore && !state.isLoadingMore) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollController.hasClients &&
+                _scrollController.position.maxScrollExtent <= 0) {
+              state.loadMore();
+            }
+          });
+        }
+
         return ListView.builder(
             controller: _scrollController,
-            itemCount: posts.length + 1 + (state.hasMore ? 1 : 0),
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: posts.length + 1 + (state.isLoadingMore ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _buildQuickPostArea(authState.userModel);
@@ -120,7 +128,11 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                 postModel: posts[postIndex],
               );
             });
-      }),
+          }),
+          ),
+        ],
+      ),
+    ),
     );
   }
 
@@ -160,6 +172,10 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
             builder: (_) => ComposePost(
               onPostSuccess: () {
                 postState.getDataFromDatabase();
+                Navigator.of(context).pop();
+              },
+              onCancel: () {
+                Navigator.of(context).pop();
               },
             ),
           ),

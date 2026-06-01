@@ -6,6 +6,7 @@ import 'package:threads/common/splash.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/network/api_client.dart';
 import 'package:threads/network/api_logger.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/locale.state.dart';
@@ -74,6 +75,7 @@ class MyApp extends StatelessWidget {
       child: Consumer2<LocaleProvider, ThemeProvider>(
         builder: (context, localeProvider, themeProvider, _) {
           return MaterialApp(
+            navigatorKey: navigatorKey,
             locale: localeProvider.locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: const [

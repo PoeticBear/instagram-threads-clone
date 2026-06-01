@@ -53,13 +53,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     _isFetchingQuote = true;
     final postState = Provider.of<PostState>(context, listen: false);
     postState.fetchQuotePostDetail(qid).then((quotePost) {
-      if (quotePost != null && mounted) {
-        setState(() {
+      if (!mounted) return;
+      setState(() {
+        if (quotePost != null) {
           _fetchedQuotePost = quotePost;
+        }
+        _isFetchingQuote = false;
+      });
+    }).catchError((_) {
+      if (mounted) {
+        setState(() {
+          _isFetchingQuote = false;
         });
       }
-    }).catchError((_) {
-      // 静默失败，卡片显示"不可用"
     });
   }
 

@@ -69,8 +69,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       },
     );
     if (index == 3) return NotificationPage();
-    if (index == 4) return MessagePage();
-    if (index == 5) return MyProfilePage();
+    if (index == 4) return MyProfilePage();
     return FeedPage();
   }
 
@@ -110,10 +109,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           separator,
           iconBar(3, Iconsax.heart),
           separator,
-          iconBar(4, Iconsax.message),
-          separator,
           iconBar(
-            5,
+            4,
             CupertinoIcons.person,
           ),
         ]));

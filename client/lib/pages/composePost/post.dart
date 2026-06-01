@@ -15,6 +15,7 @@ import 'package:threads/state/post.state.dart';
 import 'package:threads/model/draft.module.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/draft_list_sheet.dart';
+import 'package:threads/pages/composePost/compose_camera_page.dart';
 
 class ComposePost extends StatefulWidget {
   final VoidCallback? onPostSuccess;
@@ -200,6 +201,16 @@ class _ComposePostState extends State<ComposePost> {
     );
     if (xFile != null) {
       _addImage(File(xFile.path));
+    }
+  }
+
+  void _openCamera() async {
+    final filePath = await Navigator.push<String>(
+      context,
+      CupertinoPageRoute(builder: (_) => const ComposeCameraPage()),
+    );
+    if (filePath != null) {
+      _addImage(File(filePath));
     }
   }
 
@@ -803,6 +814,13 @@ class _ComposePostState extends State<ComposePost> {
         top: false,
         child: Row(
           children: [
+            // Camera button
+            IconButton(
+              onPressed: _showPollEditor ? null : _openCamera,
+              icon: Icon(Iconsax.camera,
+                  size: 22,
+                  color: _showPollEditor ? appColors.divider : appColors.textPrimary),
+            ),
             // Image button
             IconButton(
               onPressed: _showPollEditor ? null : _pickImage,

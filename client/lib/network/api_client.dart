@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 import 'api_exception.dart';
 import 'api_logger.dart';
+import 'package:threads/helper/network_error.dart';
 
 class ApiClient {
   final http.Client _client;
@@ -149,6 +151,7 @@ class ApiClient {
         error: '网络连接失败: $e',
         elapsedMs: 0,
       );
+      NetworkErrorNotifier.showNetworkError();
       throw NetworkException(message: '网络连接失败，请检查网络');
     } on http.ClientException catch (e) {
       ApiLogger.logError(
@@ -158,7 +161,18 @@ class ApiClient {
         error: '网络请求异常: $e',
         elapsedMs: 0,
       );
+      NetworkErrorNotifier.showNetworkError();
       throw NetworkException(message: '网络请求失败');
+    } on TimeoutException catch (e) {
+      ApiLogger.logError(
+        method: method,
+        url: '${ApiConfig.baseUrl}$path',
+        statusCode: null,
+        error: '请求超时: $e',
+        elapsedMs: 0,
+      );
+      NetworkErrorNotifier.showTimeoutError();
+      throw NetworkException(message: '请求超时');
     } on ApiException catch (e) {
       ApiLogger.logError(
         method: method,
@@ -167,6 +181,9 @@ class ApiClient {
         error: e.message,
         elapsedMs: stopwatch.elapsedMilliseconds,
       );
+      if (e is ServerException) {
+        NetworkErrorNotifier.showServerError();
+      }
       rethrow;
     } catch (e) {
       ApiLogger.logError(
@@ -177,6 +194,7 @@ class ApiClient {
         elapsedMs: 0,
       );
       if (e is ApiException) rethrow;
+      NetworkErrorNotifier.showNetworkError();
       throw ApiException(message: '请求失败: $e');
     }
   }
