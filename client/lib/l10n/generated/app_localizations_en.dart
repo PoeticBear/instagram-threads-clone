@@ -214,6 +214,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabReplies => 'Replies';
 
   @override
+  String get tabMedia => 'Media';
+
+  @override
   String get noThreadsYet => 'You haven\'t posted any threads yet.';
 
   @override
@@ -496,6 +499,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editGroupName => 'Edit group name';
 
   @override
+  String get verifyConversation => 'Verify conversation';
+
+  @override
+  String get pinConversation => 'Pin conversation';
+
+  @override
+  String get unpinConversation => 'Unpin conversation';
+
+  @override
+  String get hideConversation => 'Hide conversation';
+
+  @override
+  String get searchMessages => 'Search messages';
+
+  @override
+  String get messageSettings => 'Message settings';
+
+  @override
+  String get messageRequestsEnabled => 'Message requests';
+
+  @override
+  String get messageRequestsEnabledDesc =>
+      'Allow message requests from strangers';
+
+  @override
+  String get whoCanSendMessage => 'Who can send you messages';
+
+  @override
+  String get onlyFollowedUsers => 'Only people you follow';
+
+  @override
+  String get anyone => 'Anyone';
+
+  @override
+  String get joinGroupByLink => 'Join group by link';
+
+  @override
+  String get enterInviteLink => 'Enter invite link';
+
+  @override
+  String get join => 'Join';
+
+  @override
+  String get hiddenConversations => 'Hidden conversations';
+
+  @override
+  String get noHiddenConversations => 'No hidden conversations';
+
+  @override
+  String get groupChats => 'Group chats';
+
+  @override
+  String get seeAllGroups => 'See all';
+
+  @override
+  String get noGroupChats => 'No group chats';
+
+  @override
+  String get searchMessagesHint => 'Search messages...';
+
+  @override
   String get topic => 'Topic';
 
   @override
@@ -768,6 +832,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noRepliesYet => 'No replies yet';
+
+  @override
+  String get noMediaYet => 'No media yet';
 
   @override
   String get justNow => 'Just now';

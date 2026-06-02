@@ -14,13 +14,27 @@ class CreateGroupPage extends StatefulWidget {
 
 class _CreateGroupPageState extends State<CreateGroupPage> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  Set<int> _selectedUserIds = {};
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isSearching = false;
   bool _needApprove = false;
   bool _inviteLinkEnabled = false;
   bool _isCreating = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = Provider.of<MessageState>(context, listen: false);
+      state.loadRecommendUsers();
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -43,6 +57,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     try {
       await state.createGroupChat(
         name,
+        memberIds: _selectedUserIds.toList(),
+        needApprove: _needApprove,
       );
       if (mounted) {
         Navigator.of(context).pop();
@@ -193,86 +209,150 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Widget _buildSelectedUsers() {
-    return Consumer<MessageState>(
-      builder: (context, state, _) {
-        final appColors =
-            Theme.of(context).extension<AppColorsExtension>()!.colors;
-        final selectedUsers = state.recommendUsers;
-        if (selectedUsers.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(Icons.person_add_outlined,
-                      size: 40, color: appColors.surface),
-                  const SizedBox(height: 8),
-                  Text(
-                    AppLocalizations.of(context)!.searchSelectUsers,
-                    style: TextStyle(color: appColors.textMuted, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return SizedBox(
-          height: 90,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: selectedUsers.length,
-            itemBuilder: (context, index) {
-              final user = selectedUsers[index];
-              final avatarUrl = user['avatarUrl'] as String? ??
-                  user['avatar_url'] as String?;
-              final displayName = user['displayName'] as String? ??
-                  user['display_name'] as String? ??
-                  user['username'] as String? ??
-                  AppLocalizations.of(context)!.userFallback;
-
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: appColors.surface,
-                      backgroundImage: (avatarUrl != null &&
-                              avatarUrl.isNotEmpty)
-                          ? CachedNetworkImageProvider(avatarUrl)
-                          : null,
-                      child: (avatarUrl == null || avatarUrl.isEmpty)
-                          ? Text(
-                              displayName[0].toUpperCase(),
-                              style: TextStyle(
-                                color: appColors.textPrimary,
-                                fontSize: 18,
-                              ),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      width: 56,
-                      child: Text(
-                        displayName,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: appColors.textSecondary,
-                          fontSize: 11,
-                        ),
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Selected users chips
+        if (_selectedUserIds.isNotEmpty) ...[
+          Consumer<MessageState>(
+            builder: (context, state, _) {
+              final allUsers = [...state.recommendUsers, ..._searchResults];
+              final selectedUsers = allUsers.where((u) {
+                final id = u['user_id'] ?? u['userId'] ?? u['id'] ?? 0;
+                return _selectedUserIds.contains(id is int ? id : int.tryParse(id.toString()) ?? 0);
+              }).toList();
+              return SizedBox(
+                height: 60,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: selectedUsers.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final user = selectedUsers[index];
+                    final displayName = user['display_name'] ?? user['displayName'] ?? user['username'] ?? '';
+                    final avatarUrl = user['avatar_url'] ?? user['avatarUrl'] as String?;
+                    final userId = user['user_id'] ?? user['userId'] ?? user['id'] ?? 0;
+                    final intUid = userId is int ? userId : int.tryParse(userId.toString()) ?? 0;
+                    return Chip(
+                      avatar: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: appColors.surface,
+                        backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                            ? CachedNetworkImageProvider(avatarUrl)
+                            : null,
+                        child: (avatarUrl == null || avatarUrl.isEmpty)
+                            ? Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                                style: TextStyle(color: appColors.textPrimary, fontSize: 12))
+                            : null,
                       ),
-                    ),
-                  ],
+                      label: Text(displayName, style: TextStyle(color: appColors.textPrimary, fontSize: 13)),
+                      backgroundColor: appColors.surface,
+                      deleteIconColor: appColors.textSecondary,
+                      onDeleted: () {
+                        setState(() => _selectedUserIds.remove(intUid));
+                      },
+                    );
+                  },
                 ),
               );
             },
           ),
-        );
+          const SizedBox(height: 8),
+        ],
+        // Search field
+        TextField(
+          controller: _searchController,
+          cursorColor: appColors.textPrimary,
+          style: TextStyle(color: appColors.textPrimary, fontSize: 14),
+          decoration: InputDecoration(
+            prefixIcon: Icon(Icons.search, size: 20, color: appColors.textMuted),
+            hintText: AppLocalizations.of(context)!.searchUsersHint,
+            hintStyle: TextStyle(color: appColors.textMuted, fontSize: 14),
+            filled: true,
+            fillColor: appColors.surface,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
+            isDense: true,
+          ),
+          onChanged: _onSearchChanged,
+        ),
+        const SizedBox(height: 8),
+        // Search results
+        if (_isSearching)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey)),
+          )
+        else if (_searchResults.isNotEmpty)
+          ..._searchResults.map((user) => _buildSearchResultTile(user)),
+      ],
+    );
+  }
+
+  Future<void> _onSearchChanged(String value) async {
+    final keyword = value.trim();
+    if (keyword.isEmpty) {
+      setState(() { _searchResults = []; _isSearching = false; });
+      return;
+    }
+    setState(() => _isSearching = true);
+    final state = Provider.of<MessageState>(context, listen: false);
+    final results = await state.searchChatUsers(keyword);
+    if (!mounted) return;
+    if (_searchController.text.trim() == keyword) {
+      setState(() { _searchResults = results; _isSearching = false; });
+    }
+  }
+
+  Widget _buildSearchResultTile(Map<String, dynamic> user) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final userId = user['user_id'] ?? user['userId'] ?? user['id'] ?? 0;
+    final intUid = userId is int ? userId : int.tryParse(userId.toString()) ?? 0;
+    final username = user['username'] ?? '';
+    final displayName = user['display_name'] ?? user['displayName'] ?? username;
+    final avatarUrl = user['avatar_url'] ?? user['avatarUrl'] as String?;
+    final isSelected = _selectedUserIds.contains(intUid);
+
+    return ListTile(
+      dense: true,
+      leading: CircleAvatar(
+        radius: 20,
+        backgroundColor: appColors.surface,
+        backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+            ? CachedNetworkImageProvider(avatarUrl)
+            : null,
+        child: (avatarUrl == null || avatarUrl.isEmpty)
+            ? Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                style: TextStyle(color: appColors.textPrimary, fontSize: 14))
+            : null,
+      ),
+      title: Text(displayName, style: TextStyle(color: appColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500)),
+      subtitle: username.isNotEmpty ? Text('@$username', style: TextStyle(color: appColors.textMuted, fontSize: 12)) : null,
+      trailing: Checkbox(
+        value: isSelected,
+        onChanged: (v) {
+          setState(() {
+            if (v == true) {
+              _selectedUserIds.add(intUid);
+            } else {
+              _selectedUserIds.remove(intUid);
+            }
+          });
+        },
+        activeColor: appColors.accent,
+      ),
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _selectedUserIds.remove(intUid);
+          } else {
+            _selectedUserIds.add(intUid);
+          }
+        });
       },
     );
   }

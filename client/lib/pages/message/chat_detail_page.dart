@@ -89,7 +89,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   Future<void> _loadMessages() async {
     final state = Provider.of<MessageState>(context, listen: false);
-    await state.loadMessages(widget.conversationId);
+    if (widget.isGroupChat && widget.groupId != null) {
+      await state.loadGroupChatMessages(widget.groupId!);
+    } else if (widget.conversationId > 0) {
+      await state.loadMessages(widget.conversationId);
+    }
+    // conversationId < 0 表示新会话（尚未创建），无需加载消息
   }
 
   void _onScroll() {
@@ -97,7 +102,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         _scrollController.position.maxScrollExtent - 100) {
       final state = Provider.of<MessageState>(context, listen: false);
       if (state.hasMoreMessages && !state.isLoadingMessages) {
-        state.loadMoreMessages();
+        if (widget.isGroupChat && widget.groupId != null) {
+          state.loadMoreGroupChatMessages(widget.groupId!);
+        } else if (widget.conversationId > 0) {
+          state.loadMoreMessages();
+        }
       }
     }
   }
@@ -109,10 +118,17 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     _inputController.clear();
 
     final state = Provider.of<MessageState>(context, listen: false);
-    await state.sendMessage(
-      receiverId: _getPeerUserId(),
-      content: content,
-    );
+    if (widget.isGroupChat && widget.groupId != null) {
+      await state.sendGroupChatMessage(
+        groupId: widget.groupId!,
+        content: content,
+      );
+    } else {
+      await state.sendMessage(
+        receiverId: _getPeerUserId(),
+        content: content,
+      );
+    }
   }
 
   int _getPeerUserId() {
@@ -254,11 +270,81 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         else
           IconButton(
             icon: Icon(Icons.more_horiz, color: appColors.textPrimary),
-            onPressed: () {
-              // TODO: Show conversation options
-            },
+            onPressed: () => _showConversationOptions(),
           ),
       ],
+    );
+  }
+
+  void _showConversationOptions() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final state = Provider.of<MessageState>(context, listen: false);
+
+    // Find conversation from the loaded list
+    final conversation = state.conversations.isNotEmpty
+        ? state.conversations.where((c) => c.id == widget.conversationId).firstOrNull
+        : null;
+    final isStranger = conversation?.conversationType == 2;
+    final isVerified = conversation?.isVerified ?? true;
+    final isPinned = conversation?.isPinned ?? false;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: appColors.surfaceSecondary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: appColors.textSecondary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (isStranger && !isVerified)
+                ListTile(
+                  leading: Icon(Icons.verified_user_outlined, color: appColors.textPrimary),
+                  title: Text(AppLocalizations.of(context)!.verifyConversation, style: TextStyle(color: appColors.textPrimary)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    state.verifyConversation(widget.conversationId);
+                  },
+                ),
+              ListTile(
+                leading: Icon(isPinned ? Icons.push_pin : Icons.push_pin_outlined, color: appColors.textPrimary),
+                title: Text(isPinned ? AppLocalizations.of(context)!.unpinConversation : AppLocalizations.of(context)!.pinConversation, style: TextStyle(color: appColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (isPinned) {
+                    state.unpinConversation(widget.conversationId);
+                  } else {
+                    state.pinConversation(widget.conversationId);
+                  }
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.visibility_off_outlined, color: appColors.destructive),
+                title: Text(AppLocalizations.of(context)!.hideConversation, style: TextStyle(color: appColors.destructive)),
+                onTap: () {
+                  Navigator.pop(context);
+                  state.hideConversation(widget.conversationId);
+                  Navigator.of(this.context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

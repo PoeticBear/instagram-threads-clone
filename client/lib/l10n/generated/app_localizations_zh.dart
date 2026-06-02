@@ -212,6 +212,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tabReplies => '回复';
 
   @override
+  String get tabMedia => '媒体';
+
+  @override
   String get noThreadsYet => '你还没有发布任何主题。';
 
   @override
@@ -494,6 +497,66 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editGroupName => '编辑群聊名称';
 
   @override
+  String get verifyConversation => '确认收件';
+
+  @override
+  String get pinConversation => '置顶会话';
+
+  @override
+  String get unpinConversation => '取消置顶';
+
+  @override
+  String get hideConversation => '隐藏会话';
+
+  @override
+  String get searchMessages => '搜索消息';
+
+  @override
+  String get messageSettings => '消息设置';
+
+  @override
+  String get messageRequestsEnabled => '陌生消息';
+
+  @override
+  String get messageRequestsEnabledDesc => '允许接收陌生人的消息请求';
+
+  @override
+  String get whoCanSendMessage => '谁能发消息给你';
+
+  @override
+  String get onlyFollowedUsers => '仅你关注的人';
+
+  @override
+  String get anyone => '任何人';
+
+  @override
+  String get joinGroupByLink => '通过链接加入群聊';
+
+  @override
+  String get enterInviteLink => '输入邀请链接';
+
+  @override
+  String get join => '加入';
+
+  @override
+  String get hiddenConversations => '隐藏的会话';
+
+  @override
+  String get noHiddenConversations => '暂无隐藏会话';
+
+  @override
+  String get groupChats => '群聊';
+
+  @override
+  String get seeAllGroups => '查看全部';
+
+  @override
+  String get noGroupChats => '暂无群聊';
+
+  @override
+  String get searchMessagesHint => '搜索消息...';
+
+  @override
   String get topic => '话题';
 
   @override
@@ -762,6 +825,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noRepliesYet => '暂无回复';
+
+  @override
+  String get noMediaYet => '暂无媒体';
 
   @override
   String get justNow => '刚刚';

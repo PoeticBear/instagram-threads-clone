@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:threads/model/message.module.dart';
 import 'package:threads/pages/message/chat_detail_page.dart';
 import 'package:threads/pages/message/message_list_tile.dart';
+import 'package:threads/pages/message/message_search_page.dart';
+import 'package:threads/pages/message/message_settings_page.dart';
 import 'package:threads/state/message.state.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/theme/app_colors.dart';
@@ -24,6 +26,7 @@ class _MessagePageState extends State<MessagePage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
     _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -37,6 +40,15 @@ class _MessagePageState extends State<MessagePage>
     _tabController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.index == 1 && !_tabController.indexIsChanging) {
+      final state = Provider.of<MessageState>(context, listen: false);
+      if (state.strangerConversations.isEmpty) {
+        state.loadStrangerConversations();
+      }
+    }
   }
 
   void _onScroll() {
@@ -92,11 +104,31 @@ class _MessagePageState extends State<MessagePage>
         ),
         actions: [
           IconButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const MessageSearchPage()));
+            },
+            icon: Icon(
+              Icons.search,
+              color: appColors.textPrimary,
+              size: 24,
+            ),
+          ),
+          IconButton(
             onPressed: _showNewMessageSheet,
             icon: Icon(
               Icons.edit_outlined,
               color: appColors.textPrimary,
               size: 26,
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const MessageSettingsPage()));
+            },
+            icon: Icon(
+              Icons.settings_outlined,
+              color: appColors.textPrimary,
+              size: 24,
             ),
           ),
           const SizedBox(width: 4),
@@ -191,6 +223,7 @@ class _MessagePageState extends State<MessagePage>
           return MessageListTile(
             conversation: conversation,
             onTap: () => _onConversationTap(conversation),
+            onLongPress: () => _showConversationContextMenu(conversation),
           );
         },
       ),
@@ -200,11 +233,13 @@ class _MessagePageState extends State<MessagePage>
   // ── Stranger / Requests tab ──
 
   Widget _buildStrangerRequests(MessageState state) {
-    // Filter conversations with type 2 (stranger) from the main list
-    // The state currently loads all conversations, so we filter here.
-    final strangerConversations = state.conversations
-        .where((c) => c.conversationType == 2)
-        .toList();
+    if (state.isLoadingStrangers && state.strangerConversations.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    final strangerConversations = state.strangerConversations;
 
     if (strangerConversations.isEmpty) {
       return Center(
@@ -252,6 +287,83 @@ class _MessagePageState extends State<MessagePage>
       ),
     );
   }
+
+  void _showConversationContextMenu(Conversation conversation) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final state = Provider.of<MessageState>(context, listen: false);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: appColors.surfaceSecondary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: appColors.textSecondary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: Icon(
+                  conversation.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                  color: appColors.textPrimary,
+                ),
+                title: Text(
+                  conversation.isPinned
+                      ? AppLocalizations.of(context)!.unpinConversation
+                      : AppLocalizations.of(context)!.pinConversation,
+                  style: TextStyle(color: appColors.textPrimary),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (conversation.isPinned) {
+                    state.unpinConversation(conversation.id);
+                  } else {
+                    state.pinConversation(conversation.id);
+                  }
+                },
+              ),
+              if (conversation.conversationType == 2 && !conversation.isVerified)
+                ListTile(
+                  leading: Icon(Icons.verified_user_outlined, color: appColors.textPrimary),
+                  title: Text(
+                    AppLocalizations.of(context)!.verifyConversation,
+                    style: TextStyle(color: appColors.textPrimary),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    state.verifyConversation(conversation.id);
+                  },
+                ),
+              ListTile(
+                leading: Icon(Icons.visibility_off_outlined, color: appColors.destructive),
+                title: Text(
+                  AppLocalizations.of(context)!.hideConversation,
+                  style: TextStyle(color: appColors.destructive),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  state.hideConversation(conversation.id);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 // ── New Message Bottom Sheet ──
@@ -273,6 +385,10 @@ class _NewMessageBottomSheetState extends State<_NewMessageBottomSheet> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = Provider.of<MessageState>(context, listen: false);
+      state.loadRecommendUsers();
+    });
   }
 
   @override
@@ -426,22 +542,41 @@ class _NewMessageBottomSheetState extends State<_NewMessageBottomSheet> {
     }
 
     if (_searchController.text.trim().isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.person_search_outlined,
-                size: 48, color: Colors.grey[700]),
-            const SizedBox(height: 12),
-            Text(
-              AppLocalizations.of(context)!.searchForUser,
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 16,
+      return Consumer<MessageState>(
+        builder: (context, state, _) {
+          if (state.recommendUsers.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_search_outlined,
+                      size: 48, color: Colors.grey[700]),
+                  const SizedBox(height: 12),
+                  Text(
+                    AppLocalizations.of(context)!.searchForUser,
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.only(top: 4),
+            itemCount: state.recommendUsers.length,
+            separatorBuilder: (_, __) => Divider(
+              height: 0.5,
+              color: const Color.fromARGB(255, 46, 46, 46),
+              indent: 78,
             ),
-          ],
-        ),
+            itemBuilder: (context, index) {
+              final user = state.recommendUsers[index];
+              return _buildUserTile(user);
+            },
+          );
+        },
       );
     }
 

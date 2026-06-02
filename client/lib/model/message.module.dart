@@ -306,3 +306,24 @@ class MessageSettings {
     };
   }
 }
+
+// ============================================================
+// SendMessageResponse（发送消息响应）
+// ============================================================
+
+class SendMessageResponse {
+  final int conversationId;
+  final int messageId;
+
+  SendMessageResponse({
+    required this.conversationId,
+    required this.messageId,
+  });
+
+  factory SendMessageResponse.fromJson(Map<String, dynamic> json) {
+    return SendMessageResponse(
+      conversationId: json['conversation_id'] ?? json['conversationId'] ?? 0,
+      messageId: json['message_id'] ?? json['messageId'] ?? 0,
+    );
+  }
+}

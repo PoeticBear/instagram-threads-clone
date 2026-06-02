@@ -15,14 +15,24 @@ class MessageService {
   Future<List<Conversation>> getConversations({
     int page = 1,
     int size = 20,
+    int? conversationType,
+    int? filterType,
   }) async {
     try {
+      final queryParams = <String, dynamic>{
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+      if (conversationType != null) {
+        queryParams['conversation_type'] = conversationType.toString();
+      }
+      if (filterType != null) {
+        queryParams['filter_type'] = filterType.toString();
+      }
+
       final response = await _apiClient.get(
         'message/conversations',
-        queryParameters: {
-          'page': page.toString(),
-          'size': size.toString(),
-        },
+        queryParameters: queryParams,
       );
 
       final data = response['data'];
@@ -123,7 +133,7 @@ class MessageService {
   // ==============================================================
 
   /// 发送消息
-  Future<ChatMessage> sendMessage({
+  Future<SendMessageResponse> sendMessage({
     required int receiverId,
     required String content,
     int mediaType = 0,
@@ -139,18 +149,18 @@ class MessageService {
       if (mediaUrl != null) body['media_url'] = mediaUrl;
       if (quoteMessageId != null) body['quote_message_id'] = quoteMessageId;
 
-      final response = await _apiClient.post('message/send', body: body);
-      return ChatMessage.fromJson(response['data']);
+      final response = await _apiClient.post('message/messages', body: body);
+      return SendMessageResponse.fromJson(response['data']);
     } on ApiException {
       rethrow;
     }
   }
 
   /// 标记消息已读
-  Future<void> markAsRead(int conversationId) async {
+  Future<void> markAsRead(List<int> messageIds) async {
     try {
-      await _apiClient.post('message/mark-read', body: {
-        'conversation_id': conversationId,
+      await _apiClient.post('message/messages/read', body: {
+        'message_ids': messageIds,
       });
     } on ApiException {
       rethrow;
@@ -167,10 +177,10 @@ class MessageService {
     required String emoji,
   }) async {
     try {
-      await _apiClient.post('message/reactions', body: {
-        'message_id': messageId,
-        'emoji': emoji,
-      });
+      await _apiClient.post(
+        'message/messages/$messageId/reaction',
+        body: {'reaction_type': emoji},
+      );
     } on ApiException {
       rethrow;
     }
@@ -182,34 +192,33 @@ class MessageService {
     required String emoji,
   }) async {
     try {
-      await _apiClient.delete('message/reactions', body: {
-        'message_id': messageId,
-        'emoji': emoji,
-      });
+      await _apiClient.delete('message/messages/$messageId/reaction');
     } on ApiException {
       rethrow;
     }
   }
 
   // ==============================================================
-  // 群聊管理（10 个）
+  // 群聊管理（12 个）
   // ==============================================================
 
   /// 创建群聊
   Future<GroupChat> createGroupChat({
     required String name,
     String? avatarUrl,
+    List<int> memberIds = const [],
     bool needApprove = false,
   }) async {
     try {
       final body = <String, dynamic>{
         'name': name,
+        'member_ids': memberIds,
         'need_approve': needApprove,
       };
       if (avatarUrl != null) body['avatar_url'] = avatarUrl;
 
       final response =
-          await _apiClient.post('message/group/create', body: body);
+          await _apiClient.post('message/group-chats/with-link', body: body);
       return GroupChat.fromJson(response['data']);
     } on ApiException {
       rethrow;
@@ -223,7 +232,7 @@ class MessageService {
   }) async {
     try {
       final response = await _apiClient.get(
-        'message/group/list',
+        'message/group-chats',
         queryParameters: {
           'page': page.toString(),
           'size': size.toString(),
@@ -251,7 +260,7 @@ class MessageService {
   /// 获取群聊详情
   Future<GroupChat> getGroupChatDetail(int groupId) async {
     try {
-      final response = await _apiClient.get('message/group/$groupId');
+      final response = await _apiClient.get('message/group-chats/$groupId');
       return GroupChat.fromJson(response['data']);
     } on ApiException {
       rethrow;
@@ -270,7 +279,7 @@ class MessageService {
       if (avatarUrl != null) body['avatar_url'] = avatarUrl;
 
       final response =
-          await _apiClient.put('message/group/$groupId', body: body);
+          await _apiClient.patch('message/group-chats/$groupId', body: body);
       return GroupChat.fromJson(response['data']);
     } on ApiException {
       rethrow;
@@ -285,7 +294,7 @@ class MessageService {
   }) async {
     try {
       final response = await _apiClient.get(
-        'message/group/$groupId/members',
+        'message/group-chats/$groupId/members',
         queryParameters: {
           'page': page.toString(),
           'size': size.toString(),
@@ -313,7 +322,7 @@ class MessageService {
   /// 移除群成员
   Future<void> removeGroupMember(int groupId, int userId) async {
     try {
-      await _apiClient.delete('message/group/$groupId/members/$userId');
+      await _apiClient.delete('message/group-chats/$groupId/members/$userId');
     } on ApiException {
       rethrow;
     }
@@ -323,7 +332,7 @@ class MessageService {
   Future<GroupChat> joinGroupChat({required String inviteLink}) async {
     try {
       final response = await _apiClient.post(
-        'message/group/join',
+        'message/group-chats/join-by-link',
         body: {'invite_link': inviteLink},
       );
       return GroupChat.fromJson(response['data']);
@@ -335,7 +344,7 @@ class MessageService {
   /// 退出群聊
   Future<void> leaveGroupChat(int groupId) async {
     try {
-      await _apiClient.post('message/group/$groupId/leave');
+      await _apiClient.post('message/group-chats/$groupId/leave');
     } on ApiException {
       rethrow;
     }
@@ -344,7 +353,7 @@ class MessageService {
   /// 获取入群申请列表
   Future<List<Map<String, dynamic>>> getJoinRequests(int groupId) async {
     try {
-      final response = await _apiClient.get('message/group/$groupId/join-requests');
+      final response = await _apiClient.get('message/group-chats/$groupId/join-requests');
 
       final data = response['data'];
       List items;
@@ -369,8 +378,8 @@ class MessageService {
   }) async {
     try {
       await _apiClient.post(
-        'message/group/$groupId/join-requests/approve',
-        body: {'request_id': requestId},
+        'message/group-chats/$groupId/join-requests/$requestId/approve',
+        body: {'action': 1},
       );
     } on ApiException {
       rethrow;
@@ -384,8 +393,8 @@ class MessageService {
   }) async {
     try {
       await _apiClient.post(
-        'message/group/$groupId/join-requests/reject',
-        body: {'request_id': requestId},
+        'message/group-chats/$groupId/join-requests/$requestId/approve',
+        body: {'action': 2},
       );
     } on ApiException {
       rethrow;
@@ -404,8 +413,68 @@ class MessageService {
       if (inviteLinkEnabled != null) body['invite_link_enabled'] = inviteLinkEnabled;
 
       final response =
-          await _apiClient.put('message/group/$groupId/settings', body: body);
+          await _apiClient.patch('message/group-chats/$groupId', body: body);
       return GroupChat.fromJson(response['data']);
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  /// 获取群聊消息列表
+  /// GET /message/group-chats/{group_id}/messages
+  Future<List<ChatMessage>> getGroupChatMessages(
+    int groupId, {
+    int page = 1,
+    int size = 20,
+  }) async {
+    try {
+      final response = await _apiClient.get(
+        'message/group-chats/$groupId/messages',
+        queryParameters: {
+          'page': page.toString(),
+          'size': size.toString(),
+        },
+      );
+
+      final data = response['data'];
+      List items;
+      if (data is List) {
+        items = data;
+      } else if (data is Map && data.containsKey('items')) {
+        items = data['items'] as List? ?? [];
+      } else {
+        items = [];
+      }
+
+      return items
+          .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  /// 发送群聊消息
+  /// POST /message/group-chats/{group_id}/messages
+  Future<SendMessageResponse> sendGroupChatMessage({
+    required int groupId,
+    required String content,
+    int mediaType = 0,
+    String? mediaUrl,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'group_id': groupId,
+        'content': content,
+        'media_type': mediaType,
+      };
+      if (mediaUrl != null) body['media_url'] = mediaUrl;
+
+      final response = await _apiClient.post(
+        'message/group-chats/$groupId/messages',
+        body: body,
+      );
+      return SendMessageResponse.fromJson(response['data']);
     } on ApiException {
       rethrow;
     }
@@ -425,7 +494,7 @@ class MessageService {
       final response = await _apiClient.get(
         'message/search',
         queryParameters: {
-          'keyword': keyword,
+          'q': keyword,
           'page': page.toString(),
           'size': size.toString(),
         },
@@ -463,7 +532,7 @@ class MessageService {
   Future<MessageSettings> updateMessageSettings(
       MessageSettings settings) async {
     try {
-      final response = await _apiClient.put(
+      final response = await _apiClient.post(
         'message/settings',
         body: settings.toJson(),
       );
@@ -475,14 +544,12 @@ class MessageService {
 
   /// 获取推荐用户
   Future<List<Map<String, dynamic>>> getRecommendUsers({
-    int page = 1,
     int size = 20,
   }) async {
     try {
       final response = await _apiClient.get(
         'message/recommend-users',
         queryParameters: {
-          'page': page.toString(),
           'size': size.toString(),
         },
       );
@@ -513,7 +580,7 @@ class MessageService {
       final response = await _apiClient.get(
         'message/search-users',
         queryParameters: {
-          'keyword': keyword,
+          'q': keyword,
           'page': page.toString(),
           'size': size.toString(),
         },

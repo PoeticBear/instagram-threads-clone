@@ -500,6 +500,12 @@ abstract class AppLocalizations {
   /// **'Replies'**
   String get tabReplies;
 
+  /// No description provided for @tabMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get tabMedia;
+
   /// No description provided for @noThreadsYet.
   ///
   /// In en, this message translates to:
@@ -1064,6 +1070,126 @@ abstract class AppLocalizations {
   /// **'Edit group name'**
   String get editGroupName;
 
+  /// No description provided for @verifyConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify conversation'**
+  String get verifyConversation;
+
+  /// No description provided for @pinConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin conversation'**
+  String get pinConversation;
+
+  /// No description provided for @unpinConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin conversation'**
+  String get unpinConversation;
+
+  /// No description provided for @hideConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide conversation'**
+  String get hideConversation;
+
+  /// No description provided for @searchMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages'**
+  String get searchMessages;
+
+  /// No description provided for @messageSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Message settings'**
+  String get messageSettings;
+
+  /// No description provided for @messageRequestsEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Message requests'**
+  String get messageRequestsEnabled;
+
+  /// No description provided for @messageRequestsEnabledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow message requests from strangers'**
+  String get messageRequestsEnabledDesc;
+
+  /// No description provided for @whoCanSendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can send you messages'**
+  String get whoCanSendMessage;
+
+  /// No description provided for @onlyFollowedUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Only people you follow'**
+  String get onlyFollowedUsers;
+
+  /// No description provided for @anyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone'**
+  String get anyone;
+
+  /// No description provided for @joinGroupByLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Join group by link'**
+  String get joinGroupByLink;
+
+  /// No description provided for @enterInviteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter invite link'**
+  String get enterInviteLink;
+
+  /// No description provided for @join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get join;
+
+  /// No description provided for @hiddenConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden conversations'**
+  String get hiddenConversations;
+
+  /// No description provided for @noHiddenConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'No hidden conversations'**
+  String get noHiddenConversations;
+
+  /// No description provided for @groupChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Group chats'**
+  String get groupChats;
+
+  /// No description provided for @seeAllGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get seeAllGroups;
+
+  /// No description provided for @noGroupChats.
+  ///
+  /// In en, this message translates to:
+  /// **'No group chats'**
+  String get noGroupChats;
+
+  /// No description provided for @searchMessagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages...'**
+  String get searchMessagesHint;
+
   /// No description provided for @topic.
   ///
   /// In en, this message translates to:
@@ -1603,6 +1729,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No replies yet'**
   String get noRepliesYet;
+
+  /// No description provided for @noMediaYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No media yet'**
+  String get noMediaYet;
 
   /// No description provided for @justNow.
   ///

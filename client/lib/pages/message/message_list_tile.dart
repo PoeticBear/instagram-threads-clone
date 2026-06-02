@@ -7,11 +7,13 @@ import 'package:threads/theme/app_colors.dart';
 class MessageListTile extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   const MessageListTile({
     super.key,
     required this.conversation,
     this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -27,6 +29,7 @@ class MessageListTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

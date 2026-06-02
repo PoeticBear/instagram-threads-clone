@@ -75,8 +75,14 @@ class MessageState extends ChangeNotifier {
       _currentMessages =
           await messageService.getMessages(conversationId);
       if (_currentMessages.length < 20) _hasMoreMessages = false;
-      // 自动标记已读
-      messageService.markAsRead(conversationId);
+      // 自动标记已读（标记当前已加载消息的 ID）
+      if (_currentMessages.isNotEmpty) {
+        final messageIds =
+            _currentMessages.map((m) => m.id).where((id) => id > 0).toList();
+        if (messageIds.isNotEmpty) {
+          messageService.markAsRead(messageIds);
+        }
+      }
       // 更新会话列表中对应会话的未读数
       final idx =
           _conversations.indexWhere((c) => c.id == conversationId);
@@ -140,21 +146,32 @@ class MessageState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final sentMsg = await messageService.sendMessage(
+      final sentResponse = await messageService.sendMessage(
         receiverId: receiverId,
         content: content,
         mediaType: mediaType,
         mediaUrl: mediaUrl,
         quoteMessageId: quoteMessageId,
       );
-      // 替换乐观消息
+      // 替换乐观消息：用服务端返回的 messageId 更新临时消息
       final idx = _currentMessages
           .indexWhere((m) => m.id == optimisticMsg.id);
       if (idx != -1) {
-        _currentMessages[idx] = sentMsg;
+        _currentMessages[idx] = ChatMessage(
+          id: sentResponse.messageId,
+          senderId: optimisticMsg.senderId,
+          receiverId: receiverId,
+          content: content,
+          mediaType: mediaType,
+          mediaUrl: mediaUrl,
+          deliveryStatus: 2, // 2=已送达
+          createTime: optimisticMsg.createTime,
+        );
       }
-      // 更新会话列表中对应会话的最后消息
-      _updateConversationLastMessage(sentMsg);
+      // 新会话场景：用服务端返回的 conversationId 替换临时负 ID
+      if (_currentConversationId < 0) {
+        _currentConversationId = sentResponse.conversationId;
+      }
     } catch (_) {
       // 标记发送失败
       final idx = _currentMessages
@@ -173,10 +190,6 @@ class MessageState extends ChangeNotifier {
     }
     _isSending = false;
     notifyListeners();
-  }
-
-  void _updateConversationLastMessage(ChatMessage msg) {
-    // 会话列表按 peerUserId 匹配（receiverId 可能是对方）
   }
 
   // ========== 消息反应 ==========
@@ -202,7 +215,54 @@ class MessageState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ========== 陌生人消息 ==========
+  List<Conversation> _strangerConversations = [];
+  List<Conversation> get strangerConversations => _strangerConversations;
+  bool _isLoadingStrangers = false;
+  bool get isLoadingStrangers => _isLoadingStrangers;
+
+  Future<void> loadStrangerConversations() async {
+    _isLoadingStrangers = true;
+    notifyListeners();
+    try {
+      _strangerConversations = await messageService.getConversations(
+        conversationType: 2,
+      );
+    } catch (_) {
+      _strangerConversations = [];
+    }
+    _isLoadingStrangers = false;
+    notifyListeners();
+  }
+
   // ========== 会话操作 ==========
+  Future<void> verifyConversation(int conversationId) async {
+    try {
+      await messageService.verifyConversation(conversationId);
+      // 更新本地会话列表中对应会话的 isVerified 状态
+      final idx = _conversations.indexWhere((c) => c.id == conversationId);
+      if (idx != -1) {
+        final old = _conversations[idx];
+        _conversations[idx] = Conversation(
+          id: old.id,
+          peerUserId: old.peerUserId,
+          peerUsername: old.peerUsername,
+          peerDisplayName: old.peerDisplayName,
+          peerAvatarUrl: old.peerAvatarUrl,
+          conversationType: old.conversationType,
+          lastMessageContent: old.lastMessageContent,
+          lastMessageTime: old.lastMessageTime,
+          unreadCount: old.unreadCount,
+          isReplied: old.isReplied,
+          isVerified: true,
+          isHidden: old.isHidden,
+          isPinned: old.isPinned,
+        );
+      }
+      notifyListeners();
+    } catch (_) {}
+  }
+
   Future<void> pinConversation(int conversationId) async {
     try {
       await messageService.pinConversation(conversationId);
@@ -244,10 +304,10 @@ class MessageState extends ChangeNotifier {
   }
 
   Future<void> createGroupChat(String name,
-      {String? avatarUrl}) async {
+      {String? avatarUrl, List<int> memberIds = const [], bool needApprove = false}) async {
     try {
       final group = await messageService.createGroupChat(
-          name: name, avatarUrl: avatarUrl);
+          name: name, avatarUrl: avatarUrl, memberIds: memberIds, needApprove: needApprove);
       _groupChats.insert(0, group);
       notifyListeners();
     } catch (_) {}
@@ -332,6 +392,114 @@ class MessageState extends ChangeNotifier {
       _groupChats.removeWhere((g) => g.id == groupId);
       notifyListeners();
     } catch (_) {}
+  }
+
+  Future<void> joinGroupChat({required String inviteLink}) async {
+    try {
+      final group = await messageService.joinGroupChat(inviteLink: inviteLink);
+      _groupChats.insert(0, group);
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  // ========== 群聊消息 ==========
+  Future<void> loadGroupChatMessages(int groupId) async {
+    _isLoadingMessages = true;
+    _currentConversationId = groupId;
+    _messagePage = 1;
+    _hasMoreMessages = true;
+    notifyListeners();
+    try {
+      _currentMessages = await messageService.getGroupChatMessages(groupId);
+      if (_currentMessages.length < 20) _hasMoreMessages = false;
+    } catch (_) {}
+    _isLoadingMessages = false;
+    notifyListeners();
+  }
+
+  Future<void> loadMoreGroupChatMessages(int groupId) async {
+    if (_isLoadingMessages || !_hasMoreMessages) return;
+    _isLoadingMessages = true;
+    notifyListeners();
+    try {
+      _messagePage++;
+      final more = await messageService.getGroupChatMessages(
+        groupId,
+        page: _messagePage,
+      );
+      if (more.isEmpty) {
+        _hasMoreMessages = false;
+        _messagePage--;
+      } else {
+        _currentMessages.addAll(more);
+      }
+    } catch (_) {
+      _messagePage--;
+    }
+    _isLoadingMessages = false;
+    notifyListeners();
+  }
+
+  Future<void> sendGroupChatMessage({
+    required int groupId,
+    required String content,
+    int mediaType = 0,
+    String? mediaUrl,
+  }) async {
+    _isSending = true;
+    notifyListeners();
+
+    final optimisticMsg = ChatMessage(
+      id: -DateTime.now().millisecondsSinceEpoch,
+      senderId: 0,
+      receiverId: groupId,
+      content: content,
+      mediaType: mediaType,
+      mediaUrl: mediaUrl,
+      deliveryStatus: 1,
+      createTime: DateTime.now().toIso8601String(),
+    );
+    _currentMessages.insert(0, optimisticMsg);
+    notifyListeners();
+
+    try {
+      final sentResponse = await messageService.sendGroupChatMessage(
+        groupId: groupId,
+        content: content,
+        mediaType: mediaType,
+        mediaUrl: mediaUrl,
+      );
+      final idx = _currentMessages
+          .indexWhere((m) => m.id == optimisticMsg.id);
+      if (idx != -1) {
+        _currentMessages[idx] = ChatMessage(
+          id: sentResponse.messageId,
+          senderId: optimisticMsg.senderId,
+          receiverId: groupId,
+          content: content,
+          mediaType: mediaType,
+          mediaUrl: mediaUrl,
+          deliveryStatus: 2,
+          createTime: optimisticMsg.createTime,
+        );
+      }
+    } catch (_) {
+      final idx = _currentMessages
+          .indexWhere((m) => m.id == optimisticMsg.id);
+      if (idx != -1) {
+        _currentMessages[idx] = ChatMessage(
+          id: optimisticMsg.id,
+          senderId: optimisticMsg.senderId,
+          receiverId: optimisticMsg.receiverId,
+          content: optimisticMsg.content,
+          mediaType: optimisticMsg.mediaType,
+          deliveryStatus: 3,
+          createTime: optimisticMsg.createTime,
+        );
+      }
+    }
+    _isSending = false;
+    notifyListeners();
   }
 
   // ========== 入群申请 ==========
