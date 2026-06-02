@@ -2269,6 +2269,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to unpin reply'**
   String get failedToUnpinReply;
+
+  /// No description provided for @followRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow Requests'**
+  String get followRequests;
+
+  /// No description provided for @noPendingFollowRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending follow requests'**
+  String get noPendingFollowRequests;
+
+  /// No description provided for @confirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmButton;
+
+  /// No description provided for @rejectButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get rejectButton;
 }
 
 class _AppLocalizationsDelegate

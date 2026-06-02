@@ -679,7 +679,22 @@ class _ComposePostState extends State<ComposePost> {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(100),
-      child: CachedNetworkImage(imageUrl: url, height: size, width: size, fit: BoxFit.cover),
+      child: CachedNetworkImage(
+        imageUrl: url,
+        height: size,
+        width: size,
+        fit: BoxFit.cover,
+        errorWidget: (context, url, error) => Container(
+          height: size,
+          width: size,
+          decoration: BoxDecoration(
+            color: appColors.surface,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.person,
+              size: size * 0.6, color: appColors.textSecondary),
+        ),
+      ),
     );
   }
 

@@ -144,6 +144,7 @@ class AuthState extends AppStates {
   }
 
   /// Simple registration with username and password only
+  /// 注册成功后不自动登录，返回登录页让用户手动登录
   Future<String?> register(
     String username,
     String password,
@@ -160,13 +161,10 @@ class AuthState extends AppStates {
         confirmPassword: password,
       );
 
-      userId = response.userId?.toString() ?? '';
-      authStatus = AuthStatus.LOGGED_IN;
+      // 注册成功，清除自动保存的 token，不设为登录状态
+      await authService.logout();
 
-      // Load user profile after registration
-      await getProfileUser();
-
-      return userId;
+      return username;
     } on ApiException catch (error) {
       Utility.customSnackBar(scaffoldKey, error.message, context);
       return null;

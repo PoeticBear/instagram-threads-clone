@@ -67,19 +67,21 @@ class UserService {
     }
   }
 
-  Future<List<UserInfo>> getFollowRequests() async {
+  Future<List<FollowRequest>> getFollowRequests() async {
     try {
       final response = await _apiClient.get('user/follow-requests/pending');
       final list = response['data'] as List? ?? [];
-      return list.map((e) => UserInfo.fromJson(e)).toList();
+      return list.map((e) => FollowRequest.fromJson(e)).toList();
     } on ApiException {
       rethrow;
     }
   }
 
-  Future<void> approveFollowRequest(int requestId) async {
+  Future<void> approveFollowRequest(int requestId, {required int action}) async {
     try {
-      await _apiClient.post('user/follow-requests/$requestId/approve');
+      await _apiClient.post('user/follow-requests/$requestId/approve', body: {
+        'action': action, // 1=批准, 2=拒绝
+      });
     } on ApiException {
       rethrow;
     }
@@ -423,14 +425,55 @@ class FollowStats {
     this.isMutual = false,
   });
 
+  static bool _parseBool(dynamic value, [bool defaultValue = false]) {
+    if (value is bool) return value;
+    if (value is int) return value != 0;
+    return defaultValue;
+  }
+
   factory FollowStats.fromJson(Map<String, dynamic> json) {
     return FollowStats(
       followersCount: json['followers_count'] ?? json['followersCount'] ?? 0,
       followingCount: json['following_count'] ?? json['followingCount'] ?? 0,
       postsCount: json['posts_count'] ?? json['postsCount'] ?? 0,
-      isFollowing: json['is_following'] ?? json['isFollowing'] ?? false,
-      isFollowedByMe: json['is_followed_by_me'] ?? json['isFollowedByMe'] ?? false,
-      isMutual: json['is_mutual'] ?? json['isMutual'] ?? false,
+      isFollowing: _parseBool(json['is_following'] ?? json['isFollowing']),
+      isFollowedByMe: _parseBool(json['is_followed_by_me'] ?? json['isFollowedByMe']),
+      isMutual: _parseBool(json['is_mutual'] ?? json['isMutual']),
+    );
+  }
+}
+
+class FollowRequest {
+  final int id;
+  final int userId;
+  final int requesterId;
+  final String? requesterUsername;
+  final String? requesterAvatar;
+  final String? requesterDisplayName;
+  final int status; // 1=待审批, 2=已批准, 3=已拒绝
+  final String? createTime;
+
+  FollowRequest({
+    required this.id,
+    required this.userId,
+    required this.requesterId,
+    this.requesterUsername,
+    this.requesterAvatar,
+    this.requesterDisplayName,
+    this.status = 1,
+    this.createTime,
+  });
+
+  factory FollowRequest.fromJson(Map<String, dynamic> json) {
+    return FollowRequest(
+      id: json['id'] ?? 0,
+      userId: json['user_id'] ?? json['userId'] ?? 0,
+      requesterId: json['requester_id'] ?? json['requesterId'] ?? 0,
+      requesterUsername: json['requester_username'] ?? json['requesterUsername'],
+      requesterAvatar: json['requester_avatar'] ?? json['requesterAvatar'],
+      requesterDisplayName: json['requester_display_name'] ?? json['requesterDisplayName'],
+      status: json['status'] ?? 1,
+      createTime: json['create_time'] ?? json['createTime'],
     );
   }
 }
@@ -486,7 +529,7 @@ class SaveCollection {
     return SaveCollection(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      isDefault: json['is_default'] ?? json['isDefault'] ?? false,
+      isDefault: FollowStats._parseBool(json['is_default'] ?? json['isDefault']),
       saveCount: json['save_count'] ?? json['saveCount'] ?? 0,
       createTime: json['create_time'] ?? json['createTime'],
     );

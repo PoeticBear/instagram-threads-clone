@@ -431,5 +431,9 @@
   "unpinReply": "Unpin reply",
   "failedToPostReply": "Failed to post reply",
   "failedToPinReply": "Failed to pin reply",
-  "failedToUnpinReply": "Failed to unpin reply"
+  "failedToUnpinReply": "Failed to unpin reply",
+  "followRequests": "Follow Requests",
+  "noPendingFollowRequests": "No pending follow requests",
+  "confirmButton": "Confirm",
+  "rejectButton": "Reject"
 }

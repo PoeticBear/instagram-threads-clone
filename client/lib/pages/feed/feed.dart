@@ -158,7 +158,17 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
         child: Container(
           height: size,
           width: size,
-          child: CachedNetworkImage(imageUrl: url),
+          child: CachedNetworkImage(
+            imageUrl: url,
+            errorWidget: (context, url, error) => Container(
+              decoration: BoxDecoration(
+                color: appColors.surface,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.person,
+                  size: size * 0.6, color: appColors.textSecondary),
+            ),
+          ),
         ),
       );
     }

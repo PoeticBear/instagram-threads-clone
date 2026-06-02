@@ -383,7 +383,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get followers => '粉丝';
 
   @override
-  String get following => '关注';
+  String get following => '已关注';
 
   @override
   String get posts => '帖子';
@@ -1121,4 +1121,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get failedToUnpinReply => '取消置顶回复失败';
+
+  @override
+  String get followRequests => '关注请求';
+
+  @override
+  String get noPendingFollowRequests => '暂无待处理的关注请求';
+
+  @override
+  String get confirmButton => '确认';
+
+  @override
+  String get rejectButton => '拒绝';
 }

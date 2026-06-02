@@ -100,7 +100,21 @@ class SearchPostTile extends StatelessWidget {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(100),
-      child: CachedNetworkImage(imageUrl: url, height: 40, width: 40, fit: BoxFit.cover),
+      child: CachedNetworkImage(
+        imageUrl: url,
+        height: 40,
+        width: 40,
+        fit: BoxFit.cover,
+        errorWidget: (_, __, ___) => Container(
+          height: 40,
+          width: 40,
+          decoration: BoxDecoration(
+            color: appColors.surface,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.person, size: 24, color: appColors.textSecondary),
+        ),
+      ),
     );
   }
 }

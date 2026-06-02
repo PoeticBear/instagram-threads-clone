@@ -19,6 +19,7 @@ import 'package:threads/state/notification.state.dart';
 import 'package:threads/state/settings.state.dart';
 import 'package:threads/state/draft.state.dart';
 import 'package:threads/state/community.state.dart';
+import 'package:threads/state/follow_request.state.dart';
 import 'package:threads/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,6 +70,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<DraftState>(create: (_) => DraftState()),
         ChangeNotifierProvider<MessageState>(create: (_) => MessageState()),
         ChangeNotifierProvider<CommunityState>(create: (_) => CommunityState()),
+        ChangeNotifierProvider<FollowRequestState>(create: (_) => FollowRequestState()),
         ChangeNotifierProvider<LocaleProvider>(create: (_) => LocaleProvider()),
         ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
       ],

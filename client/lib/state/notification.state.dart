@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/services/notification_service.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/common/locator.dart';
+import 'dart:developer' as developer;
 
 class NotificationState extends AppStates {
   NotificationService? _notificationService;
@@ -45,11 +46,15 @@ class NotificationState extends AppStates {
       isBusy = true;
       notifyListeners();
 
+      developer.log('🔄 开始加载通知列表: page=$_currentPage, filterType=$_filterType', name: 'NotificationState');
+
       final items = await notificationService.getNotifications(
         page: _currentPage,
         pageSize: 20,
         type: _filterType,
       );
+
+      developer.log('📦 通知列表加载成功: page=$_currentPage, count=${items.length}', name: 'NotificationState');
 
       if (refresh) {
         _notifications = items;
@@ -61,6 +66,7 @@ class NotificationState extends AppStates {
       isBusy = false;
       notifyListeners();
     } catch (error) {
+      developer.log('❌ 通知列表加载失败: $error', name: 'NotificationState', error: error is Error ? error : null);
       isBusy = false;
       notifyListeners();
     }
@@ -86,6 +92,7 @@ class NotificationState extends AppStates {
       _isLoadingMore = false;
       notifyListeners();
     } catch (error) {
+      developer.log('❌ 加载更多通知失败: $error', name: 'NotificationState', error: error is Error ? error : null);
       _isLoadingMore = false;
       _currentPage--;
       notifyListeners();
@@ -103,8 +110,11 @@ class NotificationState extends AppStates {
   Future<void> fetchUnreadCount() async {
     try {
       _unreadCount = await notificationService.getUnreadCount();
+      developer.log('📬 未读通知数: $_unreadCount', name: 'NotificationState');
       notifyListeners();
-    } catch (_) {}
+    } catch (error) {
+      developer.log('❌ 获取未读数失败: $error', name: 'NotificationState');
+    }
   }
 
   /// 标记指定通知为已读

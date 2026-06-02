@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'app_colors.dart';
 
 class AppTheme {
@@ -13,6 +14,9 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         foregroundColor: colors.textPrimary,
         elevation: 0,
+        systemOverlayStyle: brightness == Brightness.light
+            ? SystemUiOverlayStyle.dark
+            : SystemUiOverlayStyle.light,
       ),
       dividerColor: colors.divider,
       tabBarTheme: TabBarThemeData(

@@ -475,6 +475,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       context,
       ProfilePage.getRoute(
         profileId: widget.postModel.user?.userId.toString() ?? '',
+        username: widget.postModel.user?.userName,
       ),
     );
   }
@@ -509,6 +510,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       context,
       ProfilePage.getRoute(
         profileId: quotePost.user!.userId.toString(),
+        username: quotePost.user!.userName,
       ),
     );
   }
@@ -547,6 +549,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
 
   void _showRepostSheet(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
     final isReposted = widget.postModel.isReposted == true;
     final postId = widget.postModel.id;
     final postState = Provider.of<PostState>(context, listen: false);
@@ -564,7 +567,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           children: [
             if (!isReposted) ...[
               _buildSheetOption(
-                label: 'Repost',
+                label: l10n.repost,
                 onTap: () {
                   Navigator.pop(sheetContext);
                   postState.repost(postId);
@@ -582,7 +585,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             _buildSheetDivider(),
             if (isReposted) ...[
               _buildSheetOption(
-                label: 'Undo Repost',
+                label: l10n.undoRepost,
                 textColor: appColors.destructive,
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -727,6 +730,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
 
   void _showShareSheet(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
     final postId = widget.postModel.id;
     final postState = Provider.of<PostState>(context, listen: false);
 
@@ -742,7 +746,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildSheetOption(
-              label: 'Copy Link',
+              label: l10n.copyLink,
               onTap: () {
                 Navigator.pop(sheetContext);
                 Clipboard.setData(ClipboardData(
@@ -750,7 +754,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 ));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Link copied to clipboard'),
+                    content: Text(l10n.linkCopiedToClipboard),
                     backgroundColor: appColors.surface,
                     duration: Duration(seconds: 2),
                   ),
@@ -759,7 +763,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             ),
             _buildSheetDivider(),
             _buildSheetOption(
-              label: 'Share',
+              label: l10n.share,
               onTap: () {
                 Navigator.pop(sheetContext);
                 postState.sharePost(postId);

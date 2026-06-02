@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/pages/profile/profile.dart';
 import 'package:threads/theme/app_colors.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/widget/custom/title_text.dart';
 
 class UserTilePage extends StatelessWidget {
@@ -20,7 +21,7 @@ class UserTilePage extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          ProfilePage.getRoute(profileId: user.userId!.toString()),
+          ProfilePage.getRoute(profileId: user.userId!.toString(), username: user.userName),
         );
       },
       child: Container(
@@ -43,6 +44,17 @@ class UserTilePage extends StatelessWidget {
                   : CachedNetworkImage(
                       imageUrl: user.profilePic!,
                       height: 40,
+                      width: 40,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Container(
+                        height: 40,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          color: appColors.surface,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.person, size: 24, color: appColors.textSecondary),
+                      ),
                     ),
             ),
             const SizedBox(width: 10),
@@ -100,7 +112,7 @@ class UserTilePage extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            "Follow",
+                            AppLocalizations.of(context)!.follow,
                             style: TextStyle(
                               fontSize: 18,
                               color: appColors.textPrimary,

@@ -75,6 +75,13 @@ class PostModel {
     this.quotesCount,
   });
 
+  static bool? _parseBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is int) return value != 0;
+    return null;
+  }
+
   // Support both Firebase format (camelCase) and API format (snake_case)
   factory PostModel.fromJson(Map<dynamic, dynamic> map) {
     // Parse quote_post recursively
@@ -109,25 +116,25 @@ class PostModel {
       likesCount: map['likesCount'] ?? map['likes_count'],
       repliesCount: map['repliesCount'] ?? map['replies_count'],
       repostsCount: map['repostsCount'] ?? map['reposts_count'],
-      isLiked: map['isLiked'] ?? map['is_liked'],
-      isSaved: map['isSaved'] ?? map['is_saved'],
-      isReposted: map['isReposted'] ?? map['is_reposted'],
+      isLiked: _parseBool(map['isLiked'] ?? map['is_liked']),
+      isSaved: _parseBool(map['isSaved'] ?? map['is_saved']),
+      isReposted: _parseBool(map['isReposted'] ?? map['is_reposted']),
       replyToPostId: map['reply_to_post_id']?.toString(),
       replyToUserId: map['reply_to_user_id']?.toString(),
       location: map['location'],
       topicIds: map['topic_ids'] is List
           ? (map['topic_ids'] as List).map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList()
           : null,
-      isGhost: map['is_ghost'] ?? map['isGhost'],
+      isGhost: _parseBool(map['is_ghost'] ?? map['isGhost']),
       communityId: map['community_id'] ?? map['communityId'],
       replySettings: map['reply_settings'] ?? map['replySettings'],
       quoteRepostId: map['quote_repost_id'] ?? map['quoteRepostId'] ?? map['quote_post_id'] ?? map['quotePostId'],
-      isPinned: map['is_pinned'] ?? map['isPinned'],
+      isPinned: _parseBool(map['is_pinned'] ?? map['isPinned']),
       scheduledTime: map['scheduled_time'] ?? map['scheduledTime'],
-      isAi: map['is_ai'] ?? map['isAi'],
+      isAi: _parseBool(map['is_ai'] ?? map['isAi']),
       quoteContent: map['quote_content'] ?? map['quoteContent'],
       quotePost: quotePost,
-      isRepost: map['is_repost'] ?? map['isRepost'],
+      isRepost: _parseBool(map['is_repost'] ?? map['isRepost']),
       repostParentId: map['repost_parent_id'] ?? map['repostParentId'],
       threadPosts: threadPosts,
       threadPostIds: threadPostIds,

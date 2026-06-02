@@ -1,30 +1,38 @@
-// ignore_for_file: deprecated_member_use, unnecessary_null_comparison
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/pages/profile/edit.dart';
 import 'package:threads/common/settings.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/profile.state.dart';
+import 'package:threads/state/auth.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key, required this.profileId, this.scaffoldKey})
-      : super(key: key);
-  final GlobalKey<ScaffoldState>? scaffoldKey;
+  const ProfilePage({
+    Key? key,
+    required this.profileId,
+    this.username,
+    this.isOwnProfileTab = false,
+  }) : super(key: key);
 
   final String profileId;
-  static PageRouteBuilder getRoute({required String profileId}) {
+  final String? username;
+  final bool isOwnProfileTab;
+
+  static PageRouteBuilder getRoute({required String profileId, String? username}) {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
         return ChangeNotifierProvider(
           create: (BuildContext context) => ProfileState(profileId),
           child: ProfilePage(
             profileId: profileId,
+            username: username,
           ),
         );
       },
@@ -43,8 +51,6 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin {
-  int pageIndex = 0;
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   late TabController _tabController;
   List<PostModel> _userPosts = [];
   bool _isLoadingPosts = false;
@@ -68,6 +74,30 @@ class _ProfilePageState extends State<ProfilePage>
         _isLoadingPosts = false;
       });
     }
+  }
+
+  Future<void> _refreshAll() async {
+    final state = Provider.of<ProfileState>(context, listen: false);
+    await Future.wait([
+      state.refresh(),
+      _loadUserPosts(),
+    ]);
+    // After refresh, also update the global AuthState so edit profile changes reflect
+    if (widget.isOwnProfileTab && mounted) {
+      try {
+        final authState = Provider.of<AuthState>(context, listen: false);
+        await authState.getProfileUser();
+      } catch (_) {}
+    }
+  }
+
+  void _shareProfile(ProfileState state) {
+    final username = state.profileUserModel?.userName ?? widget.username ?? '';
+    final link = 'https://threads.net/@$username';
+    Clipboard.setData(ClipboardData(text: link));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(AppLocalizations.of(context)!.linkCopiedToClipboard),
+    ));
   }
 
   @override
@@ -104,15 +134,22 @@ class _ProfilePageState extends State<ProfilePage>
                           child: Icon(CupertinoIcons.list_bullet_indent,
                               color: appColors.textPrimary)))
               ],
-              leading: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Icon(CupertinoIcons.back, color: appColors.textPrimary)),
+              leading: widget.isOwnProfileTab
+                  ? SizedBox.shrink()
+                  : GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: Icon(CupertinoIcons.back,
+                          color: appColors.textPrimary)),
               elevation: 0,
               backgroundColor: Colors.transparent,
             ),
-            body: Center(
+            body: RefreshIndicator(
+              color: appColors.textPrimary,
+              backgroundColor: appColors.background,
+              onRefresh: _refreshAll,
+              child: Center(
                 child: ListView(children: [
               Padding(
                   padding: EdgeInsets.symmetric(horizontal: 15),
@@ -123,54 +160,68 @@ class _ProfilePageState extends State<ProfilePage>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  state.profileUserModel?.displayName ?? '',
-                                  style: TextStyle(
-                                      color: appColors.textPrimary,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                                Container(height: 8),
-                                Row(
-                                  children: [
-                                    Text(
-                                      '@${state.profileUserModel?.userName ?? ''}',
-                                      style: TextStyle(
-                                          color: appColors.textPrimary,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w400),
-                                    ),
-                                    if (state.profileUserModel?.link != null &&
-                                        state.profileUserModel!.link!
-                                            .isNotEmpty) ...[
-                                      Container(width: 5),
-                                      Container(
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                            color: appColors.surface,
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
-                                        padding: EdgeInsets.all(2),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
                                         child: Text(
-                                          state.profileUserModel!.link!,
+                                          state.profileUserModel?.displayName ?? '',
+                                          style: TextStyle(
+                                              color: appColors.textPrimary,
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w600),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                    ]
-                                  ],
-                                )
-                              ],
+                                      if (state.profileUserModel?.isVerified == true) ...[
+                                        SizedBox(width: 4),
+                                        Icon(CupertinoIcons.checkmark_seal_fill,
+                                            size: 18, color: CupertinoColors.activeBlue),
+                                      ],
+                                    ],
+                                  ),
+                                  SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '@${state.profileUserModel?.userName ?? widget.username ?? ''}',
+                                        style: TextStyle(
+                                            color: appColors.textPrimary,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w400),
+                                      ),
+                                      if (state.profileUserModel?.link != null &&
+                                          state.profileUserModel!.link!
+                                              .isNotEmpty) ...[
+                                        SizedBox(width: 5),
+                                        Container(
+                                          height: 20,
+                                          decoration: BoxDecoration(
+                                              color: appColors.surface,
+                                              borderRadius:
+                                                  BorderRadius.circular(10)),
+                                          padding: EdgeInsets.all(2),
+                                          child: Text(
+                                            state.profileUserModel!.link!,
+                                          ),
+                                        ),
+                                      ]
+                                    ],
+                                  )
+                                ],
+                              ),
                             ),
-                            Container(width: 63),
+                            SizedBox(width: 12),
                             Container(
                                 width: 60,
                                 height: 60,
                                 child: _buildAvatar(state)),
                           ],
                         ),
-                        Container(height: 12),
+                        SizedBox(height: 12),
                         // Bio
                         if (state.profileUserModel?.bio != null &&
                             state.profileUserModel!.bio!.isNotEmpty)
@@ -184,59 +235,79 @@ class _ProfilePageState extends State<ProfilePage>
                                   fontWeight: FontWeight.w400),
                             ),
                           ),
-                        Container(height: 16),
+                        SizedBox(height: 16),
                         // Follower / Following counts
                         Row(
                           children: [
                             _buildStatItem(
                               '${state.followStats.followingCount}',
-                              AppLocalizations.of(context)!.statFollowing,
+                              ' ${AppLocalizations.of(context)!.statFollowing}',
                             ),
-                            Container(width: 16),
+                            SizedBox(width: 16),
                             _buildStatItem(
                               '${state.followStats.followersCount}',
-                              AppLocalizations.of(context)!.statFollowers,
+                              ' ${AppLocalizations.of(context)!.statFollowers}',
                             ),
                           ],
                         ),
-                        Container(height: 16),
+                        SizedBox(height: 16),
                         // Action buttons
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (state.isMyProfile) ...[
-                              _buildActionButton(
-                                label: AppLocalizations.of(context)!.editProfile,
-                                onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              EditProfilePage()));
-                                },
+                              Expanded(
+                                child: _buildActionButton(
+                                  label: AppLocalizations.of(context)!.editProfile,
+                                  onTap: () async {
+                                    await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                EditProfilePage()));
+                                    if (mounted) {
+                                      await _refreshAll();
+                                    }
+                                  },
+                                ),
                               ),
-                              Container(width: 10),
-                              _buildActionButton(label: AppLocalizations.of(context)!.shareProfile),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _buildActionButton(
+                                  label: AppLocalizations.of(context)!.shareProfile,
+                                  onTap: () => _shareProfile(state),
+                                ),
+                              ),
                             ] else ...[
-                              _buildActionButton(
-                                label: state.isFollowing ? AppLocalizations.of(context)!.following : AppLocalizations.of(context)!.follow,
-                                isHighlighted: !state.isFollowing,
-                                onTap: () {
-                                  state.followUser(
-                                      removeFollower: state.isFollowing);
-                                },
+                              Expanded(
+                                child: _buildActionButton(
+                                  label: state.isFollowLoading
+                                      ? ''
+                                      : (state.isFollowing
+                                          ? AppLocalizations.of(context)!.following
+                                          : AppLocalizations.of(context)!.follow),
+                                  isHighlighted: !state.isFollowing,
+                                  isLoading: state.isFollowLoading,
+                                  onTap: () {
+                                    state.followUser(
+                                        removeFollower: state.isFollowing);
+                                  },
+                                ),
                               ),
-                              Container(width: 10),
-                              _buildActionButton(label: AppLocalizations.of(context)!.shareProfile),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _buildActionButton(
+                                  label: AppLocalizations.of(context)!.shareProfile,
+                                  onTap: () => _shareProfile(state),
+                                ),
+                              ),
                             ],
                           ],
                         ),
-                        Container(height: 20),
+                        SizedBox(height: 20),
                         // TabBar
                         Container(
                           width: MediaQuery.of(context).size.width,
                           child: TabBar(
-                            onTap: (index) {},
                             controller: _tabController,
                             isScrollable: false,
                             labelColor: appColors.textPrimary,
@@ -244,33 +315,28 @@ class _ProfilePageState extends State<ProfilePage>
                             indicatorColor: appColors.textPrimary,
                             indicatorWeight: 1,
                             tabs: [
-                              Padding(
-                                  padding: EdgeInsets.only(left: 20),
-                                  child: Tab(
-                                      child: Text(
-                                    AppLocalizations.of(context)!.tabThreads,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ))),
-                              Padding(
-                                padding: EdgeInsets.only(right: 0),
-                                child: Tab(
-                                    child: Text(
-                                  AppLocalizations.of(context)!.tabReplies,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                )),
-                              )
+                              Tab(
+                                  child: Text(
+                                AppLocalizations.of(context)!.tabThreads,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              )),
+                              Tab(
+                                  child: Text(
+                              AppLocalizations.of(context)!.tabReplies,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ))
                             ],
                           ),
                         ),
                         Container(
                             width: MediaQuery.of(context).size.width,
-                            height: 300,
+                            height: MediaQuery.of(context).size.height,
                             child: TabBarView(
                                 controller: _tabController,
                                 children: [
@@ -278,7 +344,8 @@ class _ProfilePageState extends State<ProfilePage>
                                   _buildRepliesTab(),
                                 ]))
                       ]))
-            ])));
+            ])),
+            ));
   }
 
   Widget _buildThreadsTab() {
@@ -346,6 +413,15 @@ class _ProfilePageState extends State<ProfilePage>
           height: 60,
           width: 60,
           imageUrl: pic,
+          errorWidget: (_, __, ___) => Container(
+            height: 60,
+            width: 60,
+            decoration: BoxDecoration(
+              color: appColors.surface,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
+          ),
         ));
   }
 
@@ -371,16 +447,16 @@ class _ProfilePageState extends State<ProfilePage>
   Widget _buildActionButton({
     required String label,
     bool isHighlighted = false,
+    bool isLoading = false,
     VoidCallback? onTap,
   }) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return GestureDetector(
-        onTap: onTap,
+        onTap: isLoading ? null : onTap,
         child: Container(
             height: 40,
-            width: 170,
             decoration: BoxDecoration(
-              color: isHighlighted ? appColors.accent : appColors.background,
+              color: isHighlighted ? appColors.textPrimary : appColors.background,
               borderRadius: BorderRadius.circular(8),
               border: isHighlighted
                   ? null
@@ -390,10 +466,18 @@ class _ProfilePageState extends State<ProfilePage>
                     ),
             ),
             alignment: Alignment.center,
-            child: Text(
+            child: isLoading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CupertinoActivityIndicator(
+                      color: isHighlighted ? appColors.background : appColors.textPrimary,
+                    ),
+                  )
+                : Text(
               label,
               style: TextStyle(
-                color: appColors.textPrimary,
+                color: isHighlighted ? appColors.background : appColors.textPrimary,
                 fontWeight: FontWeight.w500,
               ),
             )));

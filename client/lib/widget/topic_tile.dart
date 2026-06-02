@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:threads/pages/topic/topic_detail_page.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/search_service.dart';
 import 'package:threads/theme/app_colors.dart';
 
@@ -81,7 +82,7 @@ class TopicTile extends StatelessWidget {
                   border: Border.all(color: appColors.textSecondary, width: 0.5),
                 ),
                 child: Text(
-                  'Follow',
+                  AppLocalizations.of(context)!.follow,
                   style: TextStyle(
                     fontSize: 15,
                     color: appColors.textPrimary,

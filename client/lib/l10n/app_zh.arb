@@ -129,7 +129,7 @@
   "follow": "关注",
   "unfollow": "取消关注",
   "followers": "粉丝",
-  "following": "关注",
+  "following": "已关注",
   "posts": "帖子",
   "linkCopiedToClipboard": "链接已复制到剪贴板",
   "replyToPost": "回复帖子...",
@@ -431,5 +431,9 @@
   "unpinReply": "取消置顶回复",
   "failedToPostReply": "回复发送失败",
   "failedToPinReply": "置顶回复失败",
-  "failedToUnpinReply": "取消置顶回复失败"
+  "failedToUnpinReply": "取消置顶回复失败",
+  "followRequests": "关注请求",
+  "noPendingFollowRequests": "暂无待处理的关注请求",
+  "confirmButton": "确认",
+  "rejectButton": "拒绝"
 }

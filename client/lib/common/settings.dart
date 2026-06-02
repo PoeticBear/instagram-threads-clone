@@ -15,6 +15,7 @@ import 'package:threads/common/settings/links_page.dart';
 import 'package:threads/pages/community/community_list_page.dart';
 import 'package:threads/pages/post/saved_posts_page.dart';
 import 'package:threads/pages/post/scheduled_posts_page.dart';
+import 'package:threads/pages/settings/follow_requests_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -98,7 +99,12 @@ class _SettingsPageState extends State<SettingsPage> {
               title: l10n.followAndInviteFriends,
               showArrow: true,
               onTap: () {
-                // Placeholder - could navigate to a follow/invite page
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (_) => const FollowRequestsPage(),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 20),

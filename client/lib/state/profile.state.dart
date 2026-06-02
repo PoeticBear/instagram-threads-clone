@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:threads/helper/enum.dart';
-import 'package:threads/helper/utility.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/services/follow_service.dart';
 import 'package:threads/services/user_service.dart';
@@ -46,6 +44,9 @@ class ProfileState extends ChangeNotifier {
   bool _isFollowing = false;
   bool get isFollowing => _isFollowing;
 
+  bool _isFollowLoading = false;
+  bool get isFollowLoading => _isFollowLoading;
+
   FollowStats _followStats = FollowStats();
   FollowStats get followStats => _followStats;
 
@@ -68,29 +69,6 @@ class ProfileState extends ChangeNotifier {
   }
 
   bool get isMyProfile => userId != null && profileId == userId;
-
-  Future<void> _getloggedInUserProfile(String userIdStr) async {
-    try {
-      final userIdInt = int.tryParse(userIdStr);
-      if (userIdInt == null) return;
-
-      final userInfo = await userService.getUserProfile(userIdInt);
-      userId = userIdStr;
-      _userModel = UserModel(
-        userId: userInfo.userId,
-        userName: userInfo.username,
-        displayName: userInfo.displayName,
-        bio: userInfo.bio,
-        profilePic: userInfo.profilePic,
-        isPrivate: userInfo.isPrivate,
-        followersCount: userInfo.followersCount,
-        followingCount: userInfo.followingCount,
-      );
-      notifyListeners();
-    } catch (error) {
-      // Handle error
-    }
-  }
 
   Future<void> _getProfileUser(String? userProfileId) async {
     if (userProfileId == null) return;
@@ -123,6 +101,8 @@ class ProfileState extends ChangeNotifier {
         postsCount: userInfo.postsCount,
       );
 
+      debugPrint('ProfileState._getProfileUser: followersCount=${userInfo.followersCount}, followingCount=${userInfo.followingCount}');
+
       loading = false;
       notifyListeners();
     } catch (error) {
@@ -131,33 +111,32 @@ class ProfileState extends ChangeNotifier {
   }
 
   Future<void> followUser({bool removeFollower = false}) async {
+    if (_isFollowLoading) return;
     try {
       if (_userModel == null || _profileUserModel == null) return;
 
       final profileUserId = int.tryParse(profileId);
       if (profileUserId == null) return;
 
+      _isFollowLoading = true;
       // Optimistic update
       _isFollowing = !removeFollower;
       notifyListeners();
 
       if (removeFollower) {
         await followService.unfollowUser(profileUserId);
-        _profileUserModel?.followersList?.remove(userId);
-        _userModel?.followingList?.remove(profileId);
       } else {
         await followService.followUser(profileUserId);
-        _profileUserModel?.followersList ??= [];
-        if (userId != null) _profileUserModel?.followersList!.add(userId!);
-        _userModel?.followingList ??= [];
-        _userModel?.followingList!.add(profileId);
       }
 
       // Refresh stats after follow/unfollow
       await _loadFollowStats();
     } catch (error) {
       // Rollback on error
-      _isFollowing = removeFollower;
+      _isFollowing = !removeFollower;
+      notifyListeners();
+    } finally {
+      _isFollowLoading = false;
       notifyListeners();
     }
   }
@@ -167,11 +146,17 @@ class ProfileState extends ChangeNotifier {
       final profileUserId = int.tryParse(profileId);
       if (profileUserId == null) return;
       _followStats = await followService.getFollowStats(profileUserId);
+      debugPrint('ProfileState._loadFollowStats: followers=${_followStats.followersCount}, following=${_followStats.followingCount}, isFollowing=${_followStats.isFollowing}');
       _isFollowing = _followStats.isFollowing;
       notifyListeners();
-    } catch (_) {
-      // Stats unavailable, keep defaults
+    } catch (e) {
+      debugPrint('ProfileState._loadFollowStats failed: $e');
     }
+  }
+
+  Future<void> refresh() async {
+    await _getProfileUser(profileId);
+    await _loadFollowStats();
   }
 
   Future<FollowStats> getFollowStats() async {
@@ -221,10 +206,5 @@ class ProfileState extends ChangeNotifier {
     } catch (error) {
       return [];
     }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

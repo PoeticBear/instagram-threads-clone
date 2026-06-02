@@ -1127,4 +1127,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToUnpinReply => 'Failed to unpin reply';
+
+  @override
+  String get followRequests => 'Follow Requests';
+
+  @override
+  String get noPendingFollowRequests => 'No pending follow requests';
+
+  @override
+  String get confirmButton => 'Confirm';
+
+  @override
+  String get rejectButton => 'Reject';
 }
