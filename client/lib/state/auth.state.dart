@@ -254,6 +254,7 @@ class AuthState extends AppStates {
   Future<void> updateUserProfile(
     UserModel? userModel, {
     File? image,
+    bool removeAvatar = false,
   }) async {
     try {
       isBusy = true;
@@ -262,6 +263,8 @@ class AuthState extends AppStates {
       String? avatarUrl;
       if (image != null) {
         avatarUrl = await uploadService.uploadImage(image);
+      } else if (removeAvatar) {
+        avatarUrl = '';
       }
 
       if (userModel != null) {

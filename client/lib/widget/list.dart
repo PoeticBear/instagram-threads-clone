@@ -82,7 +82,7 @@ class UserTilePage extends StatelessWidget {
                     height: 9,
                   ),
                   Text(
-                    "${user.followersCount ?? 0} followers",
+                    "${user.followersCount ?? 0} ${AppLocalizations.of(context)!.followers}",
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -97,29 +97,29 @@ class UserTilePage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  isadded!
-                      ? Container()
-                      : Container(
-                          height: 35,
-                          width: 100,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: appColors.background,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: appColors.textSecondary,
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Text(
-                            AppLocalizations.of(context)!.follow,
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: appColors.textPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                  Container(
+                    height: 35,
+                    width: 100,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: appColors.background,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: appColors.textSecondary,
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Text(
+                      isadded!
+                          ? AppLocalizations.of(context)!.following
+                          : AppLocalizations.of(context)!.follow,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: appColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -128,15 +129,50 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           ),
         ),
         actions: [
-          GestureDetector(
-            onTap: () {
-              // Placeholder for more options
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_horiz, color: appColors.textPrimary),
+            color: appColors.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (value) {
+              final state = context.read<TopicState>();
+              switch (value) {
+                case 'follow':
+                  state.followTopic();
+                  break;
+                case 'unfollow':
+                  state.unfollowTopic();
+                  break;
+                case 'mute':
+                  state.muteTopic();
+                  break;
+                case 'unmute':
+                  state.unmuteTopic();
+                  break;
+              }
             },
-            child: Container(
-              width: 50,
-              height: 50,
-              child: Icon(Icons.more_horiz, color: appColors.textPrimary),
-            ),
+            itemBuilder: (context) {
+              final state = context.read<TopicState>();
+              return [
+                PopupMenuItem(
+                  value: state.isFollowing ? 'unfollow' : 'follow',
+                  child: Text(
+                    state.isFollowing
+                        ? AppLocalizations.of(context)!.unfollowTopic
+                        : AppLocalizations.of(context)!.followTopic,
+                    style: TextStyle(color: appColors.textPrimary),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: state.isMuted ? 'unmute' : 'mute',
+                  child: Text(
+                    state.isMuted
+                        ? AppLocalizations.of(context)!.unmuteTopic
+                        : AppLocalizations.of(context)!.muteTopic,
+                    style: TextStyle(color: appColors.textPrimary),
+                  ),
+                ),
+              ];
+            },
           ),
         ],
         elevation: 0,
@@ -191,6 +227,20 @@ class _TopicDetailPageState extends State<TopicDetailPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Cover image
+          if (topic?.coverUrl != null && topic!.coverUrl!.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CachedNetworkImage(
+                imageUrl: topic.coverUrl!,
+                width: double.infinity,
+                height: 180,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => SizedBox.shrink(),
+              ),
+            ),
+            Container(height: 12),
+          ],
           // Topic name
           Text(
             name,

@@ -102,6 +102,7 @@ class ProfileState extends ChangeNotifier {
       );
 
       debugPrint('ProfileState._getProfileUser: followersCount=${userInfo.followersCount}, followingCount=${userInfo.followingCount}');
+      debugPrint('ProfileState._getProfileUser: profilePic=${_profileUserModel?.profilePic}');
 
       loading = false;
       notifyListeners();

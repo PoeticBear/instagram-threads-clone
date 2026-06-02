@@ -19,7 +19,7 @@ class UploadService {
 
       // 1) 获取预签名 URL
       final presignedResponse = await _apiClient.post(
-        'upload/upload/presigned_url',
+        'upload/presigned_url',
         body: {
           'filename': filename,
           'content_type': contentType,
@@ -76,7 +76,7 @@ class UploadService {
   }) async {
     try {
       final response = await _apiClient.post(
-        'upload/upload/presigned_url',
+        'upload/presigned_url',
         body: {
           'filename': filename,
           'content_type': contentType,

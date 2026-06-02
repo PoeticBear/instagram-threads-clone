@@ -721,12 +721,12 @@ class Post {
       userId = userObj['user_id'] ?? userObj['userId'] ?? userObj['id'] ?? 0;
       username = userObj['username'] ?? '';
       displayName = userObj['display_name'] ?? userObj['displayName'] ?? '';
-      profilePic = userObj['profile_pic'] ?? userObj['profilePic'];
+      profilePic = userObj['avatar'] ?? userObj['profile_pic'] ?? userObj['profilePic'];
     } else {
       userId = json['user_id'] ?? json['userId'] ?? 0;
       username = json['username'] ?? '';
       displayName = json['display_name'] ?? json['displayName'] ?? '';
-      profilePic = json['profile_pic'] ?? json['profilePic'];
+      profilePic = json['avatar'] ?? json['profile_pic'] ?? json['profilePic'];
     }
 
     // Parse media_list
@@ -979,7 +979,7 @@ class Reply {
       userId = json['user_id'] ?? json['userId'] ?? 0;
       username = json['username'] ?? '';
       displayName = json['display_name'] ?? json['displayName'] ?? '';
-      profilePic = json['profile_pic'] ?? json['profilePic'];
+      profilePic = json['avatar'] ?? json['profile_pic'] ?? json['profilePic'];
     }
 
     // Parse first image from media_list (API spec) or fallback to image_url

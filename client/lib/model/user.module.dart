@@ -23,6 +23,7 @@ class UserModel extends Equatable {
   int? accountType;   // 1=Personal, 2=Creator, 3=Business
   int? postsCount;
   String? lastActiveTime;
+  bool? isFollowing;
 
   UserModel({
     this.email,
@@ -47,6 +48,7 @@ class UserModel extends Equatable {
     this.accountType,
     this.postsCount,
     this.lastActiveTime,
+    this.isFollowing,
   });
 
   // Support both Firebase format (camelCase) and API format (snake_case)
@@ -67,7 +69,7 @@ class UserModel extends Equatable {
       bio: map['bio'],
       link: map['link'],
       displayName: map['displayName'] ?? map['display_name'],
-      profilePic: map['profilePic'] ?? map['profile_pic'],
+      profilePic: map['profilePic'] ?? map['avatar'] ?? map['avatar_url'] ?? map['profile_pic'],
       createAt: map['createAt'] ?? map['create_at'] ?? map['createdAt'],
       isPrivate: _parseBool(map['isprivate'] ?? map['is_private'] ?? map['isPrivate']),
       fcmToken: map['fcmToken'] ?? map['fcm_token'],
@@ -82,6 +84,7 @@ class UserModel extends Equatable {
       accountType: map['account_type'] ?? map['accountType'],
       postsCount: map['posts_count'] ?? map['postsCount'],
       lastActiveTime: map['last_active_time'] ?? map['lastActiveTime'],
+      isFollowing: _parseBool(map['is_following'] ?? map['isFollowing']),
     );
   }
 
@@ -124,6 +127,7 @@ class UserModel extends Equatable {
       'account_type': accountType,
       'posts_count': postsCount,
       'last_active_time': lastActiveTime,
+      'is_following': isFollowing,
     };
   }
 
@@ -135,7 +139,7 @@ class UserModel extends Equatable {
       userName: json['username'],
       displayName: json['display_name'] ?? json['displayName'],
       bio: json['bio'],
-      profilePic: json['profile_pic'] ?? json['profilePic'],
+      profilePic: json['avatar'] ?? json['avatar_url'] ?? json['profile_pic'] ?? json['profilePic'],
       isPrivate: _parseBool(json['is_private'] ?? json['isPrivate']),
       followersCount: json['followers_count'] ?? json['followersCount'],
       followingCount: json['following_count'] ?? json['followingCount'],
@@ -167,6 +171,7 @@ class UserModel extends Equatable {
     int? accountType,
     int? postsCount,
     String? lastActiveTime,
+    bool? isFollowing,
   }) {
     return UserModel(
       email: email ?? this.email,
@@ -191,6 +196,7 @@ class UserModel extends Equatable {
       accountType: accountType ?? this.accountType,
       postsCount: postsCount ?? this.postsCount,
       lastActiveTime: lastActiveTime ?? this.lastActiveTime,
+      isFollowing: isFollowing ?? this.isFollowing,
     );
   }
 
@@ -221,5 +227,6 @@ class UserModel extends Equatable {
         accountType,
         postsCount,
         lastActiveTime,
+        isFollowing,
       ];
 }

@@ -184,10 +184,11 @@ class _ProfilePageState extends State<ProfilePage>
                                     ],
                                   ),
                                   SizedBox(height: 8),
+                                  if ((state.profileUserModel?.userName ?? widget.username ?? '').isNotEmpty)
                                   Row(
                                     children: [
                                       Text(
-                                        '@${state.profileUserModel?.userName ?? widget.username ?? ''}',
+                                        '@${state.profileUserModel?.userName ?? widget.username}',
                                         style: TextStyle(
                                             color: appColors.textPrimary,
                                             fontSize: 15,
@@ -325,7 +326,7 @@ class _ProfilePageState extends State<ProfilePage>
                               )),
                               Tab(
                                   child: Text(
-                              AppLocalizations.of(context)!.tabReplies,
+                              AppLocalizations.of(context)!.tabMedia,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -341,7 +342,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 controller: _tabController,
                                 children: [
                                   _buildThreadsTab(),
-                                  _buildRepliesTab(),
+                                  _buildMediaTab(),
                                 ]))
                       ]))
             ])),
@@ -373,23 +374,39 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildRepliesTab() {
+  Widget _buildMediaTab() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    final replies = _userPosts.where((p) => p.replyToPostId != null && p.replyToPostId!.isNotEmpty).toList();
-    if (replies.isEmpty) {
+    final mediaPosts = _userPosts.where((p) => p.imagePath != null && p.imagePath!.isNotEmpty).toList();
+    if (mediaPosts.isEmpty) {
       return Center(
         child: Text(
-          AppLocalizations.of(context)!.noRepliesYet,
+          AppLocalizations.of(context)!.noMediaYet,
           style: TextStyle(color: appColors.textHint),
         ),
       );
     }
-    return ListView.builder(
+    return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
-      itemCount: replies.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 2,
+        mainAxisSpacing: 2,
+      ),
+      itemCount: mediaPosts.length,
       itemBuilder: (context, index) {
-        return FeedPostWidget(postModel: replies[index]);
+        final post = mediaPosts[index];
+        return CachedNetworkImage(
+          fit: BoxFit.cover,
+          imageUrl: post.imagePath!,
+          placeholder: (_, __) => Container(
+            color: appColors.surface,
+          ),
+          errorWidget: (_, __, ___) => Container(
+            color: appColors.surface,
+            child: Icon(Icons.broken_image, color: appColors.textSecondary),
+          ),
+        );
       },
     );
   }
@@ -397,32 +414,33 @@ class _ProfilePageState extends State<ProfilePage>
   Widget _buildAvatar(ProfileState state) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final pic = state.profileUserModel?.profilePic ?? '';
-    if (pic.isEmpty) {
-      return Container(
-        decoration: BoxDecoration(
-          color: appColors.surface,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
-      );
-    }
-    return ClipRRect(
-        borderRadius: BorderRadius.circular(100),
-        child: CachedNetworkImage(
-          fit: BoxFit.cover,
-          height: 60,
-          width: 60,
-          imageUrl: pic,
-          errorWidget: (_, __, ___) => Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              color: appColors.surface,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
-          ),
-        ));
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: appColors.textSecondary, width: 0.5),
+      ),
+      child: ClipOval(
+        child: pic.isEmpty
+            ? Container(
+                color: appColors.surface,
+                child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
+              )
+            : CachedNetworkImage(
+                fit: BoxFit.cover,
+                imageUrl: pic,
+                placeholder: (_, __) => Container(
+                  color: appColors.surface,
+                  child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  color: appColors.surface,
+                  child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
+                ),
+              ),
+      ),
+    );
   }
 
   Widget _buildStatItem(String count, String label) {

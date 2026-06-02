@@ -506,7 +506,6 @@ class _ComposePostState extends State<ComposePost> {
         leading: Container(),
         flexibleSpace: SafeArea(
           child: Container(
-            color: appColors.surfaceTertiary,
             height: 56,
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -822,7 +821,6 @@ class _ComposePostState extends State<ComposePost> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: appColors.surfaceTertiary,
         border: Border(top: BorderSide(color: appColors.divider, width: 0.5)),
       ),
       child: SafeArea(

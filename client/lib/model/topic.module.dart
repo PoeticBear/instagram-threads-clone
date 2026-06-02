@@ -28,7 +28,7 @@ class TopicInfo {
       description: json['description'],
       postsCount: json['posts_count'] ?? json['postsCount'] ?? 0,
       followersCount: json['followers_count'] ?? json['followersCount'] ?? 0,
-      isFollowing: json['is_following'] ?? json['isFollowing'] ?? false,
+      isFollowing: json['is_followed'] ?? json['is_following'] ?? json['isFollowing'] ?? false,
       isMuted: json['is_muted'] ?? json['isMuted'] ?? false,
       coverUrl: json['cover_url'] ?? json['coverUrl'],
       createTime: json['create_time'] ?? json['createTime'],

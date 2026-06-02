@@ -24,6 +24,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _pronouns;
   late TextEditingController _location;
   File? _image;
+  bool _avatarRemoved = false;
+  bool _isSubmitting = false;
   int _selectedGender = 1; // 1=Not set, 2=Male, 3=Female, 4=Other
   bool _isPrivate = false;
   int _accountType = 1; // 1=Personal, 2=Creator, 3=Business
@@ -128,12 +130,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               Padding(
                                 padding: EdgeInsets.only(right: 15),
                                 child: GestureDetector(
-                                    onTap: _submitButton,
-                                    child: Text(AppLocalizations.of(context)!.done,
-                                        style: TextStyle(
-                                            color: appColors.accent,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w600))),
+                                    onTap: _isSubmitting ? null : _submitButton,
+                                    child: _isSubmitting
+                                        ? CupertinoActivityIndicator()
+                                        : Text(AppLocalizations.of(context)!.done,
+                                            style: TextStyle(
+                                                color: appColors.accent,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w600))),
                               )
                             ],
                           )),
@@ -345,7 +349,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: Text(AppLocalizations.of(context)!.gallery),
                   onPressed: () {
                     getImage(context, ImageSource.gallery, (file) {
-                      setState(() { _image = file; });
+                      setState(() { _image = file; _avatarRemoved = false; });
                     });
                     Navigator.pop(context);
                   },
@@ -354,7 +358,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: Text(AppLocalizations.of(context)!.cameraLabel),
                   onPressed: () {
                     getImage(context, ImageSource.camera, (file) {
-                      setState(() { _image = file; });
+                      setState(() { _image = file; _avatarRemoved = false; });
                     });
                     Navigator.pop(context);
                   },
@@ -362,6 +366,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 CupertinoActionSheetAction(
                   child: Text(AppLocalizations.of(context)!.remove, style: TextStyle(color: appColors.destructive)),
                   onPressed: () {
+                    setState(() { _image = null; _avatarRemoved = true; });
                     Navigator.pop(context);
                   },
                 ),
@@ -379,13 +384,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
         radius: 25,
         backgroundImage: (_image != null
             ? FileImage(_image!)
-            : (state.profileUserModel?.profilePic ?? '').isEmpty
-                ? null
-                : CachedNetworkImageProvider(
+            : (!_avatarRemoved && (state.profileUserModel?.profilePic ?? '').isNotEmpty)
+                ? CachedNetworkImageProvider(
                     scale: 2,
                     state.profileUserModel!.profilePic!,
-                  ) as ImageProvider),
-        child: (_image == null && (state.profileUserModel?.profilePic ?? '').isEmpty)
+                  ) as ImageProvider
+                : null),
+        child: (_image == null && (_avatarRemoved || (state.profileUserModel?.profilePic ?? '').isEmpty))
             ? Icon(Icons.person, size: 30, color: appColors.textSecondary)
             : null,
       ),
@@ -457,6 +462,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _submitButton() async {
+    if (_isSubmitting) return;
     if (_displayName.text.length > 100) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(AppLocalizations.of(context)!.maxNameChars),
@@ -469,6 +475,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ));
       return;
     }
+    setState(() { _isSubmitting = true; });
     var state = Provider.of<AuthState>(context, listen: false);
     var model = state.userModel!.copyWith(
       displayName: _displayName.text,
@@ -481,7 +488,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       accountType: _accountType,
     );
     try {
-      await state.updateUserProfile(model, image: _image);
+      await state.updateUserProfile(model, image: _image, removeAvatar: _avatarRemoved);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
@@ -489,6 +496,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           content: Text(AppLocalizations.of(context)!.updateFailed),
         ));
       }
+    } finally {
+      if (mounted) setState(() { _isSubmitting = false; });
     }
   }
 }

@@ -182,7 +182,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
       children: [
         if (state.searchUsers.isNotEmpty) ...[
           _buildSectionHeader(AppLocalizations.of(context)!.sectionUsers, state.totalUsers),
-          ...state.searchUsers.take(3).map((u) => UserTilePage(user: u, isadded: false)),
+          ...state.searchUsers.take(3).map((u) => UserTilePage(user: u, isadded: u.isFollowing ?? false)),
           if (state.totalUsers > 3)
             _buildSeeAllButton(AppLocalizations.of(context)!.seeAllUsers, () {
               _tabController.animateTo(1);
@@ -190,7 +190,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
         ],
         if (state.searchTopics.isNotEmpty) ...[
           _buildSectionHeader(AppLocalizations.of(context)!.sectionTopics, state.totalTopics),
-          ...state.searchTopics.take(3).map((t) => TopicTile(topic: t)),
+          ...state.searchTopics.take(3).map((t) => TopicTile(trendingTopic: t)),
           if (state.totalTopics > 3)
             _buildSeeAllButton(AppLocalizations.of(context)!.seeAllTopics, () {
               _tabController.animateTo(2);
@@ -252,7 +252,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
       itemCount: state.searchUsers.length,
       separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
-        return UserTilePage(user: state.searchUsers[index], isadded: false);
+        return UserTilePage(user: state.searchUsers[index], isadded: state.searchUsers[index].isFollowing ?? false);
       },
     );
   }
@@ -264,7 +264,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
       itemCount: state.searchTopics.length,
       separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
-        return TopicTile(topic: state.searchTopics[index]);
+        return TopicTile(trendingTopic: state.searchTopics[index]);
       },
     );
   }
@@ -321,7 +321,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
         if (state.hotTopics.isNotEmpty) ...[
           _buildEmptySectionHeader(AppLocalizations.of(context)!.trendingTopics),
           ...state.hotTopics.map((t) => TopicTile(
-            topic: t,
+            trendingTopic: t,
             onTap: () {
               _textController.text = t.name;
               state.onSearchChanged(t.name);

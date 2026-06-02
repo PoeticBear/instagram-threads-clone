@@ -187,57 +187,70 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     postId: widget.postModel.id,
                     pollData: widget.postModel.pollData!,
                   )
+                // ── [临时隐藏] 线程连接线设计 (后期需恢复) ──
+                // 原始布局: Row 包含左侧竖线(2x300) + 迷你头像(15px) + 右侧图片(300x280)
+                // 恢复时删除下方 Padding，取消注释下方 Row 代码块即可
+                // : Row(
+                //     mainAxisAlignment: MainAxisAlignment.end,
+                //     children: [
+                //       Container(width: 10),
+                //       Column(children: [
+                //         Container(width: 2, height: 300, color: appColors.divider),
+                //         Container(height: 5),
+                //         avatar(profilePic, 15),
+                //       ]),
+                //       Flexible(
+                //         child: Padding(
+                //           padding: EdgeInsets.only(left: 48, right: 10),
+                //           child: ClipRRect(
+                //             borderRadius: BorderRadius.circular(20),
+                //             child: CachedNetworkImage(
+                //               height: 300, width: 280, fit: BoxFit.cover,
+                //               imageUrl: widget.postModel.imagePath!,
+                //               placeholder: (context, url) => Container(
+                //                 height: 300, width: 280, color: appColors.surface,
+                //                 child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: appColors.textSecondary)),
+                //               ),
+                //               errorWidget: (context, url, error) => Container(
+                //                 height: 300, width: 280, color: appColors.surface,
+                //                 child: Icon(Icons.broken_image, color: appColors.textSecondary),
+                //               ),
+                //             ),
+                //           ),
+                //         ),
+                //       ),
+                //     ],
+                //   ),
                 : !hasImage
                     ? SizedBox.shrink()
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            width: 10,
-                          ),
-                          Column(
-                            children: [
-                              Container(
-                                width: 2,
-                                height: 300,
-                                color: appColors.divider,
+                    : Padding(
+                        padding: EdgeInsets.only(left: 55, right: 10),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: CachedNetworkImage(
+                            height: 300,
+                            width: 280,
+                            fit: BoxFit.cover,
+                            imageUrl: widget.postModel.imagePath!,
+                            placeholder: (context, url) => Container(
+                              height: 300,
+                              width: 280,
+                              color: appColors.surface,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: appColors.textSecondary,
+                                ),
                               ),
-                              Container(
-                                height: 5,
-                          ),
-                              avatar(profilePic, 15),
-                            ],
-                          ),
-                          Flexible(
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 48, right: 10),
-                              child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: CachedNetworkImage(
-                                          height: 300,
-                                          width: 280,
-                                          fit: BoxFit.cover,
-                                          imageUrl: widget.postModel.imagePath!,
-                                          placeholder: (context, url) => Container(
-                                            height: 300,
-                                            width: 280,
-                                            color: appColors.surface,
-                                            child: Center(
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: appColors.textSecondary,
-                                              ),
-                                            ),
-                                          ),
-                                          errorWidget: (context, url, error) => Container(
-                                            height: 300,
-                                            width: 280,
-                                            color: appColors.surface,
-                                            child: Icon(Icons.broken_image, color: appColors.textSecondary),
-                                          ),
-                                      ))),
                             ),
-                        ],
+                            errorWidget: (context, url, error) => Container(
+                              height: 300,
+                              width: 280,
+                              color: appColors.surface,
+                              child: Icon(Icons.broken_image, color: appColors.textSecondary),
+                            ),
+                          ),
+                        ),
                       ),
             ),
             Container(
