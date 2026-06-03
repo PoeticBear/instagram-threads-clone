@@ -90,6 +90,52 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ));
   }
 
+  Widget _notificationIcon() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final isActive = tab == 3;
+    return Consumer<NotificationState>(
+      builder: (_, state, __) {
+        final showBadge = state.unreadCount > 0;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              tab = 3;
+            });
+          },
+          child: SizedBox(
+            width: 30,
+            height: 30,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Center(
+                  child: Icon(
+                    Iconsax.heart,
+                    size: 30,
+                    color: isActive ? appColors.textPrimary : appColors.textSecondary,
+                  ),
+                ),
+                if (showBadge)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: appColors.accent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget bottomNavBar() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     Widget separator = Container(
@@ -107,7 +153,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           separator,
           iconBar(2, Iconsax.edit),
           separator,
-          iconBar(3, Iconsax.heart),
+          _notificationIcon(),
           separator,
           iconBar(
             4,

@@ -121,13 +121,25 @@ class NotificationState extends AppStates {
   Future<void> markAsRead(List<String> ids) async {
     try {
       await notificationService.markAsRead(ids);
-      for (final notification in _notifications) {
-        if (ids.contains(notification.id)) {
-          // NotificationItem is immutable, so we rebuild the list
-          break;
+      for (int i = 0; i < _notifications.length; i++) {
+        final n = _notifications[i];
+        if (ids.contains(n.id) && !n.isRead) {
+          _notifications[i] = NotificationItem(
+            id: n.id,
+            type: n.type,
+            body: n.body,
+            fromUserId: n.fromUserId,
+            fromUsername: n.fromUsername,
+            fromDisplayName: n.fromDisplayName,
+            fromProfilePic: n.fromProfilePic,
+            postId: n.postId,
+            isRead: true,
+            createdAt: n.createdAt,
+          );
         }
       }
       await fetchUnreadCount();
+      notifyListeners();
     } catch (_) {}
   }
 
@@ -141,7 +153,6 @@ class NotificationState extends AppStates {
           _notifications[i] = NotificationItem(
             id: n.id,
             type: n.type,
-            title: n.title,
             body: n.body,
             fromUserId: n.fromUserId,
             fromUsername: n.fromUsername,

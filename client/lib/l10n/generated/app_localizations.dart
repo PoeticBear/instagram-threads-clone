@@ -1808,6 +1808,24 @@ abstract class AppLocalizations {
   /// **'Follows'**
   String get filterFollows;
 
+  /// No description provided for @filterReposts.
+  ///
+  /// In en, this message translates to:
+  /// **'Reposts'**
+  String get filterReposts;
+
+  /// No description provided for @filterQuotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotes'**
+  String get filterQuotes;
+
+  /// No description provided for @markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get markAllRead;
+
   /// No description provided for @quoteRepost.
   ///
   /// In en, this message translates to:
@@ -2425,6 +2443,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reject'**
   String get rejectButton;
+
+  /// No description provided for @reportPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Post'**
+  String get reportPost;
+
+  /// No description provided for @reportSpam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get reportSpam;
+
+  /// No description provided for @reportHarassment.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment'**
+  String get reportHarassment;
+
+  /// No description provided for @reportHateSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Hate Speech'**
+  String get reportHateSpeech;
+
+  /// No description provided for @reportSelfHarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-harm'**
+  String get reportSelfHarm;
+
+  /// No description provided for @reportViolence.
+  ///
+  /// In en, this message translates to:
+  /// **'Violence'**
+  String get reportViolence;
+
+  /// No description provided for @reportPrivacyViolation.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Violation'**
+  String get reportPrivacyViolation;
+
+  /// No description provided for @reportMisinformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Misinformation'**
+  String get reportMisinformation;
+
+  /// No description provided for @reportIntellectualProperty.
+  ///
+  /// In en, this message translates to:
+  /// **'Intellectual Property'**
+  String get reportIntellectualProperty;
+
+  /// No description provided for @reportOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reportOther;
+
+  /// No description provided for @reportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted successfully'**
+  String get reportSuccess;
+
+  /// No description provided for @reportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit report'**
+  String get reportFailed;
 }
 
 class _AppLocalizationsDelegate

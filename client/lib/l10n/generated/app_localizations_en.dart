@@ -879,6 +879,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterFollows => 'Follows';
 
   @override
+  String get filterReposts => 'Reposts';
+
+  @override
+  String get filterQuotes => 'Quotes';
+
+  @override
+  String get markAllRead => 'Mark all as read';
+
+  @override
   String get quoteRepost => 'Quote this post';
 
   @override
@@ -1206,4 +1215,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rejectButton => 'Reject';
+
+  @override
+  String get reportPost => 'Report Post';
+
+  @override
+  String get reportSpam => 'Spam';
+
+  @override
+  String get reportHarassment => 'Harassment';
+
+  @override
+  String get reportHateSpeech => 'Hate Speech';
+
+  @override
+  String get reportSelfHarm => 'Self-harm';
+
+  @override
+  String get reportViolence => 'Violence';
+
+  @override
+  String get reportPrivacyViolation => 'Privacy Violation';
+
+  @override
+  String get reportMisinformation => 'Misinformation';
+
+  @override
+  String get reportIntellectualProperty => 'Intellectual Property';
+
+  @override
+  String get reportOther => 'Other';
+
+  @override
+  String get reportSuccess => 'Report submitted successfully';
+
+  @override
+  String get reportFailed => 'Failed to submit report';
 }

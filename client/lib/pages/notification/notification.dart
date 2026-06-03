@@ -63,6 +63,23 @@ class _NotificationPageState extends State<NotificationPage> {
             fontWeight: FontWeight.w700,
           ),
         ),
+        actions: [
+          Consumer<NotificationState>(
+            builder: (_, state, __) {
+              if (state.unreadCount == 0) return const SizedBox.shrink();
+              return TextButton(
+                onPressed: () => state.markAllAsRead(),
+                child: Text(
+                  AppLocalizations.of(context)!.markAllRead,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
+                    fontSize: 14,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -122,6 +139,22 @@ class _NotificationPageState extends State<NotificationPage> {
             type: 4,
             currentType: state.filterType,
             onTap: () => state.setFilter(4),
+          ),
+          const SizedBox(width: 8),
+          _filterChip(
+            context: context,
+            label: AppLocalizations.of(context)!.filterReposts,
+            type: 5,
+            currentType: state.filterType,
+            onTap: () => state.setFilter(5),
+          ),
+          const SizedBox(width: 8),
+          _filterChip(
+            context: context,
+            label: AppLocalizations.of(context)!.filterQuotes,
+            type: 6,
+            currentType: state.filterType,
+            onTap: () => state.setFilter(6),
           ),
           const SizedBox(width: 16),
         ],
@@ -307,9 +340,7 @@ class _NotificationTile extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Opacity(
-          opacity: notification.isRead ? 0.6 : 1.0,
-          child: Row(
+        child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Avatar
@@ -400,7 +431,6 @@ class _NotificationTile extends StatelessWidget {
                 ),
             ],
           ),
-        ),
       ),
     );
   }

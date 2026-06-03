@@ -1,13 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/common/locator.dart';
 import 'package:threads/theme/app_colors.dart';
-import 'package:threads/widget/reply_bottom_sheet.dart';
+import 'package:threads/state/post.state.dart';
+import 'package:threads/widget/poll_widget.dart';
 
 class PostDetailPage extends StatefulWidget {
   final String postId;
@@ -32,6 +35,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _currentPage = 1;
+
+  final TextEditingController _replyController = TextEditingController();
+  final FocusNode _replyFocusNode = FocusNode();
+  bool _isPosting = false;
+
+  @override
+  void dispose() {
+    _replyController.dispose();
+    _replyFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -120,67 +134,90 @@ class _PostDetailPageState extends State<PostDetailPage> {
       appBar: AppBar(
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Icon(CupertinoIcons.back, color: appColors.textPrimary),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(CupertinoIcons.back, color: appColors.textPrimary),
+              Text(
+                AppLocalizations.of(context)!.back,
+                style: TextStyle(color: appColors.textPrimary, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+        leadingWidth: 80,
+        centerTitle: true,
+        title: Text(
+          AppLocalizations.of(context)!.postDetail,
+          style: TextStyle(color: appColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: appColors.textPrimary))
-          : RefreshIndicator(
-              color: appColors.textPrimary,
-              backgroundColor: appColors.background,
-              onRefresh: () async {
-                _currentPage = 1;
-                _hasMore = true;
-                await _loadData();
-              },
-              child: CustomScrollView(
-                slivers: [
-                  // Post content
-                  SliverToBoxAdapter(child: _buildPostContent(context)),
-                  // Divider
-                  SliverToBoxAdapter(
-                    child: Divider(color: appColors.divider, height: 0.5),
-                  ),
-                  // Replies
-                  if (_replies.isEmpty)
-                    SliverFillRemaining(
-                      child: Center(
-                        child: Text(
-                          AppLocalizations.of(context)!.noRepliesYet,
-                          style: TextStyle(color: appColors.textHint),
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator(color: appColors.textPrimary))
+                : RefreshIndicator(
+                    color: appColors.textPrimary,
+                    backgroundColor: appColors.background,
+                    onRefresh: () async {
+                      _currentPage = 1;
+                      _hasMore = true;
+                      await _loadData();
+                    },
+                    child: CustomScrollView(
+                      slivers: [
+                        // Post content
+                        SliverToBoxAdapter(child: _buildPostContent(context)),
+                        // Divider
+                        SliverToBoxAdapter(
+                          child: Divider(color: appColors.divider, height: 0.5),
                         ),
-                      ),
-                    )
-                  else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index == _replies.length) {
-                            if (_hasMore) _loadMore();
-                            return Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: appColors.textPrimary,
-                                  ),
-                                ),
+                        // Replies
+                        if (_replies.isEmpty)
+                          SliverFillRemaining(
+                            child: Center(
+                              child: Text(
+                                AppLocalizations.of(context)!.noRepliesYet,
+                                style: TextStyle(color: appColors.textHint),
                               ),
-                            );
-                          }
-                          return _buildReplyItem(context, _replies[index]);
-                        },
-                        childCount: _replies.length + (_hasMore ? 1 : 0),
-                      ),
+                            ),
+                          )
+                        else
+                          SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                if (index == _replies.length) {
+                                  if (_hasMore) _loadMore();
+                                  return Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: appColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return _buildReplyItem(context, _replies[index]);
+                              },
+                              childCount: _replies.length + (_hasMore ? 1 : 0),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              ),
-            ),
+                  ),
+          ),
+          // Bottom reply input bar
+          _buildReplyInputBar(context),
+        ],
+      ),
     );
   }
 
@@ -208,17 +245,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w700),
                 ),
               ),
-              GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: appColors.background,
-                    builder: (context) => ReplyBottomSheet(postId: widget.postId),
-                  );
-                },
-                child: Icon(Icons.chat_bubble_outline, color: appColors.textPrimary, size: 20),
-              ),
             ],
           ),
           SizedBox(height: 12),
@@ -226,18 +252,42 @@ class _PostDetailPageState extends State<PostDetailPage> {
             post.bio ?? '',
             style: TextStyle(color: appColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w400),
           ),
-          if (hasImage) ...[
+          if (post.pollData != null) ...[
             SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: CachedNetworkImage(
-                imageUrl: post.imagePath!,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorWidget: (_, __, ___) => Container(
-                  height: 200,
-                  color: appColors.surface,
-                  child: Icon(Icons.broken_image, color: appColors.textSecondary),
+            Consumer<PostState>(
+              builder: (context, postState, _) {
+                PollData pollData = post.pollData!;
+                try {
+                  final feedPost = postState.feedlist?.firstWhere(
+                    (p) => p.postId == widget.postId || p.key == widget.postId,
+                  );
+                  if (feedPost?.pollData != null) {
+                    pollData = feedPost!.pollData!;
+                  }
+                } catch (_) {}
+                return PollWidget(
+                  postId: widget.postId,
+                  pollData: pollData,
+                  padding: EdgeInsets.zero,
+                );
+              },
+            ),
+          ],
+          if (hasImage && post.pollData == null) ...[
+            SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => _showFullScreenImage(context, post.imagePath!),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CachedNetworkImage(
+                  imageUrl: post.imagePath!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  errorWidget: (_, __, ___) => Container(
+                    height: 200,
+                    color: appColors.surface,
+                    child: Icon(Icons.broken_image, color: appColors.textSecondary),
+                  ),
                 ),
               ),
             ),
@@ -361,6 +411,33 @@ class _PostDetailPageState extends State<PostDetailPage> {
     );
   }
 
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            leading: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Icon(CupertinoIcons.xmark, color: Colors.white),
+            ),
+            elevation: 0,
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   String _formatTime(DateTime dt) {
     final l10n = AppLocalizations.of(context)!;
     final diff = DateTime.now().difference(dt);
@@ -369,5 +446,111 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (diff.inHours < 24) return l10n.hoursAgo(diff.inHours);
     if (diff.inDays < 7) return l10n.daysAgo(diff.inDays);
     return '${dt.month}/${dt.day}';
+  }
+
+  Widget _buildReplyInputBar(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return Container(
+      padding: EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 8,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+      ),
+      decoration: BoxDecoration(
+        color: appColors.background,
+        border: Border(top: BorderSide(color: appColors.divider, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _replyController,
+              focusNode: _replyFocusNode,
+              style: TextStyle(color: appColors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.writeAReply,
+                hintStyle: TextStyle(color: appColors.textSecondary),
+                filled: true,
+                fillColor: appColors.surface,
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+                isDense: true,
+              ),
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _postReply(),
+            ),
+          ),
+          SizedBox(width: 8),
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: _isPosting
+                ? Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: appColors.textPrimary,
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    onPressed: _postReply,
+                    icon: Icon(Iconsax.send_2, size: 18),
+                    style: IconButton.styleFrom(
+                      backgroundColor: appColors.textPrimary,
+                      foregroundColor: appColors.background,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _postReply() async {
+    final content = _replyController.text.trim();
+    if (content.isEmpty) return;
+
+    setState(() => _isPosting = true);
+    try {
+      final newReply = await postService.createReply(
+        postId: widget.postId,
+        content: content,
+      );
+      if (mounted) {
+        Provider.of<PostState>(context, listen: false)
+            .incrementReplyCount(widget.postId);
+        setState(() {
+          _replies.insert(0, newReply);
+          _replyController.clear();
+          _isPosting = false;
+          if (_post != null) {
+            _post = _post!.copyWith(
+              repliesCount: (_post!.repliesCount ?? 0) + 1,
+            );
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isPosting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.failedToPostReply),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 }

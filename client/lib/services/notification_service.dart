@@ -52,7 +52,6 @@ class NotificationService {
 class NotificationItem {
   final String id;
   final String type;
-  final String title;
   final String body;
   final String? fromUserId;
   final String? fromUsername;
@@ -65,7 +64,6 @@ class NotificationItem {
   NotificationItem({
     required this.id,
     required this.type,
-    required this.title,
     required this.body,
     this.fromUserId,
     this.fromUsername,
@@ -84,7 +82,7 @@ class NotificationItem {
       case 4: return 'mention';
       case 5: return 'repost';
       case 6: return 'quote';
-      default: return 'follow';
+      default: return 'unknown';
     }
   }
 
@@ -93,7 +91,6 @@ class NotificationItem {
     return NotificationItem(
       id: json['id']?.toString() ?? '',
       type: _typeIntToString(json['type'] as int?),
-      title: json['content'] ?? '',
       body: json['content'] ?? '',
       fromUserId: sender?['id']?.toString(),
       fromUsername: sender?['username'] as String?,

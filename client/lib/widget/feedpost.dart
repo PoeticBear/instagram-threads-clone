@@ -903,7 +903,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 textColor: appColors.destructive,
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  postState.reportPost(postId, reason: 'Inappropriate content');
+                  _showReportMenu(context, postId, postState);
                 },
               ),
               _buildSheetDivider(),
@@ -928,6 +928,94 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showReportMenu(BuildContext context, String postId, PostState postState) {
+    final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final int targetId = int.tryParse(postId) ?? 0;
+
+    // reportType values: 1=Spam, 2=Harassment, 3=Hate Speech, 4=Self-harm,
+    //                    5=Violence, 6=Privacy Violation, 7=Misinformation,
+    //                    8=Intellectual Property, 9=Other
+    final reportOptions = [
+      (type: 1, label: l10n.reportSpam),
+      (type: 2, label: l10n.reportHarassment),
+      (type: 3, label: l10n.reportHateSpeech),
+      (type: 4, label: l10n.reportSelfHarm),
+      (type: 5, label: l10n.reportViolence),
+      (type: 6, label: l10n.reportPrivacyViolation),
+      (type: 7, label: l10n.reportMisinformation),
+      (type: 8, label: l10n.reportIntellectualProperty),
+      (type: 9, label: l10n.reportOther),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: appColors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: appColors.textSecondary.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.reportPost,
+                    style: TextStyle(
+                      color: appColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              Divider(color: appColors.textSecondary.withOpacity(0.1)),
+              ...reportOptions.map((option) => _buildSheetOption(
+                label: option.label,
+                textColor: appColors.destructive,
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  try {
+                    await postState.reportContent(
+                      targetType: 1, // Post
+                      targetId: targetId,
+                      reportType: option.type,
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.reportSuccess)),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.reportFailed)),
+                      );
+                    }
+                  }
+                },
+              )),
+            ],
+          ),
         ),
       ),
     );

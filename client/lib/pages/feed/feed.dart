@@ -100,7 +100,11 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
           });
         }
 
-        return ListView.builder(
+        return RefreshIndicator(
+          color: appColors.textPrimary,
+          backgroundColor: appColors.surface,
+          onRefresh: () => state.refresh(),
+          child: ListView.builder(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount: posts.length + 1 + (state.isLoadingMore ? 1 : 0),
@@ -127,7 +131,9 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
               return FeedPostWidget(
                 postModel: posts[postIndex],
               );
-            });
+            },
+          ),
+        );
           }),
           ),
         ],

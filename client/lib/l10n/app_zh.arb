@@ -305,6 +305,9 @@
   "notifiedQuotedPost": "引用了你的帖子",
   "filterLikes": "赞",
   "filterFollows": "关注",
+  "filterReposts": "转发",
+  "filterQuotes": "引用",
+  "markAllRead": "全部标记已读",
   "quoteRepost": "引用此帖子",
   "quotePlaceholder": "添加评论...",
   "noThreadsYetOthers": "暂无帖子",
@@ -457,5 +460,17 @@
   "followRequests": "关注请求",
   "noPendingFollowRequests": "暂无待处理的关注请求",
   "confirmButton": "确认",
-  "rejectButton": "拒绝"
+  "rejectButton": "拒绝",
+  "reportPost": "举报帖子",
+  "reportSpam": "垃圾信息",
+  "reportHarassment": "骚扰",
+  "reportHateSpeech": "仇恨言论",
+  "reportSelfHarm": "自残",
+  "reportViolence": "暴力",
+  "reportPrivacyViolation": "侵犯隐私",
+  "reportMisinformation": "虚假信息",
+  "reportIntellectualProperty": "知识产权",
+  "reportOther": "其他",
+  "reportSuccess": "举报已提交",
+  "reportFailed": "举报提交失败"
 }

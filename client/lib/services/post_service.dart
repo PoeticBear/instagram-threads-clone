@@ -185,13 +185,20 @@ class PostService {
     }
   }
 
-  Future<void> reportPost(String postId, {String? reason}) async {
+  Future<void> reportContent({
+    required int targetType,
+    required int targetId,
+    required int reportType,
+    String? description,
+  }) async {
     try {
       await _apiClient.post(
         'post/report',
         body: {
-          'post_id': postId,
-          if (reason != null) 'reason': reason,
+          'target_type': targetType,
+          'target_id': targetId,
+          'report_type': reportType,
+          if (description != null) 'description': description,
         },
       );
     } on ApiException {
@@ -336,8 +343,17 @@ class PostService {
           'page_size': pageSize.toString(),
         },
       );
-      final list = response['data'] as List? ?? [];
-      return list.map((e) => Post.fromJson(e)).toList();
+      // Support both flat list and paginated response (PageMeta with 'items' key)
+      final data = response['data'];
+      List items;
+      if (data is List) {
+        items = data;
+      } else if (data is Map && data.containsKey('items')) {
+        items = data['items'] as List? ?? [];
+      } else {
+        items = [];
+      }
+      return items.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
     } on ApiException {
       rethrow;
     }

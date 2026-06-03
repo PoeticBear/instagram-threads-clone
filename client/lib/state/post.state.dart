@@ -260,6 +260,26 @@ class PostState extends AppStates {
     }
   }
 
+  /// Pull-to-refresh: reload feed without showing full-page loading spinner.
+  Future<void> refresh() async {
+    try {
+      _currentPage = 1;
+      _hasMore = true;
+
+      final posts = await postService.getFeed();
+
+      _feedlist = posts.map((apiPost) {
+        return _apiPostToModel(apiPost);
+      }).toList();
+
+      _feedlist!.sort((x, y) => DateTime.parse(y.createdAt)
+          .compareTo(DateTime.parse(x.createdAt)));
+    } catch (error) {
+      developer.log('>>> refresh FAILED: $error', name: 'PostState');
+    }
+    notifyListeners();
+  }
+
   Future<void> voteOnPoll(String postId, int optionId) async {
     final postIndex = _feedlist?.indexWhere((p) => p.postId == postId || p.key == postId) ?? -1;
     if (postIndex == -1) return;
@@ -493,13 +513,27 @@ class PostState extends AppStates {
 
   // ==================== Report ====================
 
-  /// Report a post. No optimistic UI update needed.
-  Future<void> reportPost(String postId, {String? reason}) async {
+  /// Report content (post, reply, user, etc.). No optimistic UI update needed.
+  /// [targetType]: 1=Post, 2=Reply, 3=User, 4=Direct Message
+  /// [reportType]: 1=Spam, 2=Harassment, 3=Hate Speech, 4=Self-harm,
+  ///               5=Violence, 6=Privacy Violation, 7=Misinformation,
+  ///               8=Intellectual Property, 9=Other
+  Future<void> reportContent({
+    required int targetType,
+    required int targetId,
+    required int reportType,
+    String? description,
+  }) async {
     try {
-      await postService.reportPost(postId, reason: reason);
-      developer.log('reportPost succeeded for postId=$postId', name: 'PostState');
+      await postService.reportContent(
+        targetType: targetType,
+        targetId: targetId,
+        reportType: reportType,
+        description: description,
+      );
+      developer.log('reportContent succeeded for targetId=$targetId', name: 'PostState');
     } catch (error) {
-      developer.log('reportPost failed: $error', name: 'PostState');
+      developer.log('reportContent failed: $error', name: 'PostState');
       rethrow;
     }
   }

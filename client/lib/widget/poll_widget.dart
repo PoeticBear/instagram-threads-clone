@@ -7,11 +7,13 @@ import 'package:threads/theme/app_colors.dart';
 class PollWidget extends StatelessWidget {
   final String postId;
   final PollData pollData;
+  final EdgeInsetsGeometry padding;
 
   const PollWidget({
     super.key,
     required this.postId,
     required this.pollData,
+    this.padding = const EdgeInsets.only(left: 55, right: 10, top: 8),
   });
 
   String _formatRemainingTime() {
@@ -29,7 +31,7 @@ class PollWidget extends StatelessWidget {
     final showResults = pollData.hasVoted || pollData.isExpired;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 55, right: 10, top: 8),
+      padding: padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

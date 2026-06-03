@@ -872,6 +872,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filterFollows => '关注';
 
   @override
+  String get filterReposts => '转发';
+
+  @override
+  String get filterQuotes => '引用';
+
+  @override
+  String get markAllRead => '全部标记已读';
+
+  @override
   String get quoteRepost => '引用此帖子';
 
   @override
@@ -1199,4 +1208,40 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get rejectButton => '拒绝';
+
+  @override
+  String get reportPost => '举报帖子';
+
+  @override
+  String get reportSpam => '垃圾信息';
+
+  @override
+  String get reportHarassment => '骚扰';
+
+  @override
+  String get reportHateSpeech => '仇恨言论';
+
+  @override
+  String get reportSelfHarm => '自残';
+
+  @override
+  String get reportViolence => '暴力';
+
+  @override
+  String get reportPrivacyViolation => '侵犯隐私';
+
+  @override
+  String get reportMisinformation => '虚假信息';
+
+  @override
+  String get reportIntellectualProperty => '知识产权';
+
+  @override
+  String get reportOther => '其他';
+
+  @override
+  String get reportSuccess => '举报已提交';
+
+  @override
+  String get reportFailed => '举报提交失败';
 }

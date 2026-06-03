@@ -305,6 +305,9 @@
   "notifiedQuotedPost": "quoted your post",
   "filterLikes": "Likes",
   "filterFollows": "Follows",
+  "filterReposts": "Reposts",
+  "filterQuotes": "Quotes",
+  "markAllRead": "Mark all as read",
   "quoteRepost": "Quote this post",
   "quotePlaceholder": "Add a comment...",
   "noThreadsYetOthers": "No threads yet.",
@@ -457,5 +460,17 @@
   "followRequests": "Follow Requests",
   "noPendingFollowRequests": "No pending follow requests",
   "confirmButton": "Confirm",
-  "rejectButton": "Reject"
+  "rejectButton": "Reject",
+  "reportPost": "Report Post",
+  "reportSpam": "Spam",
+  "reportHarassment": "Harassment",
+  "reportHateSpeech": "Hate Speech",
+  "reportSelfHarm": "Self-harm",
+  "reportViolence": "Violence",
+  "reportPrivacyViolation": "Privacy Violation",
+  "reportMisinformation": "Misinformation",
+  "reportIntellectualProperty": "Intellectual Property",
+  "reportOther": "Other",
+  "reportSuccess": "Report submitted successfully",
+  "reportFailed": "Failed to submit report"
 }
