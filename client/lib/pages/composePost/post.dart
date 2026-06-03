@@ -34,6 +34,7 @@ class _ComposePostState extends State<ComposePost> {
   int _replyType = 1;
   bool _isSubmitting = false;
   String? _location;
+  DateTime? _scheduledTime;
 
   static const int _maxImages = 10;
   static const int _maxPollOptions = 4;
@@ -131,6 +132,7 @@ class _ComposePostState extends State<ComposePost> {
       _showPollEditor = false;
       _replyType = 1;
       _location = null;
+      _scheduledTime = null;
     });
     widget.onCancel?.call();
   }
@@ -331,6 +333,7 @@ class _ComposePostState extends State<ComposePost> {
       pollOptions: pollOptions,
       replyType: _replyType != 1 ? _replyType : null,
       location: _location,
+      scheduledTime: _scheduledTime?.toUtc().toIso8601String(),
     );
 
     print('🚀 _submit 结果: postId=$postId');
@@ -340,9 +343,12 @@ class _ComposePostState extends State<ComposePost> {
     setState(() => _isSubmitting = false);
 
     if (postId != null) {
+      final isScheduled = _scheduledTime != null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.publishSuccess),
+          content: Text(isScheduled
+              ? AppLocalizations.of(context)!.schedulePublishSuccess
+              : AppLocalizations.of(context)!.publishSuccess),
           backgroundColor: appColors.repost,
           duration: Duration(seconds: 1),
         ),
@@ -356,6 +362,7 @@ class _ComposePostState extends State<ComposePost> {
         _showPollEditor = false;
         _replyType = 1;
         _location = null;
+        _scheduledTime = null;
       });
       widget.onPostSuccess?.call();
     } else {
@@ -417,6 +424,85 @@ class _ComposePostState extends State<ComposePost> {
             child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
+      ),
+    );
+  }
+
+  // ─── Schedule ───────────────────────────────────────────
+
+  void _showSchedulePicker() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+
+    DateTime initialTime =
+        _scheduledTime ?? DateTime.now().add(Duration(hours: 1));
+    final minimumTime = DateTime.now().add(Duration(minutes: 5));
+    if (initialTime.isBefore(minimumTime)) {
+      initialTime = minimumTime;
+    }
+    DateTime selectedTime = initialTime;
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (modalContext) => Container(
+        height: 280,
+        padding: EdgeInsets.only(top: 6),
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+        ),
+        color: CupertinoColors.systemBackground.resolveFrom(modalContext),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                CupertinoButton(
+                  child: Text(l10n.cancel,
+                      style: TextStyle(color: appColors.textSecondary)),
+                  onPressed: () => Navigator.pop(modalContext),
+                ),
+                CupertinoButton(
+                  child: Text(l10n.clearSchedule,
+                      style: TextStyle(color: appColors.destructive)),
+                  onPressed: () {
+                    setState(() => _scheduledTime = null);
+                    Navigator.pop(modalContext);
+                  },
+                ),
+                CupertinoButton(
+                  child: Text(l10n.confirmButton,
+                      style: TextStyle(
+                          color: appColors.accent, fontWeight: FontWeight.w600)),
+                  onPressed: () {
+                    if (selectedTime
+                        .isBefore(DateTime.now().add(Duration(minutes: 5)))) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(l10n.scheduleTimeTooEarly),
+                        backgroundColor: appColors.destructive,
+                        duration: Duration(seconds: 2),
+                      ));
+                      return;
+                    }
+                    setState(() => _scheduledTime = selectedTime);
+                    Navigator.pop(modalContext);
+                  },
+                ),
+              ],
+            ),
+            Expanded(
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.dateAndTime,
+                initialDateTime: initialTime,
+                minimumDate: minimumTime,
+                maximumDate: DateTime.now().add(Duration(days: 365)),
+                use24hFormat: true,
+                onDateTimeChanged: (DateTime newTime) {
+                  selectedTime = newTime;
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -650,6 +736,27 @@ class _ComposePostState extends State<ComposePost> {
                         ),
                       ),
                     ),
+
+                  // ── Schedule time indicator ──
+                  if (_scheduledTime != null)
+                    Padding(
+                      padding: EdgeInsets.only(left: 52, top: 8),
+                      child: GestureDetector(
+                        onTap: _showSchedulePicker,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Iconsax.clock, size: 14, color: appColors.accent),
+                            SizedBox(width: 4),
+                            Text(
+                              '${_scheduledTime!.year}-${_scheduledTime!.month.toString().padLeft(2, '0')}-${_scheduledTime!.day.toString().padLeft(2, '0')} '
+                              '${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                              style: TextStyle(color: appColors.accent, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -866,6 +973,15 @@ class _ComposePostState extends State<ComposePost> {
                   size: 22,
                   color: _location != null ? appColors.accent : appColors.textMuted),
             ),
+            // Schedule button
+            IconButton(
+              onPressed: _showSchedulePicker,
+              icon: Icon(Iconsax.clock,
+                  size: 22,
+                  color: _scheduledTime != null
+                      ? appColors.accent
+                      : appColors.textMuted),
+            ),
             Spacer(),
             // Save draft text button
             if (_hasContent)
@@ -895,7 +1011,9 @@ class _ComposePostState extends State<ComposePost> {
                       ),
                     )
                   : Text(
-                      AppLocalizations.of(context)!.post,
+                      _scheduledTime != null
+                          ? AppLocalizations.of(context)!.schedulePost
+                          : AppLocalizations.of(context)!.post,
                       style: TextStyle(
                         color: _canPost ? appColors.accent : appColors.divider,
                         fontSize: 16,

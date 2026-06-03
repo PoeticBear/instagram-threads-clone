@@ -506,5 +506,9 @@
   "userRestricted": "已限制该用户",
   "userBlocked": "已拉黑该用户",
   "operationFailed": "操作失败，请重试",
-  "reportUser": "举报用户"
+  "reportUser": "举报用户",
+  "schedulePost": "定时发布",
+  "schedulePublishSuccess": "帖子已定时发布",
+  "clearSchedule": "清除定时",
+  "scheduleTimeTooEarly": "定时时间至少为 5 分钟之后"
 }

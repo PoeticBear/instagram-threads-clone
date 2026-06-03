@@ -1297,4 +1297,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportUser => 'Report User';
+
+  @override
+  String get schedulePost => 'Schedule';
+
+  @override
+  String get schedulePublishSuccess => 'Post scheduled successfully';
+
+  @override
+  String get clearSchedule => 'Clear schedule';
+
+  @override
+  String get scheduleTimeTooEarly =>
+      'Scheduled time must be at least 5 minutes from now';
 }

@@ -506,5 +506,9 @@
   "userRestricted": "User restricted",
   "userBlocked": "User blocked",
   "operationFailed": "Operation failed, please try again",
-  "reportUser": "Report User"
+  "reportUser": "Report User",
+  "schedulePost": "Schedule",
+  "schedulePublishSuccess": "Post scheduled successfully",
+  "clearSchedule": "Clear schedule",
+  "scheduleTimeTooEarly": "Scheduled time must be at least 5 minutes from now"
 }

@@ -1289,4 +1289,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reportUser => '举报用户';
+
+  @override
+  String get schedulePost => '定时发布';
+
+  @override
+  String get schedulePublishSuccess => '帖子已定时发布';
+
+  @override
+  String get clearSchedule => '清除定时';
+
+  @override
+  String get scheduleTimeTooEarly => '定时时间至少为 5 分钟之后';
 }

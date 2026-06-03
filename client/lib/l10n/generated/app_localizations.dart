@@ -2593,6 +2593,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report User'**
   String get reportUser;
+
+  /// No description provided for @schedulePost.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get schedulePost;
+
+  /// No description provided for @schedulePublishSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Post scheduled successfully'**
+  String get schedulePublishSuccess;
+
+  /// No description provided for @clearSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear schedule'**
+  String get clearSchedule;
+
+  /// No description provided for @scheduleTimeTooEarly.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled time must be at least 5 minutes from now'**
+  String get scheduleTimeTooEarly;
 }
 
 class _AppLocalizationsDelegate

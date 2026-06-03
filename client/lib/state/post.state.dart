@@ -104,6 +104,7 @@ class PostState extends AppStates {
     List<int>? topicIds,
     int? communityId,
     int? quoteRepostId,
+    String? scheduledTime,
   }) async {
     try {
       isBusy = true;
@@ -137,6 +138,7 @@ class PostState extends AppStates {
         topicIds: topicIds,
         communityId: communityId,
         quoteRepostId: quoteRepostId,
+        scheduledTime: scheduledTime,
       );
 
       developer.log('✅ 帖子创建成功: postId=${post.id}', name: 'PostState');
@@ -158,8 +160,10 @@ class PostState extends AppStates {
         pollData: post.pollData,
       );
 
-      _feedlist ??= [];
-      _feedlist!.insert(0, newPost);
+      if (scheduledTime == null) {
+        _feedlist ??= [];
+        _feedlist!.insert(0, newPost);
+      }
 
       isBusy = false;
       notifyListeners();
