@@ -472,5 +472,39 @@
   "reportIntellectualProperty": "知识产权",
   "reportOther": "其他",
   "reportSuccess": "举报已提交",
-  "reportFailed": "举报提交失败"
+  "reportFailed": "举报提交失败",
+  "mute": "静音",
+  "restrict": "限制",
+  "block": "拉黑",
+  "muteUsername": "静音 @{username}",
+  "@muteUsername": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "restrictUsername": "限制 @{username}",
+  "@restrictUsername": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "blockUsername": "拉黑 @{username}",
+  "@blockUsername": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "blockConfirmTitle": "确定拉黑该用户？",
+  "blockConfirmDesc": "他们将无法查看你的帖子或给你发送消息。",
+  "userMuted": "已静音该用户",
+  "userRestricted": "已限制该用户",
+  "userBlocked": "已拉黑该用户",
+  "operationFailed": "操作失败，请重试",
+  "reportUser": "举报用户"
 }

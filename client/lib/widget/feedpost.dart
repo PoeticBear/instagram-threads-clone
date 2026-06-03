@@ -11,6 +11,8 @@ import 'package:threads/model/user.module.dart';
 import 'package:threads/network/api_config.dart';
 import 'package:threads/pages/composePost/post.dart';
 import 'package:threads/pages/profile/profile.dart';
+import 'package:threads/common/locator.dart';
+import 'package:threads/services/user_service.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/theme/app_colors.dart';
@@ -899,6 +901,66 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             _buildSheetDivider(),
             if (!isOwnPost) ...[
               _buildSheetOption(
+                label: l10n.muteUsername(widget.postModel.user?.userName ?? ''),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _handleRelationControl(
+                    context: context,
+                    targetUserId: int.tryParse(postUserId ?? '') ?? 0,
+                    controlType: 1,
+                    successMsg: l10n.userMuted,
+                  );
+                },
+              ),
+              _buildSheetDivider(),
+              _buildSheetOption(
+                label: l10n.restrictUsername(widget.postModel.user?.userName ?? ''),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _handleRelationControl(
+                    context: context,
+                    targetUserId: int.tryParse(postUserId ?? '') ?? 0,
+                    controlType: 2,
+                    successMsg: l10n.userRestricted,
+                  );
+                },
+              ),
+              _buildSheetDivider(),
+              _buildSheetOption(
+                label: l10n.blockUsername(widget.postModel.user?.userName ?? ''),
+                textColor: appColors.destructive,
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: appColors.surface,
+                      title: Text(l10n.blockConfirmTitle, style: TextStyle(color: appColors.textPrimary)),
+                      content: Text(l10n.blockConfirmDesc, style: TextStyle(color: appColors.textSecondary)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(l10n.cancel, style: TextStyle(color: appColors.textSecondary)),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(l10n.block, style: TextStyle(color: appColors.destructive)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed == true) {
+                    await _handleRelationControl(
+                      context: context,
+                      targetUserId: int.tryParse(postUserId ?? '') ?? 0,
+                      controlType: 3,
+                      successMsg: l10n.userBlocked,
+                    );
+                  }
+                },
+              ),
+              _buildSheetDivider(),
+              _buildSheetOption(
                 label: l10n.report,
                 textColor: appColors.destructive,
                 onTap: () {
@@ -931,6 +993,37 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleRelationControl({
+    required BuildContext context,
+    required int targetUserId,
+    required int controlType,
+    required String successMsg,
+  }) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    try {
+      final userService = UserService(apiClient: getIt());
+      await userService.addRelationControl(
+        targetUserId: targetUserId,
+        controlType: controlType,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMsg), duration: Duration(seconds: 2)),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.operationFailed),
+            backgroundColor: appColors.destructive,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   void _showReportMenu(BuildContext context, String postId, PostState postState) {

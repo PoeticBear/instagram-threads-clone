@@ -1251,4 +1251,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportFailed => 'Failed to submit report';
+
+  @override
+  String get mute => 'Mute';
+
+  @override
+  String get restrict => 'Restrict';
+
+  @override
+  String get block => 'Block';
+
+  @override
+  String muteUsername(String username) {
+    return 'Mute @$username';
+  }
+
+  @override
+  String restrictUsername(String username) {
+    return 'Restrict @$username';
+  }
+
+  @override
+  String blockUsername(String username) {
+    return 'Block @$username';
+  }
+
+  @override
+  String get blockConfirmTitle => 'Block User?';
+
+  @override
+  String get blockConfirmDesc =>
+      'They won\'t be able to see your posts or send you messages.';
+
+  @override
+  String get userMuted => 'User muted';
+
+  @override
+  String get userRestricted => 'User restricted';
+
+  @override
+  String get userBlocked => 'User blocked';
+
+  @override
+  String get operationFailed => 'Operation failed, please try again';
+
+  @override
+  String get reportUser => 'Report User';
 }

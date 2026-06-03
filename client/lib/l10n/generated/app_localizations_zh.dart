@@ -1244,4 +1244,49 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reportFailed => '举报提交失败';
+
+  @override
+  String get mute => '静音';
+
+  @override
+  String get restrict => '限制';
+
+  @override
+  String get block => '拉黑';
+
+  @override
+  String muteUsername(String username) {
+    return '静音 @$username';
+  }
+
+  @override
+  String restrictUsername(String username) {
+    return '限制 @$username';
+  }
+
+  @override
+  String blockUsername(String username) {
+    return '拉黑 @$username';
+  }
+
+  @override
+  String get blockConfirmTitle => '确定拉黑该用户？';
+
+  @override
+  String get blockConfirmDesc => '他们将无法查看你的帖子或给你发送消息。';
+
+  @override
+  String get userMuted => '已静音该用户';
+
+  @override
+  String get userRestricted => '已限制该用户';
+
+  @override
+  String get userBlocked => '已拉黑该用户';
+
+  @override
+  String get operationFailed => '操作失败，请重试';
+
+  @override
+  String get reportUser => '举报用户';
 }

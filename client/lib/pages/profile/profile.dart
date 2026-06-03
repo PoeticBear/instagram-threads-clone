@@ -3,7 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/common/locator.dart';
 import 'package:threads/pages/profile/edit.dart';
+import 'package:threads/services/user_service.dart';
 import 'package:threads/common/settings.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/profile.state.dart';
@@ -132,6 +134,14 @@ class _ProfilePageState extends State<ProfilePage>
                           width: 50,
                           height: 50,
                           child: Icon(CupertinoIcons.list_bullet_indent,
+                              color: appColors.textPrimary)))
+                else
+                  GestureDetector(
+                      onTap: () => _showProfileMenu(context, state),
+                      child: Container(
+                          width: 50,
+                          height: 50,
+                          child: Icon(CupertinoIcons.ellipsis,
                               color: appColors.textPrimary)))
               ],
               leading: widget.isOwnProfileTab
@@ -460,6 +470,150 @@ class _ProfilePageState extends State<ProfilePage>
         ],
       ),
     );
+  }
+
+  // ==================== Profile Menu (Mute / Restrict / Block / Report) ====================
+
+  void _showProfileMenu(BuildContext context, ProfileState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+    final username = state.profileUserModel?.userName ?? '';
+    final targetUserId = int.tryParse(widget.profileId) ?? 0;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: appColors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => Container(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildSheetOption(
+              label: l10n.muteUsername(username),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _handleProfileRelationControl(
+                  context, targetUserId, 1, l10n.userMuted,
+                );
+              },
+            ),
+            _buildSheetDivider(),
+            _buildSheetOption(
+              label: l10n.restrictUsername(username),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _handleProfileRelationControl(
+                  context, targetUserId, 2, l10n.userRestricted,
+                );
+              },
+            ),
+            _buildSheetDivider(),
+            _buildSheetOption(
+              label: l10n.blockUsername(username),
+              textColor: appColors.destructive,
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: appColors.surface,
+                    title: Text(l10n.blockConfirmTitle, style: TextStyle(color: appColors.textPrimary)),
+                    content: Text(l10n.blockConfirmDesc, style: TextStyle(color: appColors.textSecondary)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l10n.cancel, style: TextStyle(color: appColors.textSecondary)),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(l10n.block, style: TextStyle(color: appColors.destructive)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  await _handleProfileRelationControl(
+                    context, targetUserId, 3, l10n.userBlocked,
+                  );
+                }
+              },
+            ),
+            _buildSheetDivider(),
+            _buildSheetOption(
+              label: l10n.reportUser,
+              textColor: appColors.destructive,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                final postState = Provider.of<PostState>(context, listen: false);
+                postState.reportContent(
+                  targetType: 3, // User
+                  targetId: targetUserId,
+                  reportType: 9, // Other
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.reportSuccess), duration: Duration(seconds: 2)),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleProfileRelationControl(
+    BuildContext context, int targetUserId, int controlType, String successMsg,
+  ) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    try {
+      final userService = UserService(apiClient: getIt());
+      await userService.addRelationControl(
+        targetUserId: targetUserId,
+        controlType: controlType,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMsg), duration: Duration(seconds: 2)),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.operationFailed),
+            backgroundColor: appColors.destructive,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildSheetOption({
+    required String label,
+    required VoidCallback onTap,
+    Color? textColor,
+  }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        child: Text(label, style: TextStyle(
+          color: textColor ?? appColors.textPrimary,
+          fontSize: 16, fontWeight: FontWeight.w400,
+        )),
+      ),
+    );
+  }
+
+  Widget _buildSheetDivider() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return Divider(color: appColors.divider, height: 0.5);
   }
 
   Widget _buildActionButton({

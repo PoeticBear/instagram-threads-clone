@@ -2515,6 +2515,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to submit report'**
   String get reportFailed;
+
+  /// No description provided for @mute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get mute;
+
+  /// No description provided for @restrict.
+  ///
+  /// In en, this message translates to:
+  /// **'Restrict'**
+  String get restrict;
+
+  /// No description provided for @block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get block;
+
+  /// No description provided for @muteUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute @{username}'**
+  String muteUsername(String username);
+
+  /// No description provided for @restrictUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Restrict @{username}'**
+  String restrictUsername(String username);
+
+  /// No description provided for @blockUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Block @{username}'**
+  String blockUsername(String username);
+
+  /// No description provided for @blockConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block User?'**
+  String get blockConfirmTitle;
+
+  /// No description provided for @blockConfirmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'They won\'t be able to see your posts or send you messages.'**
+  String get blockConfirmDesc;
+
+  /// No description provided for @userMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'User muted'**
+  String get userMuted;
+
+  /// No description provided for @userRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'User restricted'**
+  String get userRestricted;
+
+  /// No description provided for @userBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'User blocked'**
+  String get userBlocked;
+
+  /// No description provided for @operationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation failed, please try again'**
+  String get operationFailed;
+
+  /// No description provided for @reportUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Report User'**
+  String get reportUser;
 }
 
 class _AppLocalizationsDelegate

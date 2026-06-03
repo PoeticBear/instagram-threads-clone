@@ -472,5 +472,39 @@
   "reportIntellectualProperty": "Intellectual Property",
   "reportOther": "Other",
   "reportSuccess": "Report submitted successfully",
-  "reportFailed": "Failed to submit report"
+  "reportFailed": "Failed to submit report",
+  "mute": "Mute",
+  "restrict": "Restrict",
+  "block": "Block",
+  "muteUsername": "Mute @{username}",
+  "@muteUsername": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "restrictUsername": "Restrict @{username}",
+  "@restrictUsername": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "blockUsername": "Block @{username}",
+  "@blockUsername": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "blockConfirmTitle": "Block User?",
+  "blockConfirmDesc": "They won't be able to see your posts or send you messages.",
+  "userMuted": "User muted",
+  "userRestricted": "User restricted",
+  "userBlocked": "User blocked",
+  "operationFailed": "Operation failed, please try again",
+  "reportUser": "Report User"
 }
