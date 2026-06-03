@@ -159,7 +159,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             GestureDetector(
               onTap: () => _navigateToPostDetail(context),
               child: Padding(
-                padding: EdgeInsets.only(left: 55),
+                padding: EdgeInsets.only(left: 40),
                 child: Text(
                   widget.postModel.bio ?? '',
                   style: TextStyle(
@@ -173,7 +173,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             if (hasQuoteId) ...[
               Container(height: 8),
               Padding(
-                padding: EdgeInsets.only(left: 55, right: 10),
+                padding: EdgeInsets.only(left: 40, right: 10),
                 child: _buildQuoteCard(
                   context: context,
                   quotePost: quotePost,
@@ -188,6 +188,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 ? PollWidget(
                     postId: widget.postModel.id,
                     pollData: widget.postModel.pollData!,
+                    padding: EdgeInsets.only(left: 40, right: 10, top: 8),
                   )
                 // ── [临时隐藏] 线程连接线设计 (后期需恢复) ──
                 // 原始布局: Row 包含左侧竖线(2x300) + 迷你头像(15px) + 右侧图片(300x280)
@@ -226,7 +227,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 : !hasImage
                     ? SizedBox.shrink()
                     : Padding(
-                        padding: EdgeInsets.only(left: 55, right: 10),
+                        padding: EdgeInsets.only(left: 40, right: 10),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: CachedNetworkImage(
@@ -262,7 +263,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Container(
-                  width: 50,
+                  width: 40,
                 ),
                 // Like button
                 GestureDetector(
