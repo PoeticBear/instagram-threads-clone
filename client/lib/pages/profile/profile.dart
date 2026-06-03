@@ -13,6 +13,7 @@ import 'package:threads/state/auth.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 import 'package:threads/model/post.module.dart';
+import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -386,8 +387,22 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildMediaTab() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    final mediaPosts = _userPosts.where((p) => p.imagePath != null && p.imagePath!.isNotEmpty).toList();
-    if (mediaPosts.isEmpty) {
+
+    // 展平所有帖子的 mediaList，同时兼容旧的 imagePath
+    final List<MediaItemModel> allMedia = [];
+    for (final post in _userPosts) {
+      if (post.mediaList != null && post.mediaList!.isNotEmpty) {
+        allMedia.addAll(post.mediaList!);
+      } else if (post.imagePath != null && post.imagePath!.isNotEmpty) {
+        // 兼容旧数据：imagePath → image media item
+        allMedia.add(MediaItemModel(
+          mediaType: MediaType.image,
+          url: post.imagePath,
+        ));
+      }
+    }
+
+    if (allMedia.isEmpty) {
       return Center(
         child: Text(
           AppLocalizations.of(context)!.noMediaYet,
@@ -395,6 +410,7 @@ class _ProfilePageState extends State<ProfilePage>
         ),
       );
     }
+
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
@@ -403,18 +419,52 @@ class _ProfilePageState extends State<ProfilePage>
         crossAxisSpacing: 2,
         mainAxisSpacing: 2,
       ),
-      itemCount: mediaPosts.length,
+      itemCount: allMedia.length,
       itemBuilder: (context, index) {
-        final post = mediaPosts[index];
-        return CachedNetworkImage(
-          fit: BoxFit.cover,
-          imageUrl: post.imagePath!,
-          placeholder: (_, __) => Container(
-            color: appColors.surface,
-          ),
-          errorWidget: (_, __, ___) => Container(
-            color: appColors.surface,
-            child: Icon(Icons.broken_image, color: appColors.textSecondary),
+        final item = allMedia[index];
+        final thumbnailUrl = item.thumbUrl ?? item.url ?? '';
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MediaViewerPage(
+                  mediaItems: allMedia,
+                  initialIndex: index,
+                ),
+              ),
+            );
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CachedNetworkImage(
+                fit: BoxFit.cover,
+                imageUrl: thumbnailUrl,
+                placeholder: (_, __) => Container(color: appColors.surface),
+                errorWidget: (_, __, ___) => Container(
+                  color: appColors.surface,
+                  child: Icon(Icons.broken_image, color: appColors.textSecondary),
+                ),
+              ),
+              // 视频播放图标叠加层
+              if (item.isVideo)
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: const Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+            ],
           ),
         );
       },

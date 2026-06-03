@@ -1,6 +1,59 @@
 import 'package:threads/services/post_service.dart';
 import 'user.module.dart';
 
+/// 媒体类型常量
+class MediaType {
+  static const int image = 1;
+  static const int video = 2;
+  static const int gif = 3;
+  static const int voice = 4;
+  static const int textAttachment = 5;
+}
+
+/// 对应 API 的 MediaItem 结构
+class MediaItemModel {
+  final int? id;
+  final int mediaType; // 1=图片, 2=视频, 3=GIF, 4=语音, 5=文本附件
+  final String? url;
+  final String? thumbUrl;
+  final int? width;
+  final int? height;
+
+  const MediaItemModel({
+    this.id,
+    required this.mediaType,
+    this.url,
+    this.thumbUrl,
+    this.width,
+    this.height,
+  });
+
+  bool get isVideo => mediaType == MediaType.video;
+  bool get isImage => mediaType == MediaType.image || mediaType == MediaType.gif;
+
+  factory MediaItemModel.fromJson(Map<dynamic, dynamic> map) {
+    return MediaItemModel(
+      id: map['id'] is int ? map['id'] : int.tryParse(map['id']?.toString() ?? ''),
+      mediaType: map['media_type'] ?? map['mediaType'] ?? 1,
+      url: map['url']?.toString(),
+      thumbUrl: map['thumb_url']?.toString() ?? map['thumbUrl']?.toString(),
+      width: map['width'] is int ? map['width'] : int.tryParse(map['width']?.toString() ?? ''),
+      height: map['height'] is int ? map['height'] : int.tryParse(map['height']?.toString() ?? ''),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'media_type': mediaType,
+      'url': url,
+      'thumb_url': thumbUrl,
+      'width': width,
+      'height': height,
+    };
+  }
+}
+
 class PostModel {
   String? key;
   String? imagePath;
@@ -38,6 +91,8 @@ class PostModel {
   List<PostModel>? threadPosts;
   List<int>? threadPostIds;
   int? quotesCount;
+  // Media list (from API media_list)
+  List<MediaItemModel>? mediaList;
 
   PostModel({
     this.key,
@@ -73,6 +128,7 @@ class PostModel {
     this.threadPosts,
     this.threadPostIds,
     this.quotesCount,
+    this.mediaList,
   });
 
   static bool? _parseBool(dynamic value) {
@@ -103,6 +159,16 @@ class PostModel {
     final threadPostIdsRaw = map['thread_post_ids'] ?? map['threadPostIds'];
     if (threadPostIdsRaw is List) {
       threadPostIds = threadPostIdsRaw.map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList();
+    }
+
+    // Parse media_list
+    List<MediaItemModel>? mediaList;
+    final mediaListRaw = map['media_list'] ?? map['mediaList'];
+    if (mediaListRaw is List) {
+      mediaList = mediaListRaw
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => MediaItemModel.fromJson(e))
+          .toList();
     }
 
     return PostModel(
@@ -139,6 +205,7 @@ class PostModel {
       threadPosts: threadPosts,
       threadPostIds: threadPostIds,
       quotesCount: map['quotes_count'] ?? map['quotesCount'],
+      mediaList: mediaList,
     );
   }
 
@@ -178,6 +245,7 @@ class PostModel {
       'thread_posts': threadPosts?.map((e) => e.toJson()).toList(),
       'thread_post_ids': threadPostIds,
       'quotes_count': quotesCount,
+      'media_list': mediaList?.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -215,6 +283,7 @@ class PostModel {
     List<PostModel>? threadPosts,
     List<int>? threadPostIds,
     int? quotesCount,
+    List<MediaItemModel>? mediaList,
   }) {
     return PostModel(
       key: key ?? this.key,
@@ -250,6 +319,7 @@ class PostModel {
       threadPosts: threadPosts ?? this.threadPosts,
       threadPostIds: threadPostIds ?? this.threadPostIds,
       quotesCount: quotesCount ?? this.quotesCount,
+      mediaList: mediaList ?? this.mediaList,
     );
   }
 

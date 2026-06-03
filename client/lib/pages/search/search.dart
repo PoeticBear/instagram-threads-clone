@@ -7,6 +7,7 @@ import 'package:threads/state/search.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/list.dart';
 import 'package:threads/widget/search_post_tile.dart';
+import 'package:threads/widget/user_card.dart';
 import 'package:threads/widget/topic_tile.dart';
 
 class SearchPage extends StatefulWidget {
@@ -182,11 +183,23 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
       children: [
         if (state.searchUsers.isNotEmpty) ...[
           _buildSectionHeader(AppLocalizations.of(context)!.sectionUsers, state.totalUsers),
-          ...state.searchUsers.take(3).map((u) => UserTilePage(user: u, isadded: u.isFollowing ?? false)),
-          if (state.totalUsers > 3)
-            _buildSeeAllButton(AppLocalizations.of(context)!.seeAllUsers, () {
-              _tabController.animateTo(1);
-            }),
+          SizedBox(
+            height: 210,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              itemCount: state.searchUsers.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final u = state.searchUsers[index];
+                return SizedBox(
+                  width: 140,
+                  height: 210,
+                  child: UserCard(user: u, isFollowing: u.isFollowing ?? false),
+                );
+              },
+            ),
+          ),
         ],
         if (state.searchTopics.isNotEmpty) ...[
           _buildSectionHeader(AppLocalizations.of(context)!.sectionTopics, state.totalTopics),
@@ -249,6 +262,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (state.searchUsers.isEmpty) return _buildNoResults();
     return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       itemCount: state.searchUsers.length,
       separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
