@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/pages/community/community_list_page.dart';
 import 'package:threads/pages/message/message_page.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
@@ -55,22 +56,40 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
         bottom: false,
         child: Column(
           children: [
-            // Top bar with message icon
+            // Top bar with community and message icons
             Container(
-              padding: EdgeInsets.only(top: 4, right: 16, bottom: 4),
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(builder: (_) => MessagePage()),
-                  );
-                },
-                child: Icon(
-                  Iconsax.message,
-                  size: 28,
-                  color: appColors.textPrimary,
-                ),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                            builder: (_) => const CommunityListPage()),
+                      );
+                    },
+                    child: Icon(
+                      Icons.groups_outlined,
+                      size: 28,
+                      color: appColors.textPrimary,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(builder: (_) => MessagePage()),
+                      );
+                    },
+                    child: Icon(
+                      Iconsax.message,
+                      size: 28,
+                      color: appColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
             ),
             // Feed list

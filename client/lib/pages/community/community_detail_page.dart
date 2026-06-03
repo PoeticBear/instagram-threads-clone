@@ -204,17 +204,19 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Cover image
-          if (detail.coverUrl != null && detail.coverUrl!.isNotEmpty)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: CachedNetworkImage(
-                imageUrl: detail.coverUrl!,
-                width: double.infinity,
-                height: 160,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: (detail.coverUrl != null && detail.coverUrl!.isNotEmpty)
+                ? CachedNetworkImage(
+                    imageUrl: detail.coverUrl!,
+                    width: double.infinity,
+                    height: 160,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) =>
+                        _buildCoverPlaceholder(appColors),
+                  )
+                : _buildCoverPlaceholder(appColors),
+          ),
           const SizedBox(height: 12),
           // Community name
           Text(
@@ -253,6 +255,22 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
       ),
     );
   }
+  Widget _buildCoverPlaceholder(AppColors appColors) {
+    return Container(
+      width: double.infinity,
+      height: 160,
+      decoration: BoxDecoration(
+        color: appColors.surfaceSecondary,
+      ),
+      child: Center(
+        child: Icon(
+          Icons.groups_outlined,
+          size: 48,
+          color: appColors.textSecondary,
+        ),
+      ),
+    );
+  }
 
   Widget _buildStatItem(String count, String label, AppColors appColors) {
     return RichText(
@@ -279,6 +297,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
     final detail = state.communityDetail;
     if (detail == null) return const SizedBox.shrink();
     final isJoined = detail.isJoined;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
@@ -292,17 +311,23 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         height: 42,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: isJoined ? appColors.background : appColors.accent,
+          color: isJoined
+              ? appColors.surfaceSecondary
+              : (isDark ? Colors.white : Colors.black),
           borderRadius: BorderRadius.circular(10),
           border: isJoined
-              ? Border.all(color: appColors.textSecondary, width: 0.5)
+              ? Border.all(color: appColors.divider, width: 0.5)
               : null,
         ),
         alignment: Alignment.center,
         child: Text(
-          isJoined ? AppLocalizations.of(context)!.joined : AppLocalizations.of(context)!.joinCommunity,
+          isJoined
+              ? AppLocalizations.of(context)!.joined
+              : AppLocalizations.of(context)!.joinCommunity,
           style: TextStyle(
-            color: appColors.textPrimary,
+            color: isJoined
+                ? appColors.textPrimary
+                : (isDark ? Colors.black : Colors.white),
             fontWeight: FontWeight.w600,
             fontSize: 15,
           ),
