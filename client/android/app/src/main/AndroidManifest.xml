@@ -28,6 +28,13 @@
               <action android:name="FLUTTER_NOTIFICATION_CLICK" />
               <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <!-- Deep link: threads:// scheme -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="threads"/>
+            </intent-filter>
         </activity>
          <activity
             android:name="com.yalantis.ucrop.UCropActivity"

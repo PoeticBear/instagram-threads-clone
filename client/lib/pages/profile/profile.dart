@@ -16,6 +16,7 @@ import 'package:threads/widget/feedpost.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/pages/follow/follow_list_page.dart';
+import 'package:threads/pages/profile/share_profile_sheet.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -97,12 +98,15 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _shareProfile(ProfileState state) {
-    final username = state.profileUserModel?.userName ?? widget.username ?? '';
-    final link = 'https://threads.net/@$username';
-    Clipboard.setData(ClipboardData(text: link));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(AppLocalizations.of(context)!.linkCopiedToClipboard),
-    ));
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: appColors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => ShareProfileSheet(user: state.profileUserModel ?? UserModel()),
+    );
   }
 
   void _navigateToFollowList(int initialTab) {

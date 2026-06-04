@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:threads/auth/signup/name.dart';
 import 'package:threads/helper/enum.dart';
 import 'package:threads/pages/home.dart';
+import 'package:threads/services/deep_link_service.dart';
 import 'package:threads/state/auth.state.dart';
 
 class SplashPage extends StatefulWidget {
@@ -33,6 +34,10 @@ class _SplashPageState extends State<SplashPage> {
         // Use getProfileUser to get full profile including bio and link
         await state.getProfileUser();
         debugPrint('timer - after getProfileUser, userModel: ${state.userModel?.displayName}');
+        // Process any pending deep link after login
+        if (state.authStatus == AuthStatus.LOGGED_IN) {
+          DeepLinkService.instance.processPendingLink();
+        }
       } catch (e) {
         debugPrint('Splash initialization error: $e');
       }

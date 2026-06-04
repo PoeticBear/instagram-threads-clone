@@ -510,5 +510,9 @@
   "schedulePost": "Schedule",
   "schedulePublishSuccess": "Post scheduled successfully",
   "clearSchedule": "Clear schedule",
-  "scheduleTimeTooEarly": "Scheduled time must be at least 5 minutes from now"
+  "scheduleTimeTooEarly": "Scheduled time must be at least 5 minutes from now",
+  "scanToFollow": "Scan to follow me",
+  "saveToGallery": "Save",
+  "savedToGallery": "Saved to gallery",
+  "saveFailed": "Save failed"
 }
