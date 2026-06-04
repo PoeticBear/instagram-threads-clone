@@ -19,6 +19,7 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateMixin {
   final _textController = TextEditingController();
+  final _scrollController = ScrollController();
   late TabController _tabController;
 
   @override
@@ -26,6 +27,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_onTabChanged);
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = Provider.of<SearchState>(context, listen: false);
       state.loadEmptyStateData();
@@ -38,8 +40,20 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     state.changeTab(SearchTab.values[_tabController.index]);
   }
 
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (currentScroll >= maxScroll * 0.8) {
+      final state = Provider.of<SearchState>(context, listen: false);
+      state.loadMore();
+    }
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _textController.dispose();
@@ -128,24 +142,66 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     );
   }
 
-  // ── Tab Bar ──
+  // ── Sort Toggle + Tab Bar ──
 
   Widget _buildTabBar(SearchState state) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    return TabBar(
-      controller: _tabController,
-      labelColor: appColors.textPrimary,
-      unselectedLabelColor: appColors.textSecondary,
-      indicatorColor: appColors.textPrimary,
-      indicatorSize: TabBarIndicatorSize.label,
-      labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-      unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-      tabs: [
-        Tab(text: AppLocalizations.of(context)!.tabTop),
-        Tab(text: AppLocalizations.of(context)!.tabUsers),
-        Tab(text: AppLocalizations.of(context)!.tabTopics),
-        Tab(text: AppLocalizations.of(context)!.tabPosts),
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      children: [
+        // Sort toggle
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
+          child: Row(
+            children: [
+              _sortChip(state, 'top', l10n.sortTop, appColors),
+              const SizedBox(width: 8),
+              _sortChip(state, 'recent', l10n.sortRecent, appColors),
+            ],
+          ),
+        ),
+        TabBar(
+          controller: _tabController,
+          labelColor: appColors.textPrimary,
+          unselectedLabelColor: appColors.textSecondary,
+          indicatorColor: appColors.textPrimary,
+          indicatorSize: TabBarIndicatorSize.label,
+          labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+          tabs: [
+            Tab(text: l10n.tabTop),
+            Tab(text: l10n.tabUsers),
+            Tab(text: l10n.tabTopics),
+            Tab(text: l10n.tabPosts),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _sortChip(SearchState state, String value, String label, AppColors appColors) {
+    final isActive = state.sortOrder == value;
+    return GestureDetector(
+      onTap: () => state.changeSortOrder(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? appColors.textPrimary : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isActive ? appColors.textPrimary : appColors.textSecondary,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? appColors.background : appColors.textSecondary,
+            fontSize: 14,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
     );
   }
 
@@ -170,6 +226,37 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     );
   }
 
+  bool _getHasMore(SearchState state, SearchTab tab) {
+    switch (tab) {
+      case SearchTab.top:
+        return state.hasMoreUsers || state.hasMorePosts || state.hasMoreTopics;
+      case SearchTab.users:
+        return state.hasMoreUsers;
+      case SearchTab.topics:
+        return state.hasMoreTopics;
+      case SearchTab.posts:
+        return state.hasMorePosts;
+    }
+  }
+
+  Widget _buildLoadingFooter(SearchState state, SearchTab tab) {
+    if (!state.isLoadingMore) return const SizedBox.shrink();
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: appColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTopTab(SearchState state) {
     final hasResults = state.searchUsers.isNotEmpty ||
         state.searchTopics.isNotEmpty ||
@@ -180,6 +267,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     }
 
     return ListView(
+      controller: _scrollController,
       children: [
         if (state.searchUsers.isNotEmpty) ...[
           _buildSectionHeader(AppLocalizations.of(context)!.sectionUsers, state.totalUsers),
@@ -213,6 +301,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
           _buildSectionHeader(AppLocalizations.of(context)!.sectionPosts, state.totalPosts),
           ...state.searchPosts.take(5).map((p) => SearchPostTile(post: p)),
         ],
+        _buildLoadingFooter(state, SearchTab.top),
       ],
     );
   }
@@ -262,10 +351,14 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (state.searchUsers.isEmpty) return _buildNoResults();
     return ListView.separated(
+      controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      itemCount: state.searchUsers.length,
+      itemCount: state.searchUsers.length + 1,
       separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
+        if (index == state.searchUsers.length) {
+          return _buildLoadingFooter(state, SearchTab.users);
+        }
         return UserTilePage(user: state.searchUsers[index], isFollowing: state.searchUsers[index].isFollowing ?? false);
       },
     );
@@ -275,9 +368,13 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (state.searchTopics.isEmpty) return _buildNoResults();
     return ListView.separated(
-      itemCount: state.searchTopics.length,
+      controller: _scrollController,
+      itemCount: state.searchTopics.length + 1,
       separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
+        if (index == state.searchTopics.length) {
+          return _buildLoadingFooter(state, SearchTab.topics);
+        }
         return TopicTile(trendingTopic: state.searchTopics[index]);
       },
     );
@@ -287,9 +384,13 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (state.searchPosts.isEmpty) return _buildNoResults();
     return ListView.separated(
-      itemCount: state.searchPosts.length,
+      controller: _scrollController,
+      itemCount: state.searchPosts.length + 1,
       separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
+        if (index == state.searchPosts.length) {
+          return _buildLoadingFooter(state, SearchTab.posts);
+        }
         return SearchPostTile(post: state.searchPosts[index]);
       },
     );
@@ -381,6 +482,25 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     );
   }
 
+  IconData _historyTypeIcon(int searchType) {
+    switch (searchType) {
+      case 2: return Iconsax.user;
+      case 3: return Iconsax.hashtag;
+      case 4: return Iconsax.document_text;
+      default: return Iconsax.clock;
+    }
+  }
+
+  String _formatTime(DateTime time) {
+    final l10n = AppLocalizations.of(context)!;
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return l10n.justNow;
+    if (diff.inHours < 1) return l10n.minutesAgo(diff.inMinutes);
+    if (diff.inDays < 1) return l10n.hoursAgo(diff.inHours);
+    if (diff.inDays < 30) return l10n.daysAgo(diff.inDays);
+    return '${time.month}/${time.day}';
+  }
+
   Widget _buildHistoryItem(SearchHistoryItem item, SearchState state) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Dismissible(
@@ -402,18 +522,39 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
           child: Row(
             children: [
-              Icon(Iconsax.clock, size: 20, color: appColors.textSecondary),
+              Icon(_historyTypeIcon(item.searchType), size: 20, color: appColors.textSecondary),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  item.query,
-                  style: TextStyle(
-                    color: appColors.textPrimary,
-                    fontSize: 17,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.query,
+                      style: TextStyle(
+                        color: appColors.textPrimary,
+                        fontSize: 17,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatTime(item.searchedAt),
+                      style: TextStyle(
+                        color: appColors.textMuted,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              if (item.resultCount > 0)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(
+                    '${item.resultCount}',
+                    style: TextStyle(color: appColors.textMuted, fontSize: 14),
+                  ),
+                ),
               GestureDetector(
                 onTap: () => state.deleteHistoryItem(item.id),
                 child: Icon(Icons.close, size: 18, color: appColors.textSecondary),

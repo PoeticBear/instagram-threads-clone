@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/pages/profile/profile.dart';
@@ -64,16 +65,28 @@ class UserCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               // ── Display Name ──
-              Text(
-                user.displayName ?? '',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: appColors.textPrimary,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                textAlign: TextAlign.center,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      user.displayName ?? '',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: appColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  if (user.isVerified == true) ...[
+                    const SizedBox(width: 2),
+                    Icon(CupertinoIcons.checkmark_seal_fill,
+                        size: 14, color: CupertinoColors.activeBlue),
+                  ],
+                ],
               ),
               const SizedBox(height: 2),
               // ── Username ──

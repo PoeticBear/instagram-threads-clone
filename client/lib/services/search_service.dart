@@ -32,7 +32,7 @@ class SearchService {
     }
   }
 
-  Future<List<SearchHistoryItem>> getSearchHistory({int limit = 10}) async {
+  Future<SearchHistoryResponse> getSearchHistory({int limit = 10}) async {
     try {
       final response = await _apiClient.get(
         'search/history',
@@ -41,8 +41,14 @@ class SearchService {
         },
       );
       final data = response['data'];
-      final list = data is Map ? (data['items'] as List? ?? []) : (data as List? ?? []);
-      return list.map((e) => SearchHistoryItem.fromJson(e)).toList();
+      if (data is Map) {
+        return SearchHistoryResponse.fromJson(Map<String, dynamic>.from(data));
+      }
+      final list = (data as List? ?? []).cast<Map<String, dynamic>>();
+      return SearchHistoryResponse(
+        items: list.map((e) => SearchHistoryItem.fromJson(e)).toList(),
+        total: list.length,
+      );
     } on ApiException {
       rethrow;
     }
@@ -73,7 +79,7 @@ class SearchService {
         },
       );
       final list = response['data'] as List? ?? [];
-      return list.map((e) => TrendingTopic.fromJson(e)).toList();
+      return list.map((e) => TrendingTopic.fromJson(e as Map<String, dynamic>)).toList();
     } on ApiException {
       rethrow;
     }
@@ -88,7 +94,7 @@ class SearchService {
         },
       );
       final list = response['data'] as List? ?? [];
-      return list.map((e) => SearchPostItem.fromJson(e)).toList();
+      return list.map((e) => SearchPostItem.fromJson(e as Map<String, dynamic>)).toList();
     } on ApiException {
       rethrow;
     }
@@ -96,6 +102,7 @@ class SearchService {
 }
 
 class SearchResult {
+  final String keyword;
   final List<UserInfo> users;
   final List<SearchPostItem> posts;
   final List<TrendingTopic> topics;
@@ -104,6 +111,7 @@ class SearchResult {
   final int totalTopics;
 
   SearchResult({
+    this.keyword = '',
     this.users = const [],
     this.posts = const [],
     this.topics = const [],
@@ -114,9 +122,10 @@ class SearchResult {
 
   factory SearchResult.fromJson(Map<String, dynamic> json) {
     return SearchResult(
-      users: (json['users'] as List?)?.map((e) => UserInfo.fromJson(e)).toList() ?? [],
-      posts: (json['posts'] as List?)?.map((e) => SearchPostItem.fromJson(e)).toList() ?? [],
-      topics: (json['topics'] as List?)?.map((e) => TrendingTopic.fromJson(e)).toList() ?? [],
+      keyword: json['keyword'] ?? '',
+      users: (json['users'] as List?)?.map((e) => UserInfo.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+      posts: (json['posts'] as List?)?.map((e) => SearchPostItem.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+      topics: (json['topics'] as List?)?.map((e) => TrendingTopic.fromJson(e as Map<String, dynamic>)).toList() ?? [],
       totalUsers: json['total_users'] ?? 0,
       totalPosts: json['total_posts'] ?? 0,
       totalTopics: json['total_topics'] ?? 0,
@@ -189,6 +198,23 @@ class SearchHistoryItem {
       searchedAt: json['create_time'] != null
           ? DateTime.tryParse(json['create_time']) ?? DateTime.now()
           : DateTime.now(),
+    );
+  }
+}
+
+class SearchHistoryResponse {
+  final List<SearchHistoryItem> items;
+  final int total;
+
+  SearchHistoryResponse({
+    this.items = const [],
+    this.total = 0,
+  });
+
+  factory SearchHistoryResponse.fromJson(Map<String, dynamic> json) {
+    return SearchHistoryResponse(
+      items: (json['items'] as List?)?.map((e) => SearchHistoryItem.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+      total: json['total'] ?? 0,
     );
   }
 }

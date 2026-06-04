@@ -2617,6 +2617,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scheduled time must be at least 5 minutes from now'**
   String get scheduleTimeTooEarly;
+
+  /// No description provided for @scanToFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to follow me'**
+  String get scanToFollow;
+
+  /// No description provided for @saveToGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saveToGallery;
+
+  /// No description provided for @savedToGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to gallery'**
+  String get savedToGallery;
+
+  /// No description provided for @saveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save failed'**
+  String get saveFailed;
+
+  /// No description provided for @sortTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get sortTop;
+
+  /// No description provided for @sortRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get sortRecent;
+
+  /// No description provided for @loadingMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMore;
 }
 
 class _AppLocalizationsDelegate

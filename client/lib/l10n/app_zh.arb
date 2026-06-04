@@ -514,5 +514,8 @@
   "scanToFollow": "扫一扫，关注我",
   "saveToGallery": "保存",
   "savedToGallery": "已保存到相册",
-  "saveFailed": "保存失败"
+  "saveFailed": "保存失败",
+  "sortTop": "最相关",
+  "sortRecent": "近期",
+  "loadingMore": "加载中..."
 }

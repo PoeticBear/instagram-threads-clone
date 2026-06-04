@@ -514,5 +514,8 @@
   "scanToFollow": "Scan to follow me",
   "saveToGallery": "Save",
   "savedToGallery": "Saved to gallery",
-  "saveFailed": "Save failed"
+  "saveFailed": "Save failed",
+  "sortTop": "Top",
+  "sortRecent": "Recent",
+  "loadingMore": "Loading..."
 }

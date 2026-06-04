@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:threads/model/user.module.dart';
+import 'package:threads/services/auth_service.dart';
 import 'package:threads/services/follow_service.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/services/search_service.dart';
@@ -34,6 +35,10 @@ class SearchState extends AppStates {
   SearchTab currentTab = SearchTab.top;
   String searchQuery = '';
   bool isSearching = false;
+  bool isLoadingMore = false;
+  int currentPage = 1;
+  static const int pageSize = 20;
+  String sortOrder = 'top'; // 'top' or 'recent'
   List<UserModel> searchUsers = [];
   List<SearchPostItem> searchPosts = [];
   List<TrendingTopic> searchTopics = [];
@@ -41,8 +46,13 @@ class SearchState extends AppStates {
   int totalPosts = 0;
   int totalTopics = 0;
 
+  bool get hasMoreUsers => searchUsers.length < totalUsers;
+  bool get hasMorePosts => searchPosts.length < totalPosts;
+  bool get hasMoreTopics => searchTopics.length < totalTopics;
+
   // ── Empty state data ──
   List<SearchHistoryItem> searchHistory = [];
+  int searchHistoryTotal = 0;
   List<TrendingTopic> hotTopics = [];
   List<SearchPostItem> trendingPosts = [];
   bool isLoadingEmptyState = false;
@@ -76,7 +86,9 @@ class SearchState extends AppStates {
         searchService.getHotTopics(),
         searchService.getTrendingPosts(),
       ]);
-      searchHistory = results[0] as List<SearchHistoryItem>;
+      final historyResp = results[0] as SearchHistoryResponse;
+      searchHistory = historyResp.items;
+      searchHistoryTotal = historyResp.total;
       hotTopics = results[1] as List<TrendingTopic>;
       trendingPosts = results[2] as List<SearchPostItem>;
     } catch (_) {}
@@ -144,6 +156,7 @@ class SearchState extends AppStates {
   void changeTab(SearchTab tab) {
     if (currentTab == tab) return;
     currentTab = tab;
+    currentPage = 1;
     notifyListeners();
 
     if (searchQuery.isNotEmpty) {
@@ -153,6 +166,7 @@ class SearchState extends AppStates {
 
   Future<void> _performSearch() async {
     isSearching = true;
+    currentPage = 1;
     notifyListeners();
 
     try {
@@ -160,17 +174,12 @@ class SearchState extends AppStates {
       final result = await searchService.search(
         keyword: searchQuery,
         searchType: searchType,
+        sort: sortOrder,
+        page: 1,
+        limit: pageSize,
       );
 
-      searchUsers = result.users.map((info) => UserModel(
-        userId: info.userId,
-        userName: info.username,
-        displayName: info.displayName,
-        bio: info.bio,
-        profilePic: info.profilePic,
-        followersCount: info.followersCount,
-        followingCount: info.followingCount,
-      )).toList();
+      searchUsers = _mapUsers(result.users);
       searchPosts = result.posts;
       searchTopics = result.topics;
       totalUsers = result.totalUsers;
@@ -189,6 +198,66 @@ class SearchState extends AppStates {
     if (searchTopics.isNotEmpty) _enrichFollowStatus(searchTopics);
     // 在后台补全搜索结果中用户的关注状态
     if (searchUsers.isNotEmpty) _enrichUserFollowStatus(searchUsers);
+  }
+
+  /// 加载下一页
+  Future<void> loadMore() async {
+    if (isLoadingMore || isSearching) return;
+
+    final bool hasMore;
+    switch (currentTab) {
+      case SearchTab.top:
+        hasMore = hasMoreUsers || hasMorePosts || hasMoreTopics;
+        break;
+      case SearchTab.users:
+        hasMore = hasMoreUsers;
+        break;
+      case SearchTab.topics:
+        hasMore = hasMoreTopics;
+        break;
+      case SearchTab.posts:
+        hasMore = hasMorePosts;
+        break;
+    }
+    if (!hasMore) return;
+
+    isLoadingMore = true;
+    currentPage++;
+    notifyListeners();
+
+    try {
+      final searchType = _tabToSearchType(currentTab);
+      final result = await searchService.search(
+        keyword: searchQuery,
+        searchType: searchType,
+        sort: sortOrder,
+        page: currentPage,
+        limit: pageSize,
+      );
+
+      searchUsers = [...searchUsers, ..._mapUsers(result.users)];
+      searchPosts = [...searchPosts, ...result.posts];
+      searchTopics = [...searchTopics, ...result.topics];
+      totalUsers = result.totalUsers;
+      totalPosts = result.totalPosts;
+      totalTopics = result.totalTopics;
+    } catch (_) {}
+
+    isLoadingMore = false;
+    notifyListeners();
+  }
+
+  List<UserModel> _mapUsers(List<UserInfo> infos) {
+    return infos.map((info) => UserModel(
+      userId: info.userId,
+      userName: info.username,
+      displayName: info.displayName,
+      bio: info.bio,
+      profilePic: info.profilePic,
+      followersCount: info.followersCount,
+      followingCount: info.followingCount,
+      isVerified: info.isVerified,
+    )).toList();
   }
 
   /// 用 follow/{userId}/stats 批量查询用户关注状态，补全 UserModel.isFollowing
@@ -227,11 +296,21 @@ class SearchState extends AppStates {
     }
   }
 
+  void changeSortOrder(String sort) {
+    if (sortOrder == sort) return;
+    sortOrder = sort;
+    if (searchQuery.isNotEmpty) {
+      _performSearch();
+    }
+  }
+
   // ── Search history ──
 
   Future<void> loadSearchHistory() async {
     try {
-      searchHistory = await searchService.getSearchHistory();
+      final resp = await searchService.getSearchHistory();
+      searchHistory = resp.items;
+      searchHistoryTotal = resp.total;
       notifyListeners();
     } catch (_) {}
   }

@@ -1301,4 +1301,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get scheduleTimeTooEarly => '定时时间至少为 5 分钟之后';
+
+  @override
+  String get scanToFollow => '扫一扫，关注我';
+
+  @override
+  String get saveToGallery => '保存';
+
+  @override
+  String get savedToGallery => '已保存到相册';
+
+  @override
+  String get saveFailed => '保存失败';
+
+  @override
+  String get sortTop => '最相关';
+
+  @override
+  String get sortRecent => '近期';
+
+  @override
+  String get loadingMore => '加载中...';
 }

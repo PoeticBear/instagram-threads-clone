@@ -1310,4 +1310,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get scheduleTimeTooEarly =>
       'Scheduled time must be at least 5 minutes from now';
+
+  @override
+  String get scanToFollow => 'Scan to follow me';
+
+  @override
+  String get saveToGallery => 'Save';
+
+  @override
+  String get savedToGallery => 'Saved to gallery';
+
+  @override
+  String get saveFailed => 'Save failed';
+
+  @override
+  String get sortTop => 'Top';
+
+  @override
+  String get sortRecent => 'Recent';
+
+  @override
+  String get loadingMore => 'Loading...';
 }
