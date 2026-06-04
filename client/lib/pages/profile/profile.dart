@@ -106,7 +106,9 @@ class _ProfilePageState extends State<ProfilePage>
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => ShareProfileSheet(user: state.profileUserModel ?? UserModel()),
+      builder: (_) => ShareProfileSheet(
+        user: state.profileUserModel ?? UserModel(),
+      ),
     );
   }
 

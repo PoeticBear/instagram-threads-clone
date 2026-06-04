@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
@@ -27,6 +28,7 @@ class ShareProfileSheet extends StatefulWidget {
 class _ShareProfileSheetState extends State<ShareProfileSheet> {
   final ScreenshotController _screenshotController = ScreenshotController();
   bool _isSaving = false;
+  String? _toastMessage;
 
   String get _qrData => 'threads://user/${widget.user.userId ?? ''}';
   String get _username => widget.user.userName ?? '';
@@ -38,109 +40,114 @@ class _ShareProfileSheetState extends State<ShareProfileSheet> {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-      decoration: BoxDecoration(
-        color: appColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Container(
-            width: 36,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(
-              color: appColors.textSecondary,
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+          decoration: BoxDecoration(
+            color: appColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
           ),
-
-          // User info row
-          _buildUserInfo(appColors),
-
-          const SizedBox(height: 20),
-
-          // QR code card
-          Screenshot(
-            controller: _screenshotController,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+          child: SingleChildScrollView(
+            child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: appColors.textSecondary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              child: Column(
+
+              // User info row
+              _buildUserInfo(appColors),
+
+              const SizedBox(height: 20),
+
+              // QR code card
+              Screenshot(
+                controller: _screenshotController,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      QrImageView(
+                        data: _qrData,
+                        version: QrVersions.auto,
+                        size: 200,
+                        eyeStyle: QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Colors.black,
+                        ),
+                        dataModuleStyle: QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Hint text
+              Text(
+                l10n.scanToFollow,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: appColors.textSecondary,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Action buttons
+              Row(
                 children: [
-                  QrImageView(
-                    data: _qrData,
-                    version: QrVersions.auto,
-                    size: 200,
-                    eyeStyle: QrEyeStyle(
-                      eyeShape: QrEyeShape.square,
-                      color: Colors.black,
-                    ),
-                    dataModuleStyle: QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.square,
-                      color: Colors.black,
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: CupertinoIcons.arrow_down_to_line,
+                      label: l10n.saveToGallery,
+                      isLoading: _isSaving,
+                      onTap: _saveToGallery,
+                      appColors: appColors,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '@$_username',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: CupertinoIcons.link,
+                      label: l10n.copyLink,
+                      onTap: _copyLink,
+                      appColors: appColors,
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
 
-          const SizedBox(height: 16),
-
-          // Hint text
-          Text(
-            l10n.scanToFollow,
-            style: TextStyle(
-              fontSize: 13,
-              color: appColors.textSecondary,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: _buildActionButton(
-                  icon: CupertinoIcons.arrow_down_to_line,
-                  label: l10n.saveToGallery,
-                  isLoading: _isSaving,
-                  onTap: _saveToGallery,
-                  appColors: appColors,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionButton(
-                  icon: CupertinoIcons.link,
-                  label: l10n.copyLink,
-                  onTap: _copyLink,
-                  appColors: appColors,
-                ),
-              ),
+              const SizedBox(height: 8),
             ],
           ),
-
-          const SizedBox(height: 8),
-        ],
-      ),
+          ),
+        ),
+        if (_toastMessage != null)
+          Positioned(
+            top: 12,
+            left: 24,
+            right: 24,
+            child: _buildToast(_toastMessage!),
+          ),
+      ],
     );
   }
 
@@ -185,7 +192,7 @@ class _ShareProfileSheetState extends State<ShareProfileSheet> {
               ),
               const SizedBox(height: 2),
               Text(
-                '@$_username',
+                _username,
                 style: TextStyle(
                   fontSize: 14,
                   color: appColors.textSecondary,
@@ -244,20 +251,21 @@ class _ShareProfileSheetState extends State<ShareProfileSheet> {
     try {
       final image = await _screenshotController.capture();
       if (image == null) {
-        _showSnackBar(AppLocalizations.of(context)!.saveFailed);
+        _showToast(AppLocalizations.of(context)!.saveFailed);
         return;
       }
 
-      final directory = await getApplicationDocumentsDirectory();
+      final directory = await getTemporaryDirectory();
       final filePath = '${directory.path}/threads_qr_$_username.png';
       final file = File(filePath);
       await file.writeAsBytes(image);
 
-      // Save to gallery via platform channel
-      // For now, save to app documents and show success
-      _showSnackBar(AppLocalizations.of(context)!.savedToGallery);
+      await Gal.putImage(filePath, album: 'Threads');
+      _showToast(AppLocalizations.of(context)!.savedToGallery);
+    } on GalException {
+      _showToast(AppLocalizations.of(context)!.saveFailed);
     } catch (e) {
-      _showSnackBar(AppLocalizations.of(context)!.saveFailed);
+      _showToast(AppLocalizations.of(context)!.saveFailed);
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -268,12 +276,32 @@ class _ShareProfileSheetState extends State<ShareProfileSheet> {
   void _copyLink() {
     final link = 'https://threads.net/@$_username';
     Clipboard.setData(ClipboardData(text: link));
-    _showSnackBar(AppLocalizations.of(context)!.linkCopiedToClipboard);
+    _showToast(AppLocalizations.of(context)!.copied);
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: Duration(seconds: 2)),
+  void _showToast(String message) {
+    setState(() => _toastMessage = message);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _toastMessage = null);
+    });
+  }
+
+  Widget _buildToast(String message) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 13,
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }

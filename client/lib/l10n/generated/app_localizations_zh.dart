@@ -395,6 +395,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get linkCopiedToClipboard => '链接已复制到剪贴板';
 
   @override
+  String get copied => '已复制';
+
+  @override
   String get replyToPost => '回复帖子...';
 
   @override

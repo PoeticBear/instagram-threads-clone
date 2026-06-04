@@ -397,6 +397,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkCopiedToClipboard => 'Link copied to clipboard';
 
   @override
+  String get copied => 'Copied';
+
+  @override
   String get replyToPost => 'Reply to post...';
 
   @override
