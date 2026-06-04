@@ -267,6 +267,8 @@ class UserInfo {
   final bool? isVerified;
   final int? accountType;   // 1=Personal, 2=Creator, 3=Business
   final int? postsCount;
+  final bool isFollowing;
+  final bool isMutual;
 
   UserInfo({
     required this.userId,
@@ -284,6 +286,8 @@ class UserInfo {
     this.isVerified,
     this.accountType,
     this.postsCount,
+    this.isFollowing = false,
+    this.isMutual = false,
   });
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
@@ -298,6 +302,18 @@ class UserInfo {
     final isVerified = isVerifiedValue is bool
         ? isVerifiedValue
         : (isVerifiedValue is int ? isVerifiedValue != 0 : false);
+
+    // Handle is_following being returned as int (0/1) instead of bool
+    final isFollowingValue = json['is_following'] ?? json['isFollowing'] ?? 0;
+    final isFollowing = isFollowingValue is bool
+        ? isFollowingValue
+        : (isFollowingValue is int ? isFollowingValue != 0 : false);
+
+    // Handle is_mutual being returned as int (0/1) instead of bool
+    final isMutualValue = json['is_mutual'] ?? json['isMutual'] ?? 0;
+    final isMutual = isMutualValue is bool
+        ? isMutualValue
+        : (isMutualValue is int ? isMutualValue != 0 : false);
 
     return UserInfo(
       userId: json['user_id'] ?? json['id'] ?? 0,
@@ -315,6 +331,8 @@ class UserInfo {
       isVerified: isVerified,
       accountType: json['account_type'] ?? json['accountType'],
       postsCount: json['posts_count'] ?? json['postsCount'],
+      isFollowing: isFollowing,
+      isMutual: isMutual,
     );
   }
 }

@@ -3,6 +3,13 @@ import '../network/api_exception.dart';
 import 'auth_service.dart';
 import 'user_service.dart';
 
+class FollowListResult {
+  final List<UserInfo> users;
+  final int total;
+
+  FollowListResult({required this.users, required this.total});
+}
+
 class FollowService {
   final ApiClient _apiClient;
 
@@ -33,65 +40,93 @@ class FollowService {
     }
   }
 
-  Future<List<UserInfo>> getFollowing({int page = 1, int pageSize = 20}) async {
+  Future<FollowListResult> getFollowing(int userId, {int page = 1, int size = 20, String? keyword}) async {
     try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+      if (keyword != null && keyword.isNotEmpty) {
+        queryParams['keyword'] = keyword;
+      }
       final response = await _apiClient.get(
-        'follow/following',
-        queryParameters: {
-          'page': page.toString(),
-          'page_size': pageSize.toString(),
-        },
+        'follow/following/$userId',
+        queryParameters: queryParams,
       );
-      final list = response['data'] as List? ?? [];
-      return list.map((e) => UserInfo.fromJson(e)).toList();
+      final data = response['data'];
+      final list = (data['items'] as List? ?? []);
+      final total = data['total'] as int? ?? 0;
+      return FollowListResult(
+        users: list.map((e) => UserInfo.fromJson(e)).toList(),
+        total: total,
+      );
     } on ApiException {
       rethrow;
     }
   }
 
-  Future<List<UserInfo>> getFollowers(int userId, {int page = 1, int pageSize = 20}) async {
+  Future<FollowListResult> getFollowers(int userId, {int page = 1, int size = 20, String? keyword}) async {
     try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+      if (keyword != null && keyword.isNotEmpty) {
+        queryParams['keyword'] = keyword;
+      }
       final response = await _apiClient.get(
         'follow/followers/$userId',
-        queryParameters: {
-          'page': page.toString(),
-          'page_size': pageSize.toString(),
-        },
+        queryParameters: queryParams,
       );
-      final list = response['data'] as List? ?? [];
-      return list.map((e) => UserInfo.fromJson(e)).toList();
+      final data = response['data'];
+      final list = (data['items'] as List? ?? []);
+      final total = data['total'] as int? ?? 0;
+      return FollowListResult(
+        users: list.map((e) => UserInfo.fromJson(e)).toList(),
+        total: total,
+      );
     } on ApiException {
       rethrow;
     }
   }
 
-  Future<List<UserInfo>> getMutualFollowers({int page = 1, int pageSize = 20}) async {
+  Future<FollowListResult> getMutualFollowers({int page = 1, int size = 20}) async {
     try {
       final response = await _apiClient.get(
         'follow/mutual',
         queryParameters: {
           'page': page.toString(),
-          'page_size': pageSize.toString(),
+          'size': size.toString(),
         },
       );
-      final list = response['data'] as List? ?? [];
-      return list.map((e) => UserInfo.fromJson(e)).toList();
+      final data = response['data'];
+      final list = (data['items'] as List? ?? []);
+      final total = data['total'] as int? ?? 0;
+      return FollowListResult(
+        users: list.map((e) => UserInfo.fromJson(e)).toList(),
+        total: total,
+      );
     } on ApiException {
       rethrow;
     }
   }
 
-  Future<List<UserInfo>> getRecommendedUsers({int page = 1, int pageSize = 20}) async {
+  Future<FollowListResult> getRecommendedUsers({int page = 1, int size = 20}) async {
     try {
       final response = await _apiClient.get(
         'follow/recommend',
         queryParameters: {
           'page': page.toString(),
-          'page_size': pageSize.toString(),
+          'size': size.toString(),
         },
       );
-      final list = response['data'] as List? ?? [];
-      return list.map((e) => UserInfo.fromJson(e)).toList();
+      final data = response['data'];
+      final list = (data['items'] as List? ?? []);
+      final total = data['total'] as int? ?? 0;
+      return FollowListResult(
+        users: list.map((e) => UserInfo.fromJson(e)).toList(),
+        total: total,
+      );
     } on ApiException {
       rethrow;
     }

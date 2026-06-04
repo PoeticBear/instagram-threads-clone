@@ -266,7 +266,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
       itemCount: state.searchUsers.length,
       separatorBuilder: (_, __) => Divider(color: appColors.divider, height: 0.5, indent: 65),
       itemBuilder: (context, index) {
-        return UserTilePage(user: state.searchUsers[index], isadded: state.searchUsers[index].isFollowing ?? false);
+        return UserTilePage(user: state.searchUsers[index], isFollowing: state.searchUsers[index].isFollowing ?? false);
       },
     );
   }

@@ -10,10 +10,12 @@ import 'package:threads/common/settings.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/profile.state.dart';
 import 'package:threads/state/auth.state.dart';
+import 'package:threads/state/follow_list.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/pages/media/media_viewer_page.dart';
+import 'package:threads/pages/follow/follow_list_page.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -101,6 +103,21 @@ class _ProfilePageState extends State<ProfilePage>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(AppLocalizations.of(context)!.linkCopiedToClipboard),
     ));
+  }
+
+  void _navigateToFollowList(int initialTab) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => FollowListState(widget.profileId),
+          child: FollowListPage(
+            profileId: widget.profileId,
+            initialTab: initialTab,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -254,11 +271,13 @@ class _ProfilePageState extends State<ProfilePage>
                             _buildStatItem(
                               '${state.followStats.followingCount}',
                               ' ${AppLocalizations.of(context)!.statFollowing}',
+                              onTap: () => _navigateToFollowList(1),
                             ),
                             SizedBox(width: 16),
                             _buildStatItem(
                               '${state.followStats.followersCount}',
                               ' ${AppLocalizations.of(context)!.statFollowers}',
+                              onTap: () => _navigateToFollowList(0),
                             ),
                           ],
                         ),
@@ -503,9 +522,9 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildStatItem(String count, String label) {
+  Widget _buildStatItem(String count, String label, {VoidCallback? onTap}) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    return RichText(
+    final child = RichText(
       text: TextSpan(
         children: [
           TextSpan(
@@ -519,6 +538,12 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ],
       ),
+    );
+    if (onTap == null) return child;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: child,
     );
   }
 

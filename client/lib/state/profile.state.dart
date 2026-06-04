@@ -177,8 +177,8 @@ class ProfileState extends ChangeNotifier {
       final profileUserId = int.tryParse(profileId);
       if (profileUserId == null) return [];
 
-      final followers = await followService.getFollowers(profileUserId, page: page);
-      return followers.map((info) => UserModel(
+      final result = await followService.getFollowers(profileUserId, page: page);
+      return result.users.map((info) => UserModel(
         userId: info.userId,
         userName: info.username,
         displayName: info.displayName,
@@ -194,8 +194,11 @@ class ProfileState extends ChangeNotifier {
 
   Future<List<UserModel>> getFollowing({int page = 1}) async {
     try {
-      final following = await followService.getFollowing(page: page);
-      return following.map((info) => UserModel(
+      final profileUserId = int.tryParse(profileId);
+      if (profileUserId == null) return [];
+
+      final result = await followService.getFollowing(profileUserId, page: page);
+      return result.users.map((info) => UserModel(
         userId: info.userId,
         userName: info.username,
         displayName: info.displayName,
