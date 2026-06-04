@@ -14,6 +14,7 @@ import 'package:threads/state/follow_list.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/feedpost.dart';
 import 'package:threads/model/post.module.dart';
+import 'package:threads/model/user.module.dart';
 import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/pages/follow/follow_list_page.dart';
 import 'package:threads/pages/profile/share_profile_sheet.dart';
