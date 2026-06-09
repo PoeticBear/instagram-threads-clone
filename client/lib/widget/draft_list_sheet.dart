@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import '../model/draft.module.dart';
 import '../state/draft.state.dart';
 import '../theme/app_colors.dart';
@@ -34,7 +35,7 @@ class DraftListSheet extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Drafts', style: TextStyle(color: appColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+                Text(AppLocalizations.of(context)!.drafts, style: TextStyle(color: appColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Icon(Icons.close, color: appColors.textPrimary),
@@ -51,7 +52,7 @@ class DraftListSheet extends StatelessWidget {
               if (state.drafts.isEmpty) {
                 return Expanded(
                   child: Center(
-                    child: Text('No drafts', style: TextStyle(color: appColors.textSecondary, fontSize: 16)),
+                    child: Text(AppLocalizations.of(context)!.noDrafts, style: TextStyle(color: appColors.textSecondary, fontSize: 16)),
                   ),
                 );
               }

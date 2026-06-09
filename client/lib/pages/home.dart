@@ -167,7 +167,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        drawer: CameraPage(),
+        // drawer: CameraPage(), // TODO: 暂时屏蔽左滑打开相机
         extendBody: true,
         bottomNavigationBar: bottomNavBar(),
         extendBodyBehindAppBar: true,

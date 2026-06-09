@@ -771,8 +771,16 @@ class _ComposePostState extends State<ComposePost> {
 
   // ─── Widget builders ──────────────────────────────────────
 
+  static bool _isValidImageUrl(String url) {
+    if (url.isEmpty) return false;
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || !uri.hasAuthority) return false;
+    if (uri.host.contains('example.com')) return false;
+    return true;
+  }
+
   Widget _buildAvatar(AppColors appColors, String url, double size) {
-    if (url.isEmpty) {
+    if (!_isValidImageUrl(url)) {
       return Container(
         height: size,
         width: size,
@@ -926,7 +934,7 @@ class _ComposePostState extends State<ComposePost> {
 
   Widget _buildBottomToolbar(AppColors appColors) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: appColors.divider, width: 0.5)),
       ),
@@ -934,61 +942,48 @@ class _ComposePostState extends State<ComposePost> {
         top: false,
         child: Row(
           children: [
-            // Camera button
-            IconButton(
-              onPressed: _showPollEditor ? null : _openCamera,
-              icon: Icon(Iconsax.camera,
-                  size: 22,
-                  color: _showPollEditor ? appColors.divider : appColors.textPrimary),
+            _toolbarIcon(
+              onTap: _showPollEditor ? null : _openCamera,
+              icon: Iconsax.camera,
+              color: _showPollEditor ? appColors.divider : appColors.textPrimary,
             ),
-            // Image button
-            IconButton(
-              onPressed: _showPollEditor ? null : _pickImage,
-              icon: Icon(Iconsax.picture_frame,
-                  size: 22,
-                  color: _showPollEditor ? appColors.divider : appColors.textPrimary),
+            _toolbarIcon(
+              onTap: _showPollEditor ? null : _pickImage,
+              icon: Iconsax.picture_frame,
+              color: _showPollEditor ? appColors.divider : appColors.textPrimary,
             ),
-            // Poll button
-            IconButton(
-              onPressed: _imageFiles.isNotEmpty ? null : _togglePollEditor,
-              icon: Icon(Iconsax.chart_square,
-                  size: 22,
-                  color: _imageFiles.isNotEmpty ? appColors.divider
-                      : (_showPollEditor ? appColors.accent : appColors.textPrimary)),
+            _toolbarIcon(
+              onTap: _imageFiles.isNotEmpty ? null : _togglePollEditor,
+              icon: Iconsax.chart_square,
+              color: _imageFiles.isNotEmpty ? appColors.divider
+                  : (_showPollEditor ? appColors.accent : appColors.textPrimary),
             ),
-            // Reply type button
-            IconButton(
-              onPressed: _showReplyTypeSheet,
-              icon: Icon(_replyTypeIcon, size: 22, color: appColors.textMuted),
+            _toolbarIcon(
+              onTap: _showReplyTypeSheet,
+              icon: _replyTypeIcon,
+              color: appColors.textMuted,
             ),
-            // Drafts button
-            IconButton(
-              onPressed: _showDraftListSheet,
-              icon: Icon(Iconsax.note_text, size: 22, color: appColors.textMuted),
+            _toolbarIcon(
+              onTap: _showDraftListSheet,
+              icon: Iconsax.note_text,
+              color: appColors.textMuted,
             ),
-            // Location button
-            IconButton(
-              onPressed: _showLocationDialog,
-              icon: Icon(Iconsax.location,
-                  size: 22,
-                  color: _location != null ? appColors.accent : appColors.textMuted),
+            _toolbarIcon(
+              onTap: _showLocationDialog,
+              icon: Iconsax.location,
+              color: _location != null ? appColors.accent : appColors.textMuted,
             ),
-            // Schedule button
-            IconButton(
-              onPressed: _showSchedulePicker,
-              icon: Icon(Iconsax.clock,
-                  size: 22,
-                  color: _scheduledTime != null
-                      ? appColors.accent
-                      : appColors.textMuted),
+            _toolbarIcon(
+              onTap: _showSchedulePicker,
+              icon: Iconsax.clock,
+              color: _scheduledTime != null ? appColors.accent : appColors.textMuted,
             ),
             Spacer(),
-            // Save draft text button
             if (_hasContent)
               GestureDetector(
                 onTap: _saveCurrentDraft,
                 child: Padding(
-                  padding: EdgeInsets.only(right: 12),
+                  padding: EdgeInsets.only(right: 10),
                   child: Text(
                     AppLocalizations.of(context)!.draft,
                     style: TextStyle(
@@ -998,7 +993,6 @@ class _ComposePostState extends State<ComposePost> {
                   ),
                 ),
               ),
-            // Post button
             GestureDetector(
               onTap: _canPost ? _submit : null,
               child: _isSubmitting
@@ -1023,6 +1017,21 @@ class _ComposePostState extends State<ComposePost> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _toolbarIcon({
+    required VoidCallback? onTap,
+    required IconData icon,
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: EdgeInsets.all(6),
+        child: Icon(icon, size: 22, color: color),
       ),
     );
   }
