@@ -116,7 +116,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get or => 'or';
 
   @override
-  String get loginWithInstagram => 'Login with Instagram';
+  String get loginWithApple => 'Continue with Apple';
+
+  @override
+  String get loginWithGoogle => 'Continue with Google';
 
   @override
   String get createNewAccount => 'Create new account';

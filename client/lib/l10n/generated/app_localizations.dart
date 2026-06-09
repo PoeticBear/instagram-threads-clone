@@ -308,11 +308,17 @@ abstract class AppLocalizations {
   /// **'or'**
   String get or;
 
-  /// No description provided for @loginWithInstagram.
+  /// No description provided for @loginWithApple.
   ///
   /// In en, this message translates to:
-  /// **'Login with Instagram'**
-  String get loginWithInstagram;
+  /// **'Continue with Apple'**
+  String get loginWithApple;
+
+  /// No description provided for @loginWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get loginWithGoogle;
 
   /// No description provided for @createNewAccount.
   ///

@@ -165,24 +165,59 @@ class _NamePageState extends State<NamePage> {
               const SizedBox(height: 32),
               GestureDetector(
                 child: Container(
-                  height: 60,
+                  height: 50,
                   decoration: BoxDecoration(
-                    color: appColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: appColors.border,
-                      width: 0.5,
-                    ),
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(25),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset("assets/insta.png", height: 28),
+                      const Icon(Icons.apple, color: Colors.white, size: 28),
                       const SizedBox(width: 12),
                       Text(
-                        AppLocalizations.of(context)!.loginWithInstagram,
-                        style: TextStyle(
-                          color: appColors.textPrimary,
+                        AppLocalizations.of(context)!.loginWithApple,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: const Color(0xFF747775), width: 0.5),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      RichText(
+                        text: const TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'G',
+                              style: TextStyle(
+                                color: Color(0xFF4285F4),
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        AppLocalizations.of(context)!.loginWithGoogle,
+                        style: const TextStyle(
+                          color: Color(0xFF1F1F1F),
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),

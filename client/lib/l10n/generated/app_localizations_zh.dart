@@ -116,7 +116,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get or => '或';
 
   @override
-  String get loginWithInstagram => '使用 Instagram 账号登录';
+  String get loginWithApple => '通过 Apple 继续';
+
+  @override
+  String get loginWithGoogle => '通过 Google 继续';
 
   @override
   String get createNewAccount => '创建新账号';
