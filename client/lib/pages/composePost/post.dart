@@ -23,10 +23,10 @@ class ComposePost extends StatefulWidget {
   const ComposePost({Key? key, this.onPostSuccess, this.onCancel}) : super(key: key);
 
   @override
-  State<ComposePost> createState() => _ComposePostState();
+  State<ComposePost> createState() => ComposePostState();
 }
 
-class _ComposePostState extends State<ComposePost> {
+class ComposePostState extends State<ComposePost> {
   late TextEditingController _textEditingController;
   List<File> _imageFiles = [];
   bool _showPollEditor = false;
@@ -84,6 +84,46 @@ class _ComposePostState extends State<ComposePost> {
       _doBack();
       return;
     }
+    _showSaveDraftDialog(
+      onCancel: () {},
+      onDiscard: _doBack,
+      onSave: () async {
+        await _saveCurrentDraft();
+        if (mounted) _doBack();
+      },
+    );
+  }
+
+  /// 从底部导航栏切换 Tab 时调用，拦截未保存内容
+  void handleTabSwitch({
+    VoidCallback? onSave,
+    VoidCallback? onDiscard,
+  }) {
+    if (!_hasContent) {
+      onDiscard?.call();
+      return;
+    }
+    _showSaveDraftDialog(
+      onCancel: () {},
+      onDiscard: () {
+        _clearContent();
+        onDiscard?.call();
+      },
+      onSave: () async {
+        await _saveCurrentDraft();
+        if (mounted) {
+          _clearContent();
+          onSave?.call();
+        }
+      },
+    );
+  }
+
+  void _showSaveDraftDialog({
+    required VoidCallback onCancel,
+    required VoidCallback onDiscard,
+    required Future<void> Function() onSave,
+  }) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     showCupertinoDialog(
       context: context,
@@ -97,14 +137,17 @@ class _ComposePostState extends State<ComposePost> {
         ),
         actions: [
           CupertinoDialogAction(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              onCancel();
+            },
             child: Text(AppLocalizations.of(context)!.cancel),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
             onPressed: () {
               Navigator.pop(dialogContext);
-              _doBack();
+              onDiscard();
             },
             child: Text(AppLocalizations.of(context)!.discard),
           ),
@@ -112,8 +155,7 @@ class _ComposePostState extends State<ComposePost> {
             isDefaultAction: true,
             onPressed: () async {
               Navigator.pop(dialogContext);
-              await _saveCurrentDraft();
-              if (mounted) _doBack();
+              await onSave();
             },
             child: Text(AppLocalizations.of(context)!.save),
           ),
@@ -122,7 +164,7 @@ class _ComposePostState extends State<ComposePost> {
     );
   }
 
-  void _doBack() {
+  void _clearContent() {
     _textEditingController.clear();
     for (final c in _pollControllers) {
       c.clear();
@@ -134,6 +176,10 @@ class _ComposePostState extends State<ComposePost> {
       _location = null;
       _scheduledTime = null;
     });
+  }
+
+  void _doBack() {
+    _clearContent();
     widget.onCancel?.call();
   }
 

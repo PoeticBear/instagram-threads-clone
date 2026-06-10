@@ -22,14 +22,29 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+  final _composePostKey = GlobalKey<ComposePostState>();
+
+  late final List<Widget> _pages;
+
   @override
   void initState() {
+    super.initState();
+    _pages = [
+      FeedPage(),
+      SearchPage(),
+      ComposePost(
+        key: _composePostKey,
+        onPostSuccess: () => setState(() => tab = 0),
+        onCancel: () => setState(() => tab = 0),
+      ),
+      NotificationPage(),
+      MyProfilePage(),
+    ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       initPosts();
       initProfile();
       initNotifications();
     });
-    super.initState();
   }
 
   @override
@@ -53,112 +68,88 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     state.fetchUnreadCount();
   }
 
-  Widget tabPage(int index) {
-    if (index == 0) return FeedPage();
-    if (index == 1) return SearchPage();
-    if (index == 2) return ComposePost(
-      onPostSuccess: () {
-        setState(() {
-          tab = 0;
-        });
-      },
-      onCancel: () {
-        setState(() {
-          tab = 0;
-        });
-      },
-    );
-    if (index == 3) return NotificationPage();
-    if (index == 4) return MyProfilePage();
-    return FeedPage();
+  void _switchTab(int targetTab) {
+    if (tab == targetTab) return;
+    if (tab == 2) {
+      _composePostKey.currentState?.handleTabSwitch(
+        onSave: () => setState(() => tab = targetTab),
+        onDiscard: () => setState(() => tab = targetTab),
+      );
+      return;
+    }
+    setState(() => tab = targetTab);
   }
 
   bool isSelected = false;
-  Widget iconBar(int tabCount, IconData icon) {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    final isActive = tab == tabCount;
-    return GestureDetector(
-        onTap: () {
-          setState(() {
-            tab = tabCount;
-          });
-        },
-        child: Icon(
-          icon,
-          size: 30,
-          color: isActive ? appColors.textPrimary : appColors.textSecondary,
-        ));
-  }
 
-  Widget _notificationIcon() {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    final isActive = tab == 3;
-    return Consumer<NotificationState>(
-      builder: (_, state, __) {
-        final showBadge = state.unreadCount > 0;
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              tab = 3;
-            });
-          },
-          child: SizedBox(
-            width: 30,
-            height: 30,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Center(
-                  child: Icon(
-                    Iconsax.heart,
-                    size: 30,
-                    color: isActive ? appColors.textPrimary : appColors.textSecondary,
-                  ),
-                ),
-                if (showBadge)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: appColors.accent,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+  static const double _iconSize = 30.0;
+
+  Widget _tabBarItem({
+    required int tabIndex,
+    required IconData icon,
+    required AppColors appColors,
+    bool isActive = false,
+    Widget? badge,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _switchTab(tabIndex),
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          height: 70,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                icon,
+                size: _iconSize,
+                color: isActive ? appColors.textPrimary : appColors.textSecondary,
+              ),
+              if (badge != null) badge,
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget bottomNavBar() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    Widget separator = Container(
-      width: 40,
-    );
     return Container(
         color: appColors.background,
         height: 90,
         padding: EdgeInsets.only(bottom: 20),
         width: MediaQuery.of(context).size.width,
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          iconBar(0, Iconsax.home),
-          separator,
-          iconBar(1, Iconsax.search_normal),
-          separator,
-          iconBar(2, Iconsax.edit),
-          separator,
-          _notificationIcon(),
-          separator,
-          iconBar(
-            4,
-            CupertinoIcons.person,
+        child: Row(children: [
+          _tabBarItem(tabIndex: 0, icon: Iconsax.home, appColors: appColors, isActive: tab == 0),
+          _tabBarItem(tabIndex: 1, icon: Iconsax.search_normal, appColors: appColors, isActive: tab == 1),
+          _tabBarItem(tabIndex: 2, icon: Iconsax.edit, appColors: appColors, isActive: tab == 2),
+          Consumer<NotificationState>(
+            builder: (_, state, __) {
+              return _tabBarItem(
+                tabIndex: 3,
+                icon: Iconsax.heart,
+                appColors: appColors,
+                isActive: tab == 3,
+                badge: state.unreadCount > 0
+                    ? Positioned(
+                        right: 0,
+                        top: 8,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: appColors.accent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                    : null,
+              );
+            },
           ),
+          _tabBarItem(tabIndex: 4, icon: CupertinoIcons.person, appColors: appColors, isActive: tab == 4),
         ]));
   }
 
@@ -167,11 +158,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        // drawer: CameraPage(), // TODO: 暂时屏蔽左滑打开相机
         extendBody: true,
         bottomNavigationBar: bottomNavBar(),
         extendBodyBehindAppBar: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: tabPage(tab));
+        body: IndexedStack(
+          index: tab,
+          children: _pages,
+        ));
   }
 }
