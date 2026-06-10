@@ -9,7 +9,11 @@ class MyProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authState = Provider.of<AuthState>(context);
+    // 关键：必须用 listen: false。
+    // 否则 AuthState 任何 notifyListeners()（例如下拉刷新后调 getProfileUser）
+    // 都会导致 MyProfilePage 重建，ChangeNotifierProvider 会丢弃并重建 ProfileState，
+    // 丢失已加载的数据。
+    final authState = Provider.of<AuthState>(context, listen: false);
     final profileId = authState.userId.toString();
 
     if (profileId.isEmpty) {

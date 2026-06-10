@@ -15,8 +15,8 @@ class NamePage extends StatefulWidget {
 }
 
 class _NamePageState extends State<NamePage> {
-  final _usernameController = TextEditingController(text: 'pengsihang');
-  final _passwordController = TextEditingController(text: '123456');
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
 
   @override

@@ -143,8 +143,16 @@ class AuthState extends AppStates {
     }
   }
 
-  /// Simple registration with username and password only
-  /// 注册成功后不自动登录，返回登录页让用户手动登录
+  /// 注册流程：先创建账号，注册成功后自动用相同凭证登录，
+  /// 设置登录状态并加载用户资料，最后返回 userId。
+  ///
+  /// 执行顺序（严格按此顺序，否则会状态错乱）：
+  ///   1) POST /user/register  (创建账号)
+  ///   2) POST /user/signin    (拿 token，服务端会保存到本地 + ApiClient)
+  ///   3) userId = ...; authStatus = LOGGED_IN  (设置登录态)
+  ///   4) await getProfileUser()  (加载用户资料)
+  ///   5) notifyListeners()       (通知 Provider 监听者)
+  ///   6) return userId           (UI 收到后跳转到 HomePage)
   Future<String?> register(
     String username,
     String password,
@@ -155,16 +163,30 @@ class AuthState extends AppStates {
       isBusy = true;
       notifyListeners();
 
-      final response = await authService.register(
+      // 1) 创建账号
+      await authService.register(
         username: username,
         password: password,
         confirmPassword: password,
       );
 
-      // 注册成功，清除自动保存的 token，不设为登录状态
-      await authService.logout();
+      // 2) 用相同凭证登录（注册接口不返回 token，需要再调一次 signin）
+      final signInResult = await authService.signIn(
+        username: username,
+        password: password,
+      );
 
-      return username;
+      // 3) 设置登录态
+      userId = signInResult.userId?.toString() ?? '';
+      authStatus = AuthStatus.LOGGED_IN;
+
+      // 4) 加载用户资料
+      await getProfileUser();
+
+      // 5) 通知监听者（HomePage 挂载时才能读到正确的 authStatus）
+      notifyListeners();
+
+      return userId;
     } on ApiException catch (error) {
       Utility.customSnackBar(scaffoldKey, error.message, context);
       return null;
@@ -338,18 +360,25 @@ class AuthState extends AppStates {
 
       final userInfo = await authService.getCurrentUser();
       userId = userInfo.userId.toString();
-      debugPrint('getProfileUser - got userId: $userId');
+      debugPrint('getProfileUser - got userId: $userId, username=${userInfo.username}');
 
       // GET /user/me 只返回 id/username/avatar，需要再调完整资料接口
       final fullProfile = await userService.getUserProfile(userInfo.userId);
       debugPrint('getProfileUser - fullProfile: username=${fullProfile.username}, displayName=${fullProfile.displayName}, bio=${fullProfile.bio}, link=${fullProfile.link}');
 
+      // 关键：/user/profile/{id} 接口的 schema 不返回 username 字段，
+      // 真正的 username 来自 /user/me 的 userInfo.username。
+      // 同样的，displayName/profilePic 在新用户未填写时为空，用 /user/me 的值补。
       _userModel = UserModel(
         userId: fullProfile.userId,
-        userName: fullProfile.username,
-        displayName: fullProfile.displayName,
+        userName: userInfo.username,
+        displayName: fullProfile.displayName.isNotEmpty
+            ? fullProfile.displayName
+            : userInfo.displayName,
         bio: fullProfile.bio,
-        profilePic: fullProfile.profilePic,
+        profilePic: (fullProfile.profilePic?.isNotEmpty ?? false)
+            ? fullProfile.profilePic
+            : userInfo.profilePic,
         link: fullProfile.link,
         isPrivate: fullProfile.isPrivate,
         followersCount: fullProfile.followersCount,
@@ -362,7 +391,7 @@ class AuthState extends AppStates {
         postsCount: fullProfile.postsCount,
       );
 
-      debugPrint('getProfileUser - _userModel: displayName=${_userModel?.displayName}');
+      debugPrint('getProfileUser - _userModel: userName=${_userModel?.userName}, displayName=${_userModel?.displayName}');
 
       getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
 

@@ -90,13 +90,19 @@ class AuthService {
       );
 
       final data = response['data'];
-      await _saveTokens(
-        accessToken: data['access_token'],
-        refreshToken: data['refresh_token'],
-        userId: data['user_id']?.toString(),
-      );
+      // 服务端 /user/register 不返回 token（仅返回 OKResponse）
+      // 后续由调用方主动调用 signIn 获取 token
+      if (data != null &&
+          data['access_token'] != null &&
+          data['refresh_token'] != null) {
+        await _saveTokens(
+          accessToken: data['access_token'],
+          refreshToken: data['refresh_token'],
+          userId: data['user_id']?.toString(),
+        );
+      }
 
-      return RegisterResponse.fromJson(data);
+      return RegisterResponse.fromJson(data ?? {});
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -191,16 +197,22 @@ class AuthService {
   }
 
   Future<void> _saveTokens({
-    required String accessToken,
-    required String refreshToken,
+    String? accessToken,
+    String? refreshToken,
     String? userId,
   }) async {
-    await _prefs.setString(_accessTokenKey, accessToken);
-    await _prefs.setString(_refreshTokenKey, refreshToken);
+    if (accessToken != null) {
+      await _prefs.setString(_accessTokenKey, accessToken);
+    }
+    if (refreshToken != null) {
+      await _prefs.setString(_refreshTokenKey, refreshToken);
+    }
     if (userId != null) {
       await _prefs.setString(_userIdKey, userId);
     }
-    _apiClient.setTokens(accessToken: accessToken, refreshToken: refreshToken);
+    if (accessToken != null && refreshToken != null) {
+      _apiClient.setTokens(accessToken: accessToken, refreshToken: refreshToken);
+    }
   }
 
   Future<void> _clearTokens() async {

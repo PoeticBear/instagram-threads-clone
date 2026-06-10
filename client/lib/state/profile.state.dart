@@ -84,12 +84,25 @@ class ProfileState extends ChangeNotifier {
 
       final userInfo = await userService.getUserProfile(userIdInt);
 
+      // 对于自己的 profile，/user/profile/{id} 接口的 schema 不返回 username 字段，
+      // 需要从已加载的当前用户（_userModel）补全。
+      final isOwnProfile = isMyProfile;
+      final fallbackUserName = isOwnProfile ? (_userModel?.userName ?? '') : '';
+      final fallbackDisplayName = isOwnProfile ? (_userModel?.displayName ?? '') : '';
+      final fallbackProfilePic = isOwnProfile ? (_userModel?.profilePic ?? '') : '';
+
       _profileUserModel = UserModel(
         userId: userInfo.userId,
-        userName: userInfo.username,
-        displayName: userInfo.displayName,
+        userName: userInfo.username.isNotEmpty
+            ? userInfo.username
+            : fallbackUserName,
+        displayName: userInfo.displayName.isNotEmpty
+            ? userInfo.displayName
+            : fallbackDisplayName,
         bio: userInfo.bio,
-        profilePic: userInfo.profilePic,
+        profilePic: (userInfo.profilePic?.isNotEmpty ?? false)
+            ? userInfo.profilePic
+            : fallbackProfilePic,
         isPrivate: userInfo.isPrivate,
         followersCount: userInfo.followersCount,
         followingCount: userInfo.followingCount,
@@ -101,8 +114,7 @@ class ProfileState extends ChangeNotifier {
         postsCount: userInfo.postsCount,
       );
 
-      debugPrint('ProfileState._getProfileUser: followersCount=${userInfo.followersCount}, followingCount=${userInfo.followingCount}');
-      debugPrint('ProfileState._getProfileUser: profilePic=${_profileUserModel?.profilePic}');
+      debugPrint('ProfileState._getProfileUser: userName=${_profileUserModel?.userName}, displayName=${_profileUserModel?.displayName}, profilePic=${_profileUserModel?.profilePic}');
 
       loading = false;
       notifyListeners();

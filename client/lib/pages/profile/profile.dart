@@ -112,6 +112,23 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  /// 解析个人中心顶部要显示的"显示名称"。
+  ///
+  /// 优先级：
+  ///   1) profileUserModel.displayName（用户已设置）
+  ///   2) profileUserModel.userName（注册时录入的账号，displayName 未设置时兜底）
+  ///   3) widget.username（外部传入的 username，跳转到他人 profile 时使用）
+  ///   4) ''（以上都为空时留空，不抛错）
+  String _resolveDisplayName(ProfileState state, String? fallbackUsername) {
+    final displayName = state.profileUserModel?.displayName ?? '';
+    if (displayName.isNotEmpty) return displayName;
+
+    final userName = state.profileUserModel?.userName ?? '';
+    if (userName.isNotEmpty) return userName;
+
+    return fallbackUsername ?? '';
+  }
+
   void _navigateToFollowList(int initialTab) {
     Navigator.push(
       context,
@@ -203,7 +220,7 @@ class _ProfilePageState extends State<ProfilePage>
                                     children: [
                                       Flexible(
                                         child: Text(
-                                          state.profileUserModel?.displayName ?? '',
+                                          _resolveDisplayName(state, widget.username),
                                           style: TextStyle(
                                               color: appColors.textPrimary,
                                               fontSize: 28,
