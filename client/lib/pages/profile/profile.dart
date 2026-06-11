@@ -38,7 +38,15 @@ class ProfilePage extends StatefulWidget {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
         return ChangeNotifierProvider(
-          create: (BuildContext context) => ProfileState(profileId),
+          // 把当前登录用户的 ID 显式传给 ProfileState，
+          // 让 isMyProfile 用 AuthState.userId 作为权威来源。
+          // 否则 isMyProfile 完全依赖 SharedPreferences 缓存里的 userId，
+          // 在缓存里 userId 为 0 / 缺失时会错误地把当前用户当成"别人"，
+          // 把"编辑资料"显示成"关注"按钮。
+          create: (BuildContext context) {
+            final auth = Provider.of<AuthState>(context, listen: false);
+            return ProfileState(profileId, currentUserId: auth.userId);
+          },
           child: ProfilePage(
             profileId: profileId,
             username: username,

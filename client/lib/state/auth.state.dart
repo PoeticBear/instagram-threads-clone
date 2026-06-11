@@ -15,7 +15,9 @@ import 'package:threads/common/locator.dart';
 class AuthState extends AppStates {
   AuthStatus authStatus = AuthStatus.NOT_DETERMINED;
   bool isSignInWithGoogle = false;
-  late String userId;
+  // 默认空串，避免 late 未初始化访问抛 LateInitializationError。
+  // 未登录时也允许被读取（结果为空串），上层据此决定是否渲染需登录态的页面。
+  String userId = '';
   late AuthState authRepository;
   UserModel? _userModel;
 
@@ -88,6 +90,14 @@ class AuthState extends AppStates {
 
       // Load user profile
       await getProfileUser();
+
+      // 防御性校验：若服务端 SigninResponse 字段缺失，
+      // 且 /user/me 兜底也失败，userId 仍可能为空——
+      // 此时视为登录失败，避免把用户带到数据残缺的个人中心一片空白。
+      if (userId.isEmpty) {
+        authStatus = AuthStatus.NOT_LOGGED_IN;
+        return null;
+      }
 
       return userId;
     } on AuthException catch (error) {
@@ -366,11 +376,16 @@ class AuthState extends AppStates {
       final fullProfile = await userService.getUserProfile(userInfo.userId);
       debugPrint('getProfileUser - fullProfile: username=${fullProfile.username}, displayName=${fullProfile.displayName}, bio=${fullProfile.bio}, link=${fullProfile.link}');
 
-      // 关键：/user/profile/{id} 接口的 schema 不返回 username 字段，
-      // 真正的 username 来自 /user/me 的 userInfo.username。
+      // 关键：/user/profile/{id} 接口的 schema 把 user_id 标记为 optional + default 0，
+      // 服务端可能省略这个字段导致 fullProfile.userId = 0。
+      // 如果拿 0 写进缓存，ProfileState._loadCurrentUser 读到 "0"，
+      // isMyProfile 就会错误判定为 false，从而在个人中心页把"编辑资料"显示成"关注"。
+      // 所以 userId 一律用 /user/me 返回的（schema 必返 id），这是当前登录态的权威来源。
       // 同样的，displayName/profilePic 在新用户未填写时为空，用 /user/me 的值补。
+      // /user/profile/{id} 接口的 schema 不返回 username 字段，
+      // 真正的 username 也来自 /user/me 的 userInfo.username。
       _userModel = UserModel(
-        userId: fullProfile.userId,
+        userId: userInfo.userId,
         userName: userInfo.username,
         displayName: fullProfile.displayName.isNotEmpty
             ? fullProfile.displayName

@@ -38,7 +38,7 @@ class AuthService {
   }) async {
     try {
       final response = await _apiClient.post(
-        'user/signin',
+        'auth/username/signin',
         body: {
           'username': username,
           'password': password,
@@ -53,7 +53,8 @@ class AuthService {
       await _saveTokens(
         accessToken: data['access_token'],
         refreshToken: data['refresh_token'],
-        userId: data['user_id']?.toString(),
+        // 服务端 SigninResponse schema 字段名是 `id`，旧实现错写成 `user_id`
+        userId: (data['user_id'] ?? data['id'])?.toString(),
       );
 
       return LoginResponse.fromJson(data);
@@ -75,7 +76,7 @@ class AuthService {
   }) async {
     try {
       final response = await _apiClient.post(
-        'user/register',
+        'auth/username/register',
         body: {
           'username': username,
           'password': password,
@@ -98,7 +99,8 @@ class AuthService {
         await _saveTokens(
           accessToken: data['access_token'],
           refreshToken: data['refresh_token'],
-          userId: data['user_id']?.toString(),
+          // 与 signIn 对齐：兼容服务端字段名 `id` / `user_id` 两种
+          userId: (data['user_id'] ?? data['id'])?.toString(),
         );
       }
 
@@ -112,7 +114,7 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      await _apiClient.delete('user/logout');
+      await _apiClient.delete('auth/logout');
     } catch (_) {
       // Ignore errors during logout
     } finally {
@@ -140,7 +142,7 @@ class AuthService {
 
     try {
       final response = await _apiClient.post(
-        'user/token/refresh',
+        'auth/token/refresh',
         body: {'refresh_token': refreshToken},
       );
 
@@ -238,7 +240,8 @@ class LoginResponse {
     return LoginResponse(
       accessToken: json['access_token'] ?? '',
       refreshToken: json['refresh_token'] ?? '',
-      userId: json['user_id'],
+      // 兼容 SigninResponse schema（字段名 `id`）与旧版 `user_id`
+      userId: json['user_id'] ?? json['id'],
     );
   }
 }
@@ -258,7 +261,8 @@ class RegisterResponse {
     return RegisterResponse(
       accessToken: json['access_token'] ?? '',
       refreshToken: json['refresh_token'] ?? '',
-      userId: json['user_id'],
+      // 兼容 schema 字段名 `id` / `user_id`
+      userId: json['user_id'] ?? json['id'],
     );
   }
 }

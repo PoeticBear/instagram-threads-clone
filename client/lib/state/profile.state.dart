@@ -8,8 +8,15 @@ import 'package:threads/common/locator.dart';
 
 class ProfileState extends ChangeNotifier {
   final String profileId;
+  // 当前登录用户的 ID（由调用方显式传入，避免完全依赖缓存推断）。
+  // 之所以需要它：AuthState.getProfileUser 写入缓存的 userId 在某些场景
+  // （如 /user/profile/{id} 省略 user_id 字段）可能为 0，
+  // 导致 isMyProfile 错误判定为 false，把"编辑资料"显示成"关注"。
+  // 调用方（如 MyProfilePage）通过 Selector 拿到的是 AuthState.userId，
+  // 这是当前登录态的权威来源，优先使用它来判断是否是自己的 profile。
+  final String? currentUserId;
 
-  ProfileState(this.profileId) {
+  ProfileState(this.profileId, {this.currentUserId}) {
     _init();
   }
 
@@ -68,7 +75,14 @@ class ProfileState extends ChangeNotifier {
     }
   }
 
-  bool get isMyProfile => userId != null && profileId == userId;
+  bool get isMyProfile {
+    // 优先使用调用方显式传入的 currentUserId（来自 AuthState.userId，权威），
+    // 回退到从缓存加载的 userId。
+    // 这样在登录后第一次打开个人中心时，即使缓存的 userId 还没回填（或者像之前
+    // 那样被错误地写成了 0），也能正确判定 profileId == currentUserId。
+    final effectiveUserId = currentUserId ?? userId;
+    return effectiveUserId != null && effectiveUserId.isNotEmpty && profileId == effectiveUserId;
+  }
 
   Future<void> _getProfileUser(String? userProfileId) async {
     if (userProfileId == null) return;

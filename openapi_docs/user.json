@@ -128,7 +128,7 @@
     {
       "name": "退出登录",
       "method": "DELETE",
-      "path": "/user/logout",
+      "path": "/auth/logout",
       "auth": true,
       "response": "OKResponse?"
     },
@@ -181,7 +181,7 @@
     {
       "name": "用户名注册",
       "method": "POST",
-      "path": "/user/register",
+      "path": "/auth/username/register",
       "request": {
         "username": "string, max 50, 用户名",
         "password": "string, max 50, 密码",
@@ -283,7 +283,7 @@
     {
       "name": "用户名登录",
       "method": "POST",
-      "path": "/user/signin",
+      "path": "/auth/username/signin",
       "request": {
         "username": "string, max 50, 用户名",
         "password": "string, max 50, 密码"
@@ -293,7 +293,7 @@
     {
       "name": "刷新令牌",
       "method": "POST",
-      "path": "/user/token/refresh",
+      "path": "/auth/token/refresh",
       "request": {
         "refresh_token": "string, 刷新令牌, optional"
       },
