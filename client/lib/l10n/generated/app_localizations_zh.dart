@@ -620,6 +620,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loadDraft => '加载草稿';
 
   @override
+  String get draftLoaded => '已补全图片和位置';
+
+  @override
   String get communities => '社区';
 
   @override
@@ -991,6 +994,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cameraLabel => '拍照';
+
+  @override
+  String get cameraAccessRequired => '需要相机权限';
+
+  @override
+  String get cameraAccessHint => '请在系统设置中允许相机权限以拍照';
+
+  @override
+  String get cameraGoBack => '返回';
 
   @override
   String get remove => '移除';

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import '../model/draft.module.dart';
+import '../model/post.module.dart';
 import '../network/api_client.dart';
 import '../network/api_config.dart';
 import '../network/api_exception.dart';
@@ -59,15 +60,13 @@ class PostService {
       if (quoteRepostId != null) body['quote_post_id'] = quoteRepostId;
       if (scheduledTime != null) body['scheduled_publish_time'] = scheduledTime;
 
-      print('📤 createPost 请求体: ${json.encode(body)}');
       final response = await _apiClient.post('post/create', body: body);
-      print('✅ createPost 响应: ${json.encode(response)}');
       return Post.fromJson(response['data']);
     } on ApiException catch (e) {
-      print('❌ createPost API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})');
+      developer.log('❌ createPost API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})', name: 'PostService');
       rethrow;
     } catch (e, stackTrace) {
-      print('❌ createPost 未知异常: $e\n$stackTrace');
+      developer.log('❌ createPost 未知异常: $e\n$stackTrace', name: 'PostService');
       rethrow;
     }
   }
@@ -926,20 +925,46 @@ class MediaItem {
   final int mediaType; // 1=image, 2=video, 3=GIF, 4=voice, 5=text
   final String url;
   final String thumbUrl;
+  final int? width;
+  final int? height;
 
   MediaItem({
     this.id = 0,
     this.mediaType = 1,
     this.url = '',
     this.thumbUrl = '',
+    this.width,
+    this.height,
   });
 
   factory MediaItem.fromJson(Map<String, dynamic> json) {
+    int? parseInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse(v.toString());
+    }
+
     return MediaItem(
       id: json['id'] ?? 0,
       mediaType: json['media_type'] ?? json['mediaType'] ?? 1,
       url: json['url'] ?? '',
       thumbUrl: json['thumb_url'] ?? json['thumbUrl'] ?? '',
+      width: parseInt(json['width']),
+      height: parseInt(json['height']),
+    );
+  }
+
+  /// 转换为 UI 层 PostModel 使用的 MediaItemModel。
+  /// 缺失字段以 null 透传，便于 UI 兜底。
+  MediaItemModel toMediaItemModel() {
+    return MediaItemModel(
+      id: id == 0 ? null : id,
+      mediaType: mediaType,
+      url: url.isEmpty ? null : url,
+      thumbUrl: thumbUrl.isEmpty ? null : thumbUrl,
+      width: width,
+      height: height,
     );
   }
 }

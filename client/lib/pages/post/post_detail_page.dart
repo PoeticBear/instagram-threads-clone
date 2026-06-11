@@ -66,6 +66,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
               bio: apiPost.content,
               createdAt: apiPost.createdAt.toIso8601String(),
               imagePath: apiPost.imageUrl,
+              mediaList: apiPost.mediaList
+                  .map((m) => m.toMediaItemModel())
+                  .toList(),
               user: UserModel(
                 userId: apiPost.userId,
                 userName: apiPost.username,

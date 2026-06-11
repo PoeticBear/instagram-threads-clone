@@ -326,6 +326,27 @@ class PostModel {
   // Get the primary key/id
   String get id => postId ?? key ?? '';
 
+  /// 渲染用的有效媒体列表：
+  /// 1. 优先返回 `mediaList`（多图）
+  /// 2. 否则若 `imagePath` 非空，包装成 1-item list 兜底
+  /// 3. 否则返回空列表
+  /// 所有渲染分支（主帖 / 引用卡 / 大图预览）都应通过此 getter 取数据，
+  /// 保证「单图老数据」与「多图新数据」统一入口。
+  List<MediaItemModel> get effectiveMediaItems {
+    if (mediaList != null && mediaList!.isNotEmpty) {
+      return mediaList!;
+    }
+    if (imagePath != null && imagePath!.isNotEmpty) {
+      return [
+        MediaItemModel(mediaType: MediaType.image, url: imagePath),
+      ];
+    }
+    return const [];
+  }
+
+  /// 是否有可渲染的媒体（主帖图片分支统一判断）
+  bool get hasMedia => effectiveMediaItems.isNotEmpty;
+
   // Support both Firebase-style and API-style date parsing
   static String timestampToString(DateTime date) {
     return date.toUtc().toIso8601String();

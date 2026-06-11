@@ -15,8 +15,6 @@ class UploadService {
       final fileSize = await file.length();
       final filename = file.path.split('/').last;
 
-      print('📤 uploadImage 开始: filename=$filename contentType=$contentType fileSize=$fileSize');
-
       // 1) 获取预签名 URL
       final presignedResponse = await _apiClient.post(
         'upload/presigned_url',
@@ -27,22 +25,15 @@ class UploadService {
         },
       );
 
-      print('📤 预签名URL完整响应: $presignedResponse');
-
       // 响应可能是 {data: {...}} 或直接 {...}
       final data = presignedResponse['data'] ?? presignedResponse;
-      print('📤 预签名URL data对象: $data');
 
       final uploadUrl = (data['upload_url'] ?? '') as String;
       final cosUrl = (data['cos_url'] ?? '') as String;
 
-      print('📤 解析结果: uploadUrl=$uploadUrl cosUrl=$cosUrl');
-
       if (uploadUrl.isEmpty) {
         throw ApiException(message: '预签名URL为空: $data');
       }
-
-      print('📤 开始PUT上传到预签名URL...');
 
       // 2) PUT 文件到预签名 URL
       final fileBytes = await file.readAsBytes();
@@ -52,10 +43,7 @@ class UploadService {
 
       final httpResponse = await request.close();
 
-      print('📤 PUT上传完成: statusCode=${httpResponse.statusCode}');
-
       if (httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
-        print('✅ uploadImage 成功: cosUrl=$cosUrl');
         return cosUrl;
       } else {
         throw ApiException(message: '上传失败: ${httpResponse.statusCode}');
@@ -63,7 +51,7 @@ class UploadService {
     } on ApiException {
       rethrow;
     } catch (e, stackTrace) {
-      developer.log('❌ uploadImage 失败: $e\n$stackTrace');
+      developer.log('❌ uploadImage 失败: $e\n$stackTrace', name: 'UploadService');
       throw ApiException(message: '上传图片失败: $e');
     }
   }

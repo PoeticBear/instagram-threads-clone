@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:threads/theme/app_colors.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import '../../main.dart';
 
 class ComposeCameraPage extends StatefulWidget {
@@ -309,6 +310,7 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   }
 
   Widget _buildError(AppColors appColors) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       color: Colors.black,
       child: SafeArea(
@@ -319,7 +321,7 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
               Icon(Iconsax.camera, size: 64, color: Colors.white24),
               SizedBox(height: 24),
               Text(
-                'Camera access is required',
+                l10n.cameraAccessRequired,
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -327,7 +329,7 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
               ),
               SizedBox(height: 12),
               Text(
-                'Please allow camera access in Settings to take photos.',
+                l10n.cameraAccessHint,
                 style: TextStyle(color: Colors.white54, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
@@ -342,7 +344,7 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'Go Back',
+                    l10n.cameraGoBack,
                     style: TextStyle(
                         color: appColors.textPrimary,
                         fontSize: 16,

@@ -85,6 +85,9 @@ class _TopicDetailPageState extends State<TopicDetailPage>
       postId: post.id,
       bio: post.content,
       imagePath: post.imageUrl,
+      mediaList: post.mediaList
+          .map((m) => m.toMediaItemModel())
+          .toList(),
       createdAt: post.createdAt.toIso8601String(),
       user: UserModel(
         userId: post.user.userId,

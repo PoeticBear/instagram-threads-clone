@@ -62,6 +62,9 @@ class PostState extends AppStates {
       bio: apiPost.content,
       createdAt: apiPost.createdAt.toIso8601String(),
       imagePath: apiPost.imageUrl,
+      mediaList: apiPost.mediaList
+          .map((m) => m.toMediaItemModel())
+          .toList(),
       user: UserModel(
         userId: apiPost.userId,
         userName: apiPost.username,
@@ -98,6 +101,7 @@ class PostState extends AppStates {
   Future<String?> createPost(
     PostModel model, {
     List<File>? imageFiles,
+    List<String>? preUploadedUrls,
     List<String>? pollOptions,
     int? replyType,
     String? location,
@@ -110,21 +114,18 @@ class PostState extends AppStates {
       isBusy = true;
       notifyListeners();
 
-      print('🚀 PostState.createPost 开始: content="${model.bio}" images=${imageFiles?.length ?? 0} poll=${pollOptions} replyType=$replyType');
-
-      // 如果有图片，逐个上传获取 COS URL
+      // 如果有待上传的本地图片，逐个上传获取 COS URL；
+      // 已上传的 URL（如从草稿恢复的）直接拼接到最前面
       List<String>? mediaUrls;
       if (imageFiles != null && imageFiles.isNotEmpty) {
-        mediaUrls = [];
+        mediaUrls = [...?preUploadedUrls];
         for (int i = 0; i < imageFiles.length; i++) {
-          print('📤 上传图片 ${i + 1}/${imageFiles.length}: ${imageFiles[i].path}');
           final cosUrl = await uploadService.uploadImage(imageFiles[i]);
-          print('✅ 图片 ${i + 1} 上传成功: $cosUrl');
           mediaUrls.add(cosUrl);
         }
+      } else if (preUploadedUrls != null && preUploadedUrls.isNotEmpty) {
+        mediaUrls = [...preUploadedUrls];
       }
-
-      print('📤 调用 postService.createPost: content="${model.bio}" mediaUrls=$mediaUrls pollOptions=$pollOptions replyType=$replyType');
 
       final post = await postService.createPost(
         content: model.bio ?? '',
@@ -150,6 +151,9 @@ class PostState extends AppStates {
         bio: post.content,
         createdAt: post.createdAt.toIso8601String(),
         imagePath: post.imageUrl,
+        mediaList: post.mediaList
+            .map((m) => m.toMediaItemModel())
+            .toList(),
         user: model.user,
         likesCount: post.likesCount,
         repliesCount: post.repliesCount,
@@ -169,7 +173,7 @@ class PostState extends AppStates {
       notifyListeners();
       return post.id;
     } catch (error, stackTrace) {
-      print('❌ 创建帖子失败: $error\n$stackTrace');
+      developer.log('❌ 创建帖子失败: $error\n$stackTrace', name: 'PostState');
       isBusy = false;
       notifyListeners();
       return null;
@@ -570,6 +574,9 @@ class PostState extends AppStates {
         bio: updated.content,
         createdAt: updated.createdAt.toIso8601String(),
         imagePath: updated.imageUrl,
+        mediaList: updated.mediaList
+            .map((m) => m.toMediaItemModel())
+            .toList(),
         likesCount: updated.likesCount,
         repliesCount: updated.repliesCount,
         repostsCount: updated.repostsCount,

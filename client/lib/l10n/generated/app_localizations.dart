@@ -1316,6 +1316,12 @@ abstract class AppLocalizations {
   /// **'Load draft'**
   String get loadDraft;
 
+  /// No description provided for @draftLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Images and location restored'**
+  String get draftLoaded;
+
   /// No description provided for @communities.
   ///
   /// In en, this message translates to:
@@ -2041,6 +2047,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Camera'**
   String get cameraLabel;
+
+  /// No description provided for @cameraAccessRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is required'**
+  String get cameraAccessRequired;
+
+  /// No description provided for @cameraAccessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please allow camera access in Settings to take photos.'**
+  String get cameraAccessHint;
+
+  /// No description provided for @cameraGoBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Back'**
+  String get cameraGoBack;
 
   /// No description provided for @remove.
   ///

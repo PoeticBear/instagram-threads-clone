@@ -29,6 +29,7 @@ class ComposePost extends StatefulWidget {
 class ComposePostState extends State<ComposePost> {
   late TextEditingController _textEditingController;
   List<File> _imageFiles = [];
+  List<String> _imageUrls = []; // 从草稿恢复的、已上传的远程图片 URL
   bool _showPollEditor = false;
   List<TextEditingController> _pollControllers = [];
   int _replyType = 1;
@@ -68,7 +69,7 @@ class ComposePostState extends State<ComposePost> {
 
   bool get _hasContent {
     final hasText = _textEditingController.text.trim().isNotEmpty;
-    final hasImages = _imageFiles.isNotEmpty;
+    final hasImages = _imageFiles.isNotEmpty || _imageUrls.isNotEmpty;
     final hasPoll = _showPollEditor &&
         _pollControllers.any((c) => c.text.trim().isNotEmpty);
     return hasText || hasImages || hasPoll;
@@ -171,6 +172,7 @@ class ComposePostState extends State<ComposePost> {
     }
     setState(() {
       _imageFiles.clear();
+      _imageUrls.clear();
       _showPollEditor = false;
       _replyType = 1;
       _location = null;
@@ -184,6 +186,8 @@ class ComposePostState extends State<ComposePost> {
   }
 
   void _addImage(File file) {
+    final totalImages = _imageFiles.length + _imageUrls.length;
+    if (totalImages >= _maxImages) return;
     setState(() {
       // 添加图片时关闭投票（互斥）
       if (_showPollEditor) {
@@ -192,15 +196,18 @@ class ComposePostState extends State<ComposePost> {
           c.clear();
         }
       }
-      if (_imageFiles.length < _maxImages) {
-        _imageFiles.add(file);
-      }
+      // 新选图加到头部；_imageUrls（草稿恢复的）保留，用户可混用
+      _imageFiles.insert(0, file);
     });
   }
 
   void _removeImage(int index) {
     setState(() {
-      _imageFiles.removeAt(index);
+      if (index < _imageFiles.length) {
+        _imageFiles.removeAt(index);
+      } else {
+        _imageUrls.removeAt(index - _imageFiles.length);
+      }
     });
   }
 
@@ -208,8 +215,9 @@ class ComposePostState extends State<ComposePost> {
     setState(() {
       _showPollEditor = !_showPollEditor;
       if (_showPollEditor) {
-        // 开启投票时清空图片（互斥）
+        // 开启投票时清空所有图片（互斥）
         _imageFiles.clear();
+        _imageUrls.clear();
         _initPollControllers();
       }
     });
@@ -276,12 +284,20 @@ class ComposePostState extends State<ComposePost> {
     );
   }
 
-  void _onDraftSelected(DraftInfo draft) {
+  /// 从草稿列表选中草稿：先用 list 数据立即恢复基本字段（保持 UI 响应即时），
+  /// 再异步调 loadDraftForEditing 拉详情，补全 mediaUrls / location。
+  Future<void> _onDraftSelected(DraftInfo draft) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+    final draftState = Provider.of<DraftState>(context, listen: false);
+
+    // Step 1: 立即用 list 数据恢复基本字段
     setState(() {
       _textEditingController.text = draft.content;
       if (draft.pollOptions != null && draft.pollOptions!.isNotEmpty) {
         _showPollEditor = true;
         _imageFiles.clear();
+        _imageUrls.clear();
         _pollControllers = draft.pollOptions!
             .map((opt) => TextEditingController(text: opt))
             .toList();
@@ -290,17 +306,45 @@ class ComposePostState extends State<ComposePost> {
             _pollControllers.add(TextEditingController());
           }
         }
+      } else {
+        _imageFiles.clear();
+        _imageUrls.clear();
+        _showPollEditor = false;
       }
       if (draft.replyType != null) {
         _replyType = draft.replyType!;
       }
     });
+
+    // Step 2: 异步拉详情补全 mediaUrls / location
+    final detail = await draftState.loadDraftForEditing(draft.id);
+    if (!mounted) return;
+    if (detail == null) return; // 拉取失败时基本字段已恢复，忽略
+    setState(() {
+      if (detail.mediaUrls.isNotEmpty) {
+        _imageUrls = List<String>.from(detail.mediaUrls);
+      }
+      if (detail.location != null && detail.location!.isNotEmpty) {
+        _location = detail.location;
+      }
+    });
+    // 静默提示
+    if (detail.mediaUrls.isNotEmpty || (detail.location?.isNotEmpty ?? false)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.draftLoaded),
+          backgroundColor: appColors.surface,
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   Future<void> _saveCurrentDraft() async {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final content = _textEditingController.text.trim();
-    if (content.isEmpty && _imageFiles.isEmpty && !_showPollEditor) {
+    final hasImage = _imageFiles.isNotEmpty || _imageUrls.isNotEmpty;
+    if (content.isEmpty && !hasImage && !_showPollEditor) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.nothingToSaveDraft),
@@ -311,8 +355,29 @@ class ComposePostState extends State<ComposePost> {
       return;
     }
     final draftState = Provider.of<DraftState>(context, listen: false);
+    final uploadService = Provider.of<PostState>(context, listen: false).uploadService;
+
+    // 先把本地图片逐个上传拿 cos_url，再与已上传的 url 合并
+    final List<String> mediaUrls = List<String>.from(_imageUrls);
+    for (int i = 0; i < _imageFiles.length; i++) {
+      try {
+        final cosUrl = await uploadService.uploadImage(_imageFiles[i]);
+        mediaUrls.add(cosUrl);
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.draftSaveFailed),
+            backgroundColor: appColors.destructive,
+          ),
+        );
+        return;
+      }
+    }
+
     final saved = await draftState.saveDraft(
       content: content,
+      mediaUrls: mediaUrls.isNotEmpty ? mediaUrls : null,
       pollOptions: _getValidPollOptions(),
       replyType: _replyType != 1 ? _replyType : null,
       location: _location,
@@ -363,26 +428,21 @@ class ComposePostState extends State<ComposePost> {
     setState(() => _isSubmitting = true);
     HapticFeedback.heavyImpact();
 
-    print('🚀 _submit 开始: text="${_textEditingController.text}" images=${_imageFiles.length} poll=$_showPollEditor replyType=$_replyType');
-
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     var state = Provider.of<PostState>(context, listen: false);
     PostModel postModel = await _createPostModel();
 
     final pollOptions = _getValidPollOptions();
 
-    print('🚀 _submit 参数: imageFiles=${_imageFiles.length} pollOptions=$pollOptions replyType=${_replyType != 1 ? _replyType : null}');
-
     final postId = await state.createPost(
       postModel,
       imageFiles: _imageFiles.isNotEmpty ? _imageFiles : null,
+      preUploadedUrls: _imageUrls.isNotEmpty ? _imageUrls : null,
       pollOptions: pollOptions,
       replyType: _replyType != 1 ? _replyType : null,
       location: _location,
       scheduledTime: _scheduledTime?.toUtc().toIso8601String(),
     );
-
-    print('🚀 _submit 结果: postId=$postId');
 
     if (!mounted) return;
 
@@ -405,6 +465,7 @@ class ComposePostState extends State<ComposePost> {
       }
       setState(() {
         _imageFiles.clear();
+        _imageUrls.clear();
         _showPollEditor = false;
         _replyType = 1;
         _location = null;
@@ -738,7 +799,7 @@ class ComposePostState extends State<ComposePost> {
                   ),
 
                   // ── Image previews ──
-                  if (_imageFiles.isNotEmpty)
+                  if (_imageFiles.isNotEmpty || _imageUrls.isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(left: 52, top: 8),
                       child: Wrap(
@@ -746,8 +807,13 @@ class ComposePostState extends State<ComposePost> {
                         runSpacing: 8,
                         children: [
                           for (int i = 0; i < _imageFiles.length; i++)
-                            _buildImagePreview(appColors, _imageFiles[i], i),
-                          if (_imageFiles.length < _maxImages)
+                            _buildImagePreview(
+                                appColors, _imageFiles[i], i, isLocal: true),
+                          for (int j = 0; j < _imageUrls.length; j++)
+                            _buildImagePreview(
+                                appColors, _imageUrls[j], _imageFiles.length + j,
+                                isLocal: false),
+                          if (_imageFiles.length + _imageUrls.length < _maxImages)
                             _buildAddImageTile(appColors),
                         ],
                       ),
@@ -858,12 +924,33 @@ class ComposePostState extends State<ComposePost> {
     );
   }
 
-  Widget _buildImagePreview(AppColors appColors, File file, int index) {
+  Widget _buildImagePreview(AppColors appColors, Object source, int index,
+      {required bool isLocal}) {
     return Stack(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.file(file, width: 80, height: 80, fit: BoxFit.cover),
+          child: isLocal
+              ? Image.file(source as File,
+                  width: 80, height: 80, fit: BoxFit.cover)
+              : CachedNetworkImage(
+                  imageUrl: source as String,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Container(
+                    width: 80,
+                    height: 80,
+                    color: appColors.surface,
+                  ),
+                  errorWidget: (_, __, ___) => Container(
+                    width: 80,
+                    height: 80,
+                    color: appColors.surface,
+                    child: Icon(Icons.broken_image,
+                        color: appColors.textMuted, size: 20),
+                  ),
+                ),
         ),
         Positioned(
           right: -4,
@@ -999,9 +1086,12 @@ class ComposePostState extends State<ComposePost> {
               color: _showPollEditor ? appColors.divider : appColors.textPrimary,
             ),
             _toolbarIcon(
-              onTap: _imageFiles.isNotEmpty ? null : _togglePollEditor,
+              onTap: (_imageFiles.isNotEmpty || _imageUrls.isNotEmpty)
+                  ? null
+                  : _togglePollEditor,
               icon: Iconsax.chart_square,
-              color: _imageFiles.isNotEmpty ? appColors.divider
+              color: (_imageFiles.isNotEmpty || _imageUrls.isNotEmpty)
+                  ? appColors.divider
                   : (_showPollEditor ? appColors.accent : appColors.textPrimary),
             ),
             _toolbarIcon(

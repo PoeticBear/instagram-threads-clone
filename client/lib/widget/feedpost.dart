@@ -79,8 +79,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     final displayName = user?.displayName?.isNotEmpty == true
         ? user!.displayName!
         : (user?.userName?.isNotEmpty == true ? user!.userName! : 'User${user?.userId ?? ''}');
-    final hasImage = widget.postModel.imagePath != null &&
-        widget.postModel.imagePath!.isNotEmpty;
+    final hasMedia = widget.postModel.hasMedia;
     final hasPoll = widget.postModel.pollData != null;
     final hasQuoteId = widget.postModel.quoteRepostId != null;
     final quotePost = _effectiveQuotePost;
@@ -227,39 +226,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 //   ),
                 : SizedBox.shrink(),
             ),
-            // ── 帖子图片 ── 点击进入大图预览（不跳转详情页）
-            if (!hasPoll && hasImage)
-              GestureDetector(
-                onTap: () => _openMediaViewer(context),
-                child: Padding(
-                  padding: EdgeInsets.only(left: 40, right: 10),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: CachedNetworkImage(
-                      height: 300,
-                      width: 280,
-                      fit: BoxFit.cover,
-                      imageUrl: widget.postModel.imagePath!,
-                      placeholder: (context, url) => Container(
-                        height: 300,
-                        width: 280,
-                        color: appColors.surface,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: appColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        height: 300,
-                        width: 280,
-                        color: appColors.surface,
-                        child: Icon(Icons.broken_image, color: appColors.textSecondary),
-                      ),
-                    ),
-                  ),
-                ),
+            // ── 帖子图片/视频/多图 ── 点击进入大图预览（不跳转详情页）
+            if (!hasPoll && hasMedia)
+              Padding(
+                padding: EdgeInsets.only(left: 40, right: 10),
+                child: _buildMediaGallery(appColors),
               ),
             Container(
               height: 10,
@@ -349,6 +320,141 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     );
   }
 
+  // ==================== Media Gallery (multi-image) ====================
+
+  /// 入口：按媒体数量分派到不同布局
+  /// 风格参考：微博 / 微信朋友圈 / 小红书 —— 9 宫格风格
+  /// 1 张：大图（保留原比例）
+  /// 2-4 张：2 列网格（2×2 满格）
+  /// 5-9 张：3 列网格（3×3 满格）
+  /// >9 张：显示前 9 个，最后一个叠 +N 半透明角标
+  Widget _buildMediaGallery(AppColors appColors) {
+    final items = widget.postModel.effectiveMediaItems;
+    if (items.isEmpty) return SizedBox.shrink();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 300.0; // 兜底：父级无界时给个固定值
+        if (items.length == 1) {
+          return _buildSingleMedia(appColors, items[0], 0, maxWidth);
+        }
+        return _buildGridMedia(appColors, items, maxWidth);
+      },
+    );
+  }
+
+  /// 单图：撑满父宽，按 width/height 比例渲染（缺值时 1:1 兜底）
+  Widget _buildSingleMedia(
+    AppColors appColors,
+    MediaItemModel item,
+    int index,
+    double maxWidth,
+  ) {
+    final w = item.width ?? 0;
+    final h = item.height ?? 0;
+    final hasRatio = w > 0 && h > 0;
+    final aspectRatio = hasRatio ? w / h : 1.0; // 缺值时 1:1 兜底
+
+    return GestureDetector(
+      onTap: () => _openMediaViewer(context, tappedIndex: index),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: AspectRatio(
+          aspectRatio: aspectRatio,
+          child: _buildMediaImage(appColors, item),
+        ),
+      ),
+    );
+  }
+
+  /// 多图网格：2-4 张 2 列 / 5+ 张 3 列；>9 张时第 9 张叠 +N 角标
+  Widget _buildGridMedia(
+    AppColors appColors,
+    List<MediaItemModel> items,
+    double maxWidth,
+  ) {
+    final columns = items.length <= 4 ? 2 : 3;
+    const gap = 2.0;
+    final tileSize = (maxWidth - (columns - 1) * gap) / columns;
+    final displayCount = items.length > 9 ? 9 : items.length;
+    final rows = ((displayCount + columns - 1) / columns).floor();
+    final gridHeight = rows * tileSize + (rows - 1) * gap;
+
+    return SizedBox(
+      height: gridHeight,
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
+          mainAxisSpacing: gap,
+          crossAxisSpacing: gap,
+          childAspectRatio: 1,
+        ),
+        itemCount: displayCount,
+        itemBuilder: (context, i) {
+          final item = items[i];
+          final isLast = i == displayCount - 1;
+          final overflow = items.length - displayCount;
+          return GestureDetector(
+            onTap: () => _openMediaViewer(context, tappedIndex: i),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _buildMediaImage(appColors, item),
+                  if (isLast && overflow > 0)
+                    Container(
+                      color: Colors.black54,
+                      alignment: Alignment.center,
+                      child: Text(
+                        '+$overflow',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 通用单图块（缩略图，点击进大图预览）
+  Widget _buildMediaImage(AppColors appColors, MediaItemModel item) {
+    final url = item.thumbUrl ?? item.url;
+    if (url == null || url.isEmpty) {
+      return Container(
+        color: appColors.surface,
+        child: Icon(Icons.broken_image, color: appColors.textSecondary),
+      );
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => Container(
+        color: appColors.surface,
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: appColors.textSecondary,
+          ),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: appColors.surface,
+        child: Icon(Icons.broken_image, color: appColors.textSecondary),
+      ),
+    );
+  }
+
   // ────────────────── 引用帖子卡片 ──────────────────
 
   Widget _buildQuoteCard({
@@ -365,7 +471,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           : (qUser?.userName?.isNotEmpty == true ? qUser!.userName! : '');
       final qAvatar = qUser?.profilePic ?? '';
       final qContent = quotePost.bio ?? '';
-      final qHasImage = quotePost.imagePath != null && quotePost.imagePath!.isNotEmpty;
+      final qHasImage = quotePost.hasMedia;
+      final qFirstMedia = qHasImage ? quotePost.effectiveMediaItems.first : null;
+      final qImageUrl = qFirstMedia == null
+          ? null
+          : (qFirstMedia.thumbUrl ?? qFirstMedia.url);
 
       return GestureDetector(
         onTap: () => _navigateToQuotedPostDetail(context, quotePost),
@@ -418,8 +528,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                   maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
-              // 图片
-              if (qHasImage) ...[
+              // 图片（仅取首图，引用卡保持单图卡片尺寸约束）
+              if (qHasImage && qImageUrl != null) ...[
                 Container(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -427,7 +537,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    imageUrl: quotePost.imagePath!,
+                    imageUrl: qImageUrl,
                     placeholder: (context, url) => Container(
                       height: 150,
                       color: appColors.surface,
@@ -536,23 +646,18 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     );
   }
 
-  /// 打开大图预览：优先用 mediaList，否则用 imagePath 兜底为单图
-  void _openMediaViewer(BuildContext context) {
-    final mediaList = widget.postModel.mediaList;
-    final List<MediaItemModel> items;
-    if (mediaList != null && mediaList.isNotEmpty) {
-      items = mediaList;
-    } else {
-      final imagePath = widget.postModel.imagePath;
-      if (imagePath == null || imagePath.isEmpty) return;
-      items = [
-        MediaItemModel(mediaType: MediaType.image, url: imagePath),
-      ];
-    }
+  /// 打开大图预览：tappedIndex 决定从哪张开始
+  void _openMediaViewer(BuildContext context, {int tappedIndex = 0}) {
+    final items = widget.postModel.effectiveMediaItems;
+    if (items.isEmpty) return;
+    final safeIndex = tappedIndex.clamp(0, items.length - 1);
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MediaViewerPage(mediaItems: items),
+        builder: (_) => MediaViewerPage(
+          mediaItems: items,
+          initialIndex: safeIndex,
+        ),
       ),
     );
   }

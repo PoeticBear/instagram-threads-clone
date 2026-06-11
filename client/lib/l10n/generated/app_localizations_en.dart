@@ -625,6 +625,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadDraft => 'Load draft';
 
   @override
+  String get draftLoaded => 'Images and location restored';
+
+  @override
   String get communities => 'Communities';
 
   @override
@@ -999,6 +1002,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cameraLabel => 'Camera';
+
+  @override
+  String get cameraAccessRequired => 'Camera access is required';
+
+  @override
+  String get cameraAccessHint =>
+      'Please allow camera access in Settings to take photos.';
+
+  @override
+  String get cameraGoBack => 'Go Back';
 
   @override
   String get remove => 'Remove';
