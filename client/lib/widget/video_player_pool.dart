@@ -39,6 +39,8 @@ class VideoPlayerPool {
 
   /// key → controller。LRU 顺序：先入为「最久未访问」。
   final LinkedHashMap<String, VideoPlayerController> _pool = LinkedHashMap();
+  /// key → 是否静音（缺省 true，与历史默认行为一致）
+  final Map<String, bool> _mutedKeys = {};
   bool _disposed = false;
 
   /// 池变更通知（用于驱动 UI 重建）。Feed 订阅这个值即可。
@@ -74,7 +76,7 @@ class VideoPlayerPool {
     _bumpVersion();
     // 初始化在后台进行；外部等待 [controller.value.isInitialized]
     controller.initialize().then((_) {
-      controller.setVolume(0);
+      controller.setVolume(isMuted(key) ? 0 : 1);
       controller.setLooping(true);
       _bumpVersion();
     }).catchError((e) {
@@ -89,6 +91,7 @@ class VideoPlayerPool {
   /// 释放指定 key（不调用 dispose，可能在可见性变化后再次 acquire）
   void release(String key) {
     final ctrl = _pool.remove(key);
+    _mutedKeys.remove(key);
     if (ctrl != null) _bumpVersion();
     _disposeController(ctrl);
   }
@@ -105,18 +108,33 @@ class VideoPlayerPool {
   }
 
   /// 播放指定 key（需要 autoPlayEnabled 且 controller 已 initialize）
+  /// ★ 同时把池里其它正在播的全暂停掉，保证同一时间只播 1 个视频
   void playVisible(String key) {
     if (!_autoPlayEnabled) return;
     final ctrl = _pool[key];
     if (ctrl == null) return;
     if (!ctrl.value.isInitialized) return;
     if (ctrl.value.isPlaying) return;
+    _pauseOthers(key);
     try {
-      ctrl.setVolume(0);
+      ctrl.setVolume(isMuted(key) ? 0 : 1);
       ctrl.setLooping(true);
       ctrl.play();
     } catch (e) {
       developer.log('❌ VideoPlayerPool.play failed: $e', name: 'VideoPlayerPool');
+    }
+  }
+
+  /// 暂停池中除 [exceptKey] 外的所有 controller（未初始化或不在播的跳过）
+  void _pauseOthers(String exceptKey) {
+    for (final entry in _pool.entries) {
+      if (entry.key == exceptKey) continue;
+      final other = entry.value;
+      try {
+        if (other.value.isInitialized && other.value.isPlaying) {
+          other.pause();
+        }
+      } catch (_) {}
     }
   }
 
@@ -130,6 +148,26 @@ class VideoPlayerPool {
   }
 
   VideoPlayerController? controllerOf(String key) => _pool[key];
+
+  /// 该 key 当前是否静音。缺省 true（与历史默认行为一致）。
+  bool isMuted(String key) => _mutedKeys[key] ?? true;
+
+  /// 切换 [key] 的静音状态。返回新的静音状态（true=静音, false=有声）。
+  /// 立即应用音量并 bump version 触发 UI 重建（图标 mute ↔ unmute 切换）。
+  bool toggleMute(String key) {
+    final nowMuted = !isMuted(key);
+    _mutedKeys[key] = nowMuted;
+    final ctrl = _pool[key];
+    if (ctrl != null) {
+      try {
+        if (ctrl.value.isInitialized) {
+          ctrl.setVolume(nowMuted ? 0 : 1);
+        }
+      } catch (_) {}
+    }
+    _bumpVersion();
+    return nowMuted;
+  }
 
   /// 全部释放 + dispose
   Future<void> dispose() async {

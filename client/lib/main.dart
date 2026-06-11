@@ -91,6 +91,7 @@ class _MyAppState extends State<MyApp> {
         // ===== feed autoplay (pure client) =====
         ChangeNotifierProvider<MediaPreferences>(
           create: (_) => MediaPreferences(widget.sharedPreferences),
+          lazy: false, // 关键：启动即构造，跑 _load() 把开关写入 VideoPlayerPool
         ),
         // ======================================
         ChangeNotifierProvider<DraftState>(create: (_) => DraftState()),

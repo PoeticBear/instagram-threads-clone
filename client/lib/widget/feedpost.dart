@@ -507,7 +507,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
 
   /// 通用单图块（缩略图，点击进大图预览）
   /// - 图片 / GIF：直接显示缩略图（CachedNetworkImage 支持 GIF 动画）
-  /// - 视频：缩略图 + 视频播放器（如果在池中已就绪）+ ▶ 角标 + 右下角时长标签
+  /// - 视频：缩略图 + 视频播放器（如果在池中已就绪）+ 右下角「时长 + 音频开关」
+  ///   - 音频开关图标：volume_off (静音) / volume_up (有声)，点击 VideoPlayerPool.toggleMute
   ///
   /// [mediaKey]：当 [item] 是视频时，从 VideoPlayerPool 查找 controller 用的 key。
   /// 多图网格里同一帖子可能有多段视频，必须用 (postId, mediaIndex) 唯一定位。
@@ -558,39 +559,56 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 child: VideoPlayer(controller),
               ),
             ),
-          // 半透明遮罩让 ▶ 更醒目（仅在非播放态或未初始化时显示）
-          if (controller == null || !controller.value.isPlaying)
-            Container(color: Colors.black.withValues(alpha: 0.18)),
-          // ▶ 角标：未播放时显示
-          if (controller == null || !controller.value.isPlaying)
-            const Center(
-              child: Icon(
-                Icons.play_circle_filled,
-                color: Colors.white,
-                size: 36,
-              ),
-            ),
-          // 右下角时长标签
-          if (item.durationLabel.isNotEmpty)
-            Positioned(
-              right: 6,
-              bottom: 6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.65),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  item.durationLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+          // 右下角：时长标签 + 音频开关（点击互不冲突）
+          Positioned(
+            right: 6,
+            bottom: 6,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (item.durationLabel.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      item.durationLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                if (item.durationLabel.isNotEmpty) const SizedBox(width: 4),
+                // 音频开关：图标随 VideoPlayerPool.isMuted(mediaKey) 切换
+                GestureDetector(
+                  onTap: () {
+                    if (mediaKey != null) {
+                      VideoPlayerPool.instance.toggleMute(mediaKey);
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(
+                      VideoPlayerPool.instance.isMuted(mediaKey ?? '')
+                          ? Icons.volume_off
+                          : Icons.volume_up,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
+          ),
         ],
       );
     }
