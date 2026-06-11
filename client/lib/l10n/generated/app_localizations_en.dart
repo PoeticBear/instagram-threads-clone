@@ -1014,6 +1014,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cameraGoBack => 'Go Back';
 
   @override
+  String get cameraModePhoto => 'Photo';
+
+  @override
+  String get cameraModeVideo => 'Video';
+
+  @override
   String get remove => 'Remove';
 
   @override
@@ -1357,4 +1363,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loadingMore => 'Loading...';
+
+  @override
+  String get cameraMicRequired =>
+      'Please allow microphone access in Settings to record video';
+
+  @override
+  String get cameraStartRecordingFailed =>
+      'Failed to start recording. Please check microphone access.';
+
+  @override
+  String get cameraStopRecordingFailed => 'Failed to stop recording';
+
+  @override
+  String get mediaPickerTitle => 'Add media';
+
+  @override
+  String get mediaPickerPhoto => 'Photo';
+
+  @override
+  String get mediaPickerVideo => 'Video';
+
+  @override
+  String get mediaPickerGif => 'GIF';
+
+  @override
+  String mediaLimitReached(int max) {
+    return 'Media limit reached ($max)';
+  }
+
+  @override
+  String gifTooLarge(String size) {
+    return 'GIF exceeds 20MB limit (current ${size}MB)';
+  }
+
+  @override
+  String get notGifFormat => 'Please choose a .gif animated image';
+
+  @override
+  String videoTooLarge(String size) {
+    return 'Video exceeds 100MB limit (current ${size}MB)';
+  }
+
+  @override
+  String videoTooLong(String duration) {
+    return 'Video is ${duration}s, exceeds 60s limit';
+  }
+
+  @override
+  String get videoMetaReadFailed => 'Failed to read video info';
+
+  @override
+  String get tapToPlayVideo => 'Tap to play video';
 }

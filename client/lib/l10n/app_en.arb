@@ -358,6 +358,8 @@
   "cameraAccessRequired": "Camera access is required",
   "cameraAccessHint": "Please allow camera access in Settings to take photos.",
   "cameraGoBack": "Go Back",
+  "cameraModePhoto": "Photo",
+  "cameraModeVideo": "Video",
   "remove": "Remove",
   "notSet": "Not set",
   "male": "Male",
@@ -525,5 +527,41 @@
   "saveFailed": "Save failed",
   "sortTop": "Top",
   "sortRecent": "Recent",
-  "loadingMore": "Loading..."
+  "loadingMore": "Loading...",
+  "cameraModePhoto": "Photo",
+  "cameraModeVideo": "Video",
+  "cameraMicRequired": "Please allow microphone access in Settings to record video",
+  "cameraStartRecordingFailed": "Failed to start recording. Please check microphone access.",
+  "cameraStopRecordingFailed": "Failed to stop recording",
+  "mediaPickerTitle": "Add media",
+  "mediaPickerPhoto": "Photo",
+  "mediaPickerVideo": "Video",
+  "mediaPickerGif": "GIF",
+  "mediaLimitReached": "Media limit reached ({max})",
+  "@mediaLimitReached": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "gifTooLarge": "GIF exceeds 20MB limit (current {size}MB)",
+  "@gifTooLarge": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "notGifFormat": "Please choose a .gif animated image",
+  "videoTooLarge": "Video exceeds 100MB limit (current {size}MB)",
+  "@videoTooLarge": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "videoTooLong": "Video is {duration}s, exceeds 60s limit",
+  "@videoTooLong": {
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+  "videoMetaReadFailed": "Failed to read video info",
+  "tapToPlayVideo": "Tap to play video"
 }

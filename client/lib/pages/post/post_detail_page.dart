@@ -8,6 +8,7 @@ import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/widget/poll_widget.dart';
@@ -231,7 +232,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final user = post.user;
     final profilePic = user?.profilePic ?? '';
     final displayName = user?.displayName ?? '';
-    final hasImage = post.imagePath != null && post.imagePath!.isNotEmpty;
+    // 优先使用 effectiveMediaItems（统一处理 image / video / gif），
+    // 兼容老接口 imagePath（纯图帖子）
+    final mediaItems = post.effectiveMediaItems;
+    final hasMedia = mediaItems.isNotEmpty;
 
     return Padding(
       padding: EdgeInsets.all(16),
@@ -276,24 +280,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
               },
             ),
           ],
-          if (hasImage && post.pollData == null) ...[
+          if (hasMedia && post.pollData == null) ...[
             SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => _showFullScreenImage(context, post.imagePath!),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: post.imagePath!,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorWidget: (_, __, ___) => Container(
-                    height: 200,
-                    color: appColors.surface,
-                    child: Icon(Icons.broken_image, color: appColors.textSecondary),
-                  ),
-                ),
-              ),
-            ),
+            _buildMediaGallery(context, appColors, mediaItems),
           ],
           if (post.location != null && post.location!.isNotEmpty) ...[
             SizedBox(height: 8),
@@ -318,6 +307,174 @@ class _PostDetailPageState extends State<PostDetailPage> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// 详情页媒体画廊：
+  /// - 1 张：单图铺满宽
+  /// - 多张：3 列 Grid
+  /// - 视频：缩略图 + ▶ 角标 + 时长
+  /// - 点击任一 → MediaViewerPage 全屏预览（已支持 video）
+  Widget _buildMediaGallery(
+    BuildContext context,
+    AppColors appColors,
+    List<MediaItemModel> items,
+  ) {
+    if (items.length == 1) {
+      return _buildSingleMediaItem(context, appColors, items.first, 0, items);
+    }
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 4,
+      crossAxisSpacing: 4,
+      childAspectRatio: 1,
+      children: [
+        for (int i = 0; i < items.length; i++)
+          _buildGridMediaItem(context, appColors, items[i], i, items),
+      ],
+    );
+  }
+
+  Widget _buildSingleMediaItem(
+    BuildContext context,
+    AppColors appColors,
+    MediaItemModel item,
+    int index,
+    List<MediaItemModel> all,
+  ) {
+    final url = item.thumbUrl ?? item.url;
+    return GestureDetector(
+      onTap: () => _openMediaViewer(context, all, index),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            if (url != null && url.isNotEmpty)
+              CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorWidget: (_, __, ___) => Container(
+                  height: 200,
+                  color: appColors.surface,
+                  child: Icon(Icons.broken_image, color: appColors.textSecondary),
+                ),
+              )
+            else
+              Container(
+                height: 200,
+                color: appColors.surface,
+                child: Icon(Icons.broken_image, color: appColors.textSecondary),
+              ),
+            if (item.isVideo) ...[
+              Container(color: Colors.black.withValues(alpha: 0.18)),
+              const Center(
+                child: Icon(Icons.play_circle_filled, color: Colors.white, size: 56),
+              ),
+              if (item.durationLabel.isNotEmpty)
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      item.durationLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGridMediaItem(
+    BuildContext context,
+    AppColors appColors,
+    MediaItemModel item,
+    int index,
+    List<MediaItemModel> all,
+  ) {
+    final url = item.thumbUrl ?? item.url;
+    return GestureDetector(
+      onTap: () => _openMediaViewer(context, all, index),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (url != null && url.isNotEmpty)
+              CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => Container(
+                  color: appColors.surface,
+                  child: Icon(Icons.broken_image, color: appColors.textSecondary, size: 16),
+                ),
+              )
+            else
+              Container(
+                color: appColors.surface,
+                child: Icon(Icons.broken_image, color: appColors.textSecondary, size: 16),
+              ),
+            if (item.isVideo) ...[
+              Container(color: Colors.black.withValues(alpha: 0.2)),
+              const Center(
+                child: Icon(Icons.play_circle_filled, color: Colors.white, size: 24),
+              ),
+              if (item.durationLabel.isNotEmpty)
+                Positioned(
+                  right: 2,
+                  bottom: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      item.durationLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openMediaViewer(
+    BuildContext context,
+    List<MediaItemModel> items,
+    int initialIndex,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MediaViewerPage(
+          mediaItems: items,
+          initialIndex: initialIndex,
+        ),
       ),
     );
   }
@@ -411,33 +568,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(100),
       child: CachedNetworkImage(imageUrl: url, height: size, width: size, fit: BoxFit.cover),
-    );
-  }
-
-  void _showFullScreenImage(BuildContext context, String imageUrl) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            leading: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Icon(CupertinoIcons.xmark, color: Colors.white),
-            ),
-            elevation: 0,
-          ),
-          body: Center(
-            child: InteractiveViewer(
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 

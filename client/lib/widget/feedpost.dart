@@ -17,10 +17,13 @@ import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/poll_widget.dart';
+import 'package:threads/widget/video_player_pool.dart';
 import 'package:threads/pages/media/media_viewer_page.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:threads/pages/post/post_detail_page.dart';
 import 'package:threads/widget/edit_history_sheet.dart';
 import 'package:threads/widget/reply_bottom_sheet.dart';
+import 'package:video_player/video_player.dart';
 
 // ignore: must_be_immutable
 class FeedPostWidget extends StatefulWidget {
@@ -43,6 +46,18 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   void initState() {
     super.initState();
     _maybeFetchQuotePost();
+    // 订阅 VideoPlayerPool 变更：池内 controller ready 后触发重建
+    VideoPlayerPool.instance.version.addListener(_onPoolChanged);
+  }
+
+  @override
+  void dispose() {
+    VideoPlayerPool.instance.version.removeListener(_onPoolChanged);
+    super.dispose();
+  }
+
+  void _onPoolChanged() {
+    if (mounted) setState(() {});
   }
 
   /// 当 quote_post_id 有值但 quotePost 为空时，拉取被引用帖子的详情
@@ -345,6 +360,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   }
 
   /// 单图：撑满父宽，按 width/height 比例渲染（缺值时 1:1 兜底）
+  /// - 视频：包一层 VisibilityDetector，可见时调池自动播放；不可见时暂停
   Widget _buildSingleMedia(
     AppColors appColors,
     MediaItemModel item,
@@ -356,14 +372,43 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     final hasRatio = w > 0 && h > 0;
     final aspectRatio = hasRatio ? w / h : 1.0; // 缺值时 1:1 兜底
 
+    final child = ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: AspectRatio(
+        aspectRatio: aspectRatio,
+        child: _buildMediaImage(appColors, item),
+      ),
+    );
+
+    // 非视频：保持原行为
+    if (!item.isVideo || (item.url == null || item.url!.isEmpty)) {
+      return GestureDetector(
+        onTap: () => _openMediaViewer(context, tappedIndex: index),
+        child: child,
+      );
+    }
+
+    // 视频：包 VisibilityDetector，可见时让 VideoPlayerPool 接管自动播放
+    final videoUrl = item.url!;
+    final key = 'feed_video_${widget.postModel.id}';
     return GestureDetector(
-      onTap: () => _openMediaViewer(context, tappedIndex: index),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: AspectRatio(
-          aspectRatio: aspectRatio,
-          child: _buildMediaImage(appColors, item),
-        ),
+      onTap: () {
+        // 进入大图前先暂停所有
+        VideoPlayerPool.instance.pauseAll();
+        _openMediaViewer(context, tappedIndex: index);
+      },
+      child: VisibilityDetector(
+        key: ValueKey('vd_$key'),
+        onVisibilityChanged: (info) {
+          // visibleFraction > 0.5 视为「可见」
+          if (info.visibleFraction > 0.5) {
+            VideoPlayerPool.instance.acquire(key, videoUrl);
+            VideoPlayerPool.instance.playVisible(key);
+          } else {
+            VideoPlayerPool.instance.pauseVisible(key);
+          }
+        },
+        child: child,
       ),
     );
   }
@@ -428,6 +473,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   }
 
   /// 通用单图块（缩略图，点击进大图预览）
+  /// - 图片 / GIF：直接显示缩略图（CachedNetworkImage 支持 GIF 动画）
+  /// - 视频：缩略图 + 视频播放器（如果在池中已就绪）+ ▶ 角标 + 右下角时长标签
   Widget _buildMediaImage(AppColors appColors, MediaItemModel item) {
     final url = item.thumbUrl ?? item.url;
     if (url == null || url.isEmpty) {
@@ -436,6 +483,78 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         child: Icon(Icons.broken_image, color: appColors.textSecondary),
       );
     }
+
+    if (item.isVideo) {
+      // 尝试从 VideoPlayerPool 拿到当前帖子的 controller；已就绪时叠加 VideoPlayer
+      final key = 'feed_video_${widget.postModel.id}';
+      final controller = VideoPlayerPool.instance.controllerOf(key);
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          CachedNetworkImage(
+            imageUrl: url,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              color: appColors.surface,
+              child: Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: appColors.textSecondary,
+                ),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: appColors.surface,
+              child: const Icon(Icons.broken_image, color: Colors.white24),
+            ),
+          ),
+          // 视频已初始化 → 叠加播放器
+          if (controller != null && controller.value.isInitialized)
+            FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: controller.value.size.width,
+                height: controller.value.size.height,
+                child: VideoPlayer(controller),
+              ),
+            ),
+          // 半透明遮罩让 ▶ 更醒目（仅在非播放态或未初始化时显示）
+          if (controller == null || !controller.value.isPlaying)
+            Container(color: Colors.black.withValues(alpha: 0.18)),
+          // ▶ 角标：未播放时显示
+          if (controller == null || !controller.value.isPlaying)
+            const Center(
+              child: Icon(
+                Icons.play_circle_filled,
+                color: Colors.white,
+                size: 36,
+              ),
+            ),
+          // 右下角时长标签
+          if (item.durationLabel.isNotEmpty)
+            Positioned(
+              right: 6,
+              bottom: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  item.durationLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,

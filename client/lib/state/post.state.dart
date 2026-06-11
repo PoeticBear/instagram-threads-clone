@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:threads/model/user.module.dart';
+import 'package:threads/model/media_draft_item.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/services/upload_service.dart';
 import 'package:threads/state/app.state.dart';
@@ -100,7 +101,13 @@ class PostState extends AppStates {
 
   Future<String?> createPost(
     PostModel model, {
+    /// 多类型媒体草稿（image / video / gif）。新代码请使用此参数。
+    /// 与 [mediaTypes] 配合传入 PostService。
+    List<MediaDraftItem>? mediaDrafts,
+    /// 旧的图片上传 API（保留向后兼容）。
+    @Deprecated('Use mediaDrafts with mixed media types')
     List<File>? imageFiles,
+    @Deprecated('Use mediaDrafts with mixed media types')
     List<String>? preUploadedUrls,
     List<String>? pollOptions,
     int? replyType,
@@ -114,22 +121,45 @@ class PostState extends AppStates {
       isBusy = true;
       notifyListeners();
 
-      // 如果有待上传的本地图片，逐个上传获取 COS URL；
-      // 已上传的 URL（如从草稿恢复的）直接拼接到最前面
+      // 1) 处理媒体草稿：上传本地文件 → 收集 (mediaUrls, mediaTypes)
       List<String>? mediaUrls;
-      if (imageFiles != null && imageFiles.isNotEmpty) {
+      List<int>? mediaTypes;
+      if (mediaDrafts != null && mediaDrafts.isNotEmpty) {
+        mediaUrls = [];
+        mediaTypes = [];
+        for (int i = 0; i < mediaDrafts.length; i++) {
+          final item = mediaDrafts[i];
+          final url = item.needsUpload && item.localFile != null
+              ? await uploadService.uploadMedia(
+                  item.localFile!,
+                  mediaType: item.mediaTypeInt,
+                  durationMs: item.durationMs,
+                )
+              : (item.remoteUrl ?? '');
+          if (url.isEmpty) {
+            throw StateError('MediaDraftItem[$i] has no URL after upload');
+          }
+          mediaUrls.add(url);
+          mediaTypes.add(item.mediaTypeInt);
+        }
+      } else if (imageFiles != null && imageFiles.isNotEmpty) {
+        // 兼容旧 API：纯图片
         mediaUrls = [...?preUploadedUrls];
+        mediaTypes = mediaUrls.map((_) => MediaType.image).toList();
         for (int i = 0; i < imageFiles.length; i++) {
           final cosUrl = await uploadService.uploadImage(imageFiles[i]);
           mediaUrls.add(cosUrl);
+          mediaTypes.add(MediaType.image);
         }
       } else if (preUploadedUrls != null && preUploadedUrls.isNotEmpty) {
         mediaUrls = [...preUploadedUrls];
+        mediaTypes = mediaUrls.map((_) => MediaType.image).toList();
       }
 
       final post = await postService.createPost(
         content: model.bio ?? '',
         mediaUrls: mediaUrls,
+        mediaTypes: mediaTypes,
         pollOptions: pollOptions,
         replyType: replyType,
         replyToPostId: model.replyToPostId,

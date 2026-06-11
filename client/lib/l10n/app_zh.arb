@@ -358,6 +358,8 @@
   "cameraAccessRequired": "需要相机权限",
   "cameraAccessHint": "请在系统设置中允许相机权限以拍照",
   "cameraGoBack": "返回",
+  "cameraModePhoto": "拍照",
+  "cameraModeVideo": "视频",
   "remove": "移除",
   "notSet": "未设置",
   "male": "男",
@@ -525,5 +527,41 @@
   "saveFailed": "保存失败",
   "sortTop": "最相关",
   "sortRecent": "近期",
-  "loadingMore": "加载中..."
+  "loadingMore": "加载中...",
+  "cameraModePhoto": "拍照",
+  "cameraModeVideo": "视频",
+  "cameraMicRequired": "请在系统设置中允许麦克风权限以录制视频",
+  "cameraStartRecordingFailed": "开始录制失败，请检查麦克风权限",
+  "cameraStopRecordingFailed": "停止录制失败",
+  "mediaPickerTitle": "添加媒体",
+  "mediaPickerPhoto": "图片",
+  "mediaPickerVideo": "视频",
+  "mediaPickerGif": "GIF",
+  "mediaLimitReached": "已达媒体数量上限 ({max})",
+  "@mediaLimitReached": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "gifTooLarge": "GIF 超过 20MB 上限（当前 {size}MB）",
+  "@gifTooLarge": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "notGifFormat": "请选择 .gif 格式的动图",
+  "videoTooLarge": "视频超过 100MB 上限（当前 {size}MB）",
+  "@videoTooLarge": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "videoTooLong": "视频时长 {duration}s 超过 60s 上限",
+  "@videoTooLong": {
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+  "videoMetaReadFailed": "读取视频信息失败",
+  "tapToPlayVideo": "点击播放视频"
 }

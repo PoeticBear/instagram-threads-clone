@@ -42,7 +42,14 @@ class PostService {
       };
       if (mediaUrls != null && mediaUrls.isNotEmpty) {
         body['media_urls'] = mediaUrls;
-        body['media_types'] = mediaTypes ?? List.filled(mediaUrls.length, 1);
+        // 透传 mediaTypes（不再写死为 1）。
+        // 缺省时回退全 1，向后兼容老调用方（纯图片场景）。
+        final types = mediaTypes ?? List.filled(mediaUrls.length, 1);
+        assert(
+          types.length == mediaUrls.length,
+          'mediaTypes.length (${types.length}) must equal mediaUrls.length (${mediaUrls.length})',
+        );
+        body['media_types'] = types;
       }
       if (pollOptions != null && pollOptions.isNotEmpty) {
         body['poll_options'] = pollOptions;
@@ -471,6 +478,7 @@ class PostService {
   Future<DraftInfo> saveDraft({
     required String content,
     List<String>? mediaUrls,
+    List<int>? mediaTypes,
     List<String>? pollOptions,
     int? topicId,
     int? replyType,
@@ -478,7 +486,17 @@ class PostService {
   }) async {
     try {
       final body = <String, dynamic>{'content': content};
-      if (mediaUrls != null && mediaUrls.isNotEmpty) body['media_urls'] = mediaUrls;
+      if (mediaUrls != null && mediaUrls.isNotEmpty) {
+        body['media_urls'] = mediaUrls;
+        // 透传 mediaTypes（与 mediaUrls 等长），缺省时按全 1 兜底（向后兼容）
+        if (mediaTypes != null) {
+          assert(
+            mediaTypes.length == mediaUrls.length,
+            'mediaTypes.length (${mediaTypes.length}) must equal mediaUrls.length (${mediaUrls.length})',
+          );
+          body['media_types'] = mediaTypes;
+        }
+      }
       if (pollOptions != null && pollOptions.isNotEmpty) body['poll_options'] = pollOptions;
       if (topicId != null) body['topic_id'] = topicId;
       if (replyType != null) body['reply_type'] = replyType;
@@ -927,6 +945,8 @@ class MediaItem {
   final String thumbUrl;
   final int? width;
   final int? height;
+  // 视频 / 语音时长（秒）。后端 schema 已支持，前端此前未透传。
+  final int? duration;
 
   MediaItem({
     this.id = 0,
@@ -935,6 +955,7 @@ class MediaItem {
     this.thumbUrl = '',
     this.width,
     this.height,
+    this.duration,
   });
 
   factory MediaItem.fromJson(Map<String, dynamic> json) {
@@ -952,6 +973,7 @@ class MediaItem {
       thumbUrl: json['thumb_url'] ?? json['thumbUrl'] ?? '',
       width: parseInt(json['width']),
       height: parseInt(json['height']),
+      duration: parseInt(json['duration']),
     );
   }
 
@@ -965,6 +987,7 @@ class MediaItem {
       thumbUrl: thumbUrl.isEmpty ? null : thumbUrl,
       width: width,
       height: height,
+      duration: duration,
     );
   }
 }

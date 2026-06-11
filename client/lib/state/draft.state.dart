@@ -31,6 +31,7 @@ class DraftState extends ChangeNotifier {
   Future<DraftInfo?> saveDraft({
     required String content,
     List<String>? mediaUrls,
+    List<int>? mediaTypes,
     List<String>? pollOptions,
     int? topicId,
     int? replyType,
@@ -40,6 +41,7 @@ class DraftState extends ChangeNotifier {
       final draft = await postService.saveDraft(
         content: content,
         mediaUrls: mediaUrls,
+        mediaTypes: mediaTypes,
         pollOptions: pollOptions,
         topicId: topicId,
         replyType: replyType,

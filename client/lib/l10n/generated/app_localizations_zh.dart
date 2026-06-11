@@ -1005,6 +1005,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cameraGoBack => '返回';
 
   @override
+  String get cameraModePhoto => '拍照';
+
+  @override
+  String get cameraModeVideo => '视频';
+
+  @override
   String get remove => '移除';
 
   @override
@@ -1346,4 +1352,54 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get loadingMore => '加载中...';
+
+  @override
+  String get cameraMicRequired => '请在系统设置中允许麦克风权限以录制视频';
+
+  @override
+  String get cameraStartRecordingFailed => '开始录制失败，请检查麦克风权限';
+
+  @override
+  String get cameraStopRecordingFailed => '停止录制失败';
+
+  @override
+  String get mediaPickerTitle => '添加媒体';
+
+  @override
+  String get mediaPickerPhoto => '图片';
+
+  @override
+  String get mediaPickerVideo => '视频';
+
+  @override
+  String get mediaPickerGif => 'GIF';
+
+  @override
+  String mediaLimitReached(int max) {
+    return '已达媒体数量上限 ($max)';
+  }
+
+  @override
+  String gifTooLarge(String size) {
+    return 'GIF 超过 20MB 上限（当前 ${size}MB）';
+  }
+
+  @override
+  String get notGifFormat => '请选择 .gif 格式的动图';
+
+  @override
+  String videoTooLarge(String size) {
+    return '视频超过 100MB 上限（当前 ${size}MB）';
+  }
+
+  @override
+  String videoTooLong(String duration) {
+    return '视频时长 ${duration}s 超过 60s 上限';
+  }
+
+  @override
+  String get videoMetaReadFailed => '读取视频信息失败';
+
+  @override
+  String get tapToPlayVideo => '点击播放视频';
 }

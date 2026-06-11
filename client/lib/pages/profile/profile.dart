@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/common/locator.dart';
 import 'package:threads/pages/profile/edit.dart';
@@ -19,6 +20,7 @@ import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/pages/follow/follow_list_page.dart';
 import 'package:threads/pages/profile/share_profile_sheet.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -250,15 +252,29 @@ class _ProfilePageState extends State<ProfilePage>
                                           state.profileUserModel!.link!
                                               .isNotEmpty) ...[
                                         SizedBox(width: 5),
-                                        Container(
-                                          height: 20,
-                                          decoration: BoxDecoration(
-                                              color: appColors.surface,
-                                              borderRadius:
-                                                  BorderRadius.circular(10)),
-                                          padding: EdgeInsets.all(2),
-                                          child: Text(
-                                            state.profileUserModel!.link!,
+                                        GestureDetector(
+                                          onTap: () => _openLink(
+                                              state.profileUserModel!.link!),
+                                          behavior: HitTestBehavior.opaque,
+                                          child: MouseRegion(
+                                            cursor:
+                                                SystemMouseCursors.click,
+                                            child: Container(
+                                              height: 20,
+                                              decoration: BoxDecoration(
+                                                  color: appColors.surface,
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          10)),
+                                              padding: EdgeInsets.all(2),
+                                              child: Text(
+                                                state
+                                                    .profileUserModel!.link!,
+                                                style: TextStyle(
+                                                  color: appColors.accent,
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ]
@@ -282,12 +298,19 @@ class _ProfilePageState extends State<ProfilePage>
                             alignment: Alignment.centerLeft,
                             child: Text(
                               state.profileUserModel!.bio!,
+                              maxLines: 5,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   color: appColors.textPrimary,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w400),
                             ),
                           ),
+                        // 扩展信息行（代词 / 位置 / 性别）
+                        if (state.profileUserModel != null) ...[
+                          SizedBox(height: 12),
+                          _buildInfoRow(state),
+                        ],
                         SizedBox(height: 16),
                         // Follower / Following counts
                         Row(
@@ -569,6 +592,131 @@ class _ProfilePageState extends State<ProfilePage>
       behavior: HitTestBehavior.opaque,
       child: child,
     );
+  }
+
+  // 渲染代词 / 位置 / 性别三个扩展字段的紧凑信息行。
+  // 任一字段为空或未设置时跳过该项；全部为空时返回 SizedBox.shrink()。
+  Widget _buildInfoRow(ProfileState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+    final user = state.profileUserModel;
+    if (user == null) return const SizedBox.shrink();
+
+    final items = <Widget>[];
+
+    // 位置
+    final location = user.location;
+    if (location != null && location.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Iconsax.location,
+        text: location,
+        appColors: appColors,
+      ));
+    }
+
+    // 代词
+    final pronouns = user.pronouns;
+    if (pronouns != null && pronouns.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Iconsax.tag,
+        text: pronouns,
+        appColors: appColors,
+      ));
+    }
+
+    // 性别（1=未设置，不展示）
+    final gender = user.gender;
+    if (gender != null && gender != 1) {
+      String genderText;
+      switch (gender) {
+        case 2: genderText = l10n.male; break;
+        case 3: genderText = l10n.female; break;
+        case 4: genderText = l10n.otherGender; break;
+        default: genderText = '';
+      }
+      if (genderText.isNotEmpty) {
+        items.add(_buildInfoItem(
+          icon: Iconsax.user,
+          text: genderText,
+          appColors: appColors,
+        ));
+      }
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        children: items,
+      ),
+    );
+  }
+
+  // 单个信息项：图标 + 文本
+  Widget _buildInfoItem({
+    required IconData icon,
+    required String text,
+    required AppColors appColors,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: appColors.textSecondary),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: appColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+            ),
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            maxLines: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 打开外部链接：自动补 https:// 前缀；失败时弹 SnackBar
+  Future<void> _openLink(String raw) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return;
+    var urlStr = trimmed;
+    if (!urlStr.startsWith('http://') && !urlStr.startsWith('https://')) {
+      urlStr = 'https://$urlStr';
+    }
+    final uri = Uri.tryParse(urlStr);
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(l10n.operationFailed),
+        backgroundColor: appColors.destructive,
+      ));
+      return;
+    }
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.operationFailed),
+          backgroundColor: appColors.destructive,
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.operationFailed),
+          backgroundColor: appColors.destructive,
+        ));
+      }
+    }
   }
 
   // ==================== Profile Menu (Mute / Restrict / Block / Report) ====================

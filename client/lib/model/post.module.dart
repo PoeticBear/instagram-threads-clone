@@ -8,6 +8,8 @@ class MediaType {
   static const int gif = 3;
   static const int voice = 4;
   static const int textAttachment = 5;
+  // Phase 2 预留：实况动图（iOS Live Photo），本期末启用
+  static const int livePhoto = 6;
 }
 
 /// 对应 API 的 MediaItem 结构
@@ -18,6 +20,8 @@ class MediaItemModel {
   final String? thumbUrl;
   final int? width;
   final int? height;
+  // 视频 / 语音时长（秒）。后端 schema 已支持，前端此前未透传。
+  final int? duration;
 
   const MediaItemModel({
     this.id,
@@ -26,19 +30,45 @@ class MediaItemModel {
     this.thumbUrl,
     this.width,
     this.height,
+    this.duration,
   });
 
   bool get isVideo => mediaType == MediaType.video;
+  bool get isGif => mediaType == MediaType.gif;
+  // 兼容旧渲染分支：gif 仍按 image 渲染走 CachedNetworkImage
   bool get isImage => mediaType == MediaType.image || mediaType == MediaType.gif;
+  // 可播放媒体（视频 / GIF），自动播放池用
+  bool get isPlayable => mediaType == MediaType.video || mediaType == MediaType.gif;
+
+  /// 时长格式化为 "m:ss" / "h:mm:ss"。无 duration 返回空串。
+  String get durationLabel {
+    if (duration == null || duration! <= 0) return '';
+    final s = duration!;
+    final h = s ~/ 3600;
+    final m = (s % 3600) ~/ 60;
+    final sec = s % 60;
+    if (h > 0) {
+      return '$h:${m.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+    }
+    return '$m:${sec.toString().padLeft(2, '0')}';
+  }
 
   factory MediaItemModel.fromJson(Map<dynamic, dynamic> map) {
+    int? parseInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse(v.toString());
+    }
+
     return MediaItemModel(
-      id: map['id'] is int ? map['id'] : int.tryParse(map['id']?.toString() ?? ''),
-      mediaType: map['media_type'] ?? map['mediaType'] ?? 1,
+      id: parseInt(map['id']),
+      mediaType: parseInt(map['media_type']) ?? parseInt(map['mediaType']) ?? 1,
       url: map['url']?.toString(),
       thumbUrl: map['thumb_url']?.toString() ?? map['thumbUrl']?.toString(),
-      width: map['width'] is int ? map['width'] : int.tryParse(map['width']?.toString() ?? ''),
-      height: map['height'] is int ? map['height'] : int.tryParse(map['height']?.toString() ?? ''),
+      width: parseInt(map['width']),
+      height: parseInt(map['height']),
+      duration: parseInt(map['duration']),
     );
   }
 
@@ -50,6 +80,7 @@ class MediaItemModel {
       'thumb_url': thumbUrl,
       'width': width,
       'height': height,
+      if (duration != null) 'duration': duration,
     };
   }
 }
@@ -346,6 +377,21 @@ class PostModel {
 
   /// 是否有可渲染的媒体（主帖图片分支统一判断）
   bool get hasMedia => effectiveMediaItems.isNotEmpty;
+
+  /// 首个可播放媒体（视频 / GIF），自动播放池用。无则返回 null。
+  MediaItemModel? get firstPlayableMedia {
+    for (final m in effectiveMediaItems) {
+      if (m.isPlayable) return m;
+    }
+    return null;
+  }
+
+  /// 按索引取媒体，越界返回 null。
+  MediaItemModel? getMediaItem(int index) {
+    final items = effectiveMediaItems;
+    if (index < 0 || index >= items.length) return null;
+    return items[index];
+  }
 
   // Support both Firebase-style and API-style date parsing
   static String timestampToString(DateTime date) {

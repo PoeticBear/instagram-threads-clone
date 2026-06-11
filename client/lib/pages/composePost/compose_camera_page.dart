@@ -5,14 +5,24 @@ import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/utils/video_processor.dart';
 import '../../main.dart';
+import '../../model/camera_capture_result.dart';
 
+/// 相机页面（拍照 + 录视频）
+/// - [initialMode] 决定默认进入拍照还是视频 Tab
+/// - pop 值：[CameraCaptureResult]
 class ComposeCameraPage extends StatefulWidget {
-  const ComposeCameraPage({super.key});
+  const ComposeCameraPage({super.key, this.initialMode = CameraMode.photo});
+
+  final CameraMode initialMode;
 
   @override
   State<ComposeCameraPage> createState() => _ComposeCameraPageState();
 }
+
+/// 相机模式（公开，供外部调用方选择默认 Tab）
+enum CameraMode { photo, video }
 
 class _ComposeCameraPageState extends State<ComposeCameraPage>
     with WidgetsBindingObserver {
@@ -26,10 +36,21 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   double _maxZoom = 1.0;
   bool _hasError = false;
 
+  // 模式与录制
+  late CameraMode _mode;
+  bool _isRecording = false;
+  DateTime? _recordingStartAt;
+
+  // 视频时长上限（与后端 / VideoProcessor 保持一致：60s）
+  static const int _maxVideoDurationSec = 60;
+  // 自动停止容差（每 200ms 检查一次）
+  static const Duration _recordingTickInterval = Duration(milliseconds: 200);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _mode = widget.initialMode;
     _initCamera();
   }
 
@@ -73,14 +94,15 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   }
 
   /// 初始化 CameraController。
-  /// camera 包在 iOS 上会自动触发系统原生授权弹窗，无需手动调用 permission_handler。
+  /// - 视频模式开启音频（需麦克风权限）
+  /// - 切换模式时也会调用本方法重建 controller
   Future<void> _startCamera() async {
     if (cameras.isEmpty || _cameraIndex >= cameras.length) return;
 
     _controller = CameraController(
       cameras[_cameraIndex],
       ResolutionPreset.veryHigh,
-      enableAudio: false,
+      enableAudio: _mode == CameraMode.video,
       imageFormatGroup: Platform.isAndroid
           ? ImageFormatGroup.nv21
           : ImageFormatGroup.bgra8888,
@@ -102,7 +124,20 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     }
   }
 
-  // ─── Actions ────────────────────────────────────────────
+  // ─── Mode switching ────────────────────────────────────
+
+  Future<void> _switchMode(CameraMode newMode) async {
+    if (_mode == newMode || _isRecording) return;
+    setState(() => _mode = newMode);
+    HapticFeedback.selectionClick();
+
+    // 重建 controller 以切换 enableAudio
+    await _controller?.dispose();
+    _controller = null;
+    await _startCamera();
+  }
+
+  // ─── Photo actions ─────────────────────────────────────
 
   Future<void> _takePicture() async {
     if (_controller == null || !_controller!.value.isInitialized || _isTakingPicture) return;
@@ -113,7 +148,7 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     try {
       final xFile = await _controller!.takePicture();
       if (mounted) {
-        Navigator.of(context).pop(xFile.path);
+        Navigator.of(context).pop(CameraCaptureResult.photo(xFile.path));
       }
     } catch (e) {
       debugPrint('Take picture failed: $e');
@@ -121,6 +156,97 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
       if (mounted) setState(() => _isTakingPicture = false);
     }
   }
+
+  // ─── Video actions ─────────────────────────────────────
+
+  Future<void> _toggleRecording() async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    if (_isRecording) {
+      await _stopRecording();
+    } else {
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    HapticFeedback.mediumImpact();
+    try {
+      // startVideoRecording 内部会触发系统保存对话框（iOS），可由包含 UIVideoAtPathIsCompatibleKey 处理
+      await _controller!.startVideoRecording();
+      _recordingStartAt = DateTime.now();
+      if (mounted) setState(() => _isRecording = true);
+      _scheduleAutoStop();
+    } catch (e) {
+      debugPrint('Start recording failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('开始录制失败，请检查麦克风权限')),
+        );
+      }
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    final controller = _controller;
+    if (controller == null || !_isRecording) return;
+
+    HapticFeedback.mediumImpact();
+    setState(() => _isRecording = false);
+    final startAt = _recordingStartAt;
+    _recordingStartAt = null;
+
+    try {
+      final xFile = await controller.stopVideoRecording();
+      final durationMs = startAt == null
+          ? 0
+          : DateTime.now().difference(startAt).inMilliseconds;
+
+      // 生成首帧缩略图（不阻塞返回，失败时降级无图）
+      File? thumb;
+      try {
+        final thumbFile = await VideoProcessor.getThumbnail(xFile.path);
+        thumb = thumbFile;
+      } catch (e) {
+        debugPrint('Generate thumbnail failed: $e');
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop(
+        CameraCaptureResult.video(
+          path: xFile.path,
+          durationMs: durationMs,
+          thumbnail: thumb ?? File(xFile.path),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Stop recording failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('停止录制失败: $e')),
+        );
+      }
+    }
+  }
+
+  /// 自动停止定时器：到 _maxVideoDurationSec 时强制停止
+  void _scheduleAutoStop() {
+    Future.delayed(_recordingTickInterval, () {
+      if (!mounted || !_isRecording) return;
+      final startAt = _recordingStartAt;
+      if (startAt == null) return;
+      final elapsed = DateTime.now().difference(startAt).inSeconds;
+      if (elapsed >= _maxVideoDurationSec) {
+        _stopRecording();
+        return;
+      }
+      // 持续触发 setState 以刷新计时器 UI
+      setState(() {});
+      _scheduleAutoStop();
+    });
+  }
+
+  // ─── Common actions ────────────────────────────────────
 
   Future<void> _switchCamera() async {
     if (_isSwitchingCamera) return;
@@ -175,6 +301,7 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
           _buildPreview(),
           if (!_hasError) ...[
             _buildTopControls(appColors),
+            _buildModeSwitch(appColors),
             _buildBottomControls(appColors),
           ],
           if (_hasError) _buildError(appColors),
@@ -227,28 +354,137 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                   color: Colors.black.withValues(alpha: 0.4),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.close, color: Colors.white, size: 24),
+                child: const Icon(Icons.close, color: Colors.white, size: 24),
               ),
             ),
-            GestureDetector(
-              onTap: isBackCamera ? _toggleFlash : null,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _flashMode == FlashMode.torch
-                      ? Iconsax.flash_15
-                      : Iconsax.flash_slash5,
-                  color: isBackCamera ? Colors.white : Colors.white24,
-                  size: 22,
+            if (_isRecording)
+              _buildRecordingIndicator()
+            else
+              GestureDetector(
+                onTap: isBackCamera && _mode == CameraMode.photo
+                    ? _toggleFlash
+                    : null,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _flashMode == FlashMode.torch
+                        ? Iconsax.flash_15
+                        : Iconsax.flash_slash5,
+                    color: (isBackCamera && _mode == CameraMode.photo)
+                        ? Colors.white
+                        : Colors.white24,
+                    size: 22,
+                  ),
                 ),
               ),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 录制中顶部红点 + 计时器
+  Widget _buildRecordingIndicator() {
+    final startAt = _recordingStartAt;
+    final elapsed = startAt == null
+        ? Duration.zero
+        : DateTime.now().difference(startAt);
+    final clamped = elapsed.inSeconds.clamp(0, _maxVideoDurationSec);
+    final mm = (clamped ~/ 60).toString().padLeft(1, '0');
+    final ss = (clamped % 60).toString().padLeft(2, '0');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: const BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$mm:$ss / 1:00',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 拍照 / 视频 模式切换
+  Widget _buildModeSwitch(AppColors appColors) {
+    if (_isRecording) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 60,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildModeChip(
+                label: l10n.cameraModePhoto,
+                active: _mode == CameraMode.photo,
+                onTap: () => _switchMode(CameraMode.photo),
+              ),
+              _buildModeChip(
+                label: l10n.cameraModeVideo,
+                active: _mode == CameraMode.video,
+                onTap: () => _switchMode(CameraMode.video),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeChip({
+    required String label,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.black : Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -265,33 +501,10 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              SizedBox(width: 60),
+              const SizedBox(width: 60),
+              _buildShutter(),
               GestureDetector(
-                onTap: _isTakingPicture ? null : _takePicture,
-                child: Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    color: _isTakingPicture ? Colors.white24 : Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white54, width: 4),
-                  ),
-                  child: _isTakingPicture
-                      ? Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.black,
-                            ),
-                          ),
-                        )
-                      : null,
-                ),
-              ),
-              GestureDetector(
-                onTap: _switchCamera,
+                onTap: _isRecording ? null : _switchCamera,
                 child: Container(
                   width: 60,
                   height: 60,
@@ -309,6 +522,65 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     );
   }
 
+  /// 快门按钮：拍照圆形 / 视频方块（录制中变红）
+  Widget _buildShutter() {
+    if (_mode == CameraMode.photo) {
+      return GestureDetector(
+        onTap: _isTakingPicture ? null : _takePicture,
+        child: Container(
+          width: 76,
+          height: 76,
+          decoration: BoxDecoration(
+            color: _isTakingPicture ? Colors.white24 : Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white54, width: 4),
+          ),
+          child: _isTakingPicture
+              ? const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.black,
+                    ),
+                  ),
+                )
+              : null,
+        ),
+      );
+    }
+
+    // 视频模式：单击切换录制状态
+    return GestureDetector(
+      onTap: _isRecording ? _stopRecording : _toggleRecording,
+      child: Container(
+        width: 76,
+        height: 76,
+        decoration: BoxDecoration(
+          color: _isRecording ? Colors.transparent : Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: _isRecording ? Colors.red : Colors.white54,
+            width: 4,
+          ),
+        ),
+        child: _isRecording
+            ? Center(
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
   Widget _buildError(AppColors appColors) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
@@ -318,27 +590,26 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Iconsax.camera, size: 64, color: Colors.white24),
-              SizedBox(height: 24),
+              const Icon(Iconsax.camera, size: 64, color: Colors.white24),
+              const SizedBox(height: 24),
               Text(
                 l10n.cameraAccessRequired,
-                style: TextStyle(
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w600),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 l10n.cameraAccessHint,
-                style: TextStyle(color: Colors.white54, fontSize: 14),
+                style: const TextStyle(color: Colors.white54, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
               GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
                 child: Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   decoration: BoxDecoration(
                     color: appColors.surface,
                     borderRadius: BorderRadius.circular(8),

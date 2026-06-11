@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -92,22 +93,80 @@ class DraftListSheet extends StatelessWidget {
         },
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Text(
-                draft.content.isEmpty ? '(empty)' : draft.content,
-                style: TextStyle(color: appColors.textPrimary, fontSize: 16),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(height: 4),
-              Text(
-                draft.createTime,
-                style: TextStyle(color: appColors.textSecondary, fontSize: 13),
+              // 缩略图：取首个媒体 + 视频角标
+              if (draft.mediaUrls.isNotEmpty) ...[
+                _buildDraftThumb(context, appColors, draft),
+                SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      draft.content.isEmpty ? '(empty)' : draft.content,
+                      style: TextStyle(color: appColors.textPrimary, fontSize: 16),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      draft.createTime,
+                      style: TextStyle(color: appColors.textSecondary, fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDraftThumb(
+    BuildContext context,
+    AppColors appColors,
+    DraftInfo draft,
+  ) {
+    final firstUrl = draft.firstMediaUrl;
+    final hasVideo = draft.hasVideo;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (firstUrl != null && firstUrl.isNotEmpty)
+              CachedNetworkImage(
+                imageUrl: firstUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(color: appColors.surface),
+                errorWidget: (_, __, ___) => Container(
+                  color: appColors.surface,
+                  child: Icon(Icons.broken_image, color: appColors.textMuted, size: 16),
+                ),
+              )
+            else
+              Container(
+                color: appColors.surface,
+                child: Icon(Icons.notes, color: appColors.textMuted, size: 20),
+              ),
+            if (hasVideo)
+              Container(
+                color: Colors.black.withValues(alpha: 0.25),
+                child: const Center(
+                  child: Icon(
+                    Icons.play_circle_filled,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

@@ -9,10 +9,13 @@ import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
+import 'package:threads/model/media_draft_item.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/draft.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/model/draft.module.dart';
+import 'package:threads/model/camera_capture_result.dart';
+import 'package:threads/utils/video_processor.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/draft_list_sheet.dart';
 import 'package:threads/pages/composePost/compose_camera_page.dart';
@@ -28,8 +31,13 @@ class ComposePost extends StatefulWidget {
 
 class ComposePostState extends State<ComposePost> {
   late TextEditingController _textEditingController;
-  List<File> _imageFiles = [];
-  List<String> _imageUrls = []; // 从草稿恢复的、已上传的远程图片 URL
+
+  /// 多类型媒体草稿（image / video / gif）。
+  /// - 新选的本地资源：`localFile` 非空，`remoteUrl` 为空
+  /// - 草稿恢复的远端资源：`localFile` 为空，`remoteUrl` 非空
+  /// - 上传成功后会原地替换为 remoteUrl（可继续编辑 / 删除）
+  List<MediaDraftItem> _mediaDrafts = [];
+
   bool _showPollEditor = false;
   List<TextEditingController> _pollControllers = [];
   int _replyType = 1;
@@ -37,10 +45,15 @@ class ComposePostState extends State<ComposePost> {
   String? _location;
   DateTime? _scheduledTime;
 
-  static const int _maxImages = 10;
+  static const int _maxMediaCount = 10;
   static const int _maxPollOptions = 4;
   static const int _minPollOptions = 2;
   static const int _maxContentLength = 500;
+
+  // 视频相关限制（与后端 / VideoProcessor 保持一致）
+  static const int _maxVideoDurationMs = 60 * 1000;
+  static const int _maxVideoSizeBytes = 100 * 1024 * 1024;
+  static const int _maxGifSizeBytes = 20 * 1024 * 1024;
 
   @override
   void initState() {
@@ -69,16 +82,18 @@ class ComposePostState extends State<ComposePost> {
 
   bool get _hasContent {
     final hasText = _textEditingController.text.trim().isNotEmpty;
-    final hasImages = _imageFiles.isNotEmpty || _imageUrls.isNotEmpty;
+    final hasMedia = _mediaDrafts.isNotEmpty;
     final hasPoll = _showPollEditor &&
         _pollControllers.any((c) => c.text.trim().isNotEmpty);
-    return hasText || hasImages || hasPoll;
+    return hasText || hasMedia || hasPoll;
   }
 
   bool get _canPost {
     if (_isSubmitting) return false;
     return _hasContent;
   }
+
+  bool get _canAddMoreMedia => _mediaDrafts.length < _maxMediaCount;
 
   void _handleBack(BuildContext context) {
     if (!_hasContent) {
@@ -171,8 +186,7 @@ class ComposePostState extends State<ComposePost> {
       c.clear();
     }
     setState(() {
-      _imageFiles.clear();
-      _imageUrls.clear();
+      _mediaDrafts.clear();
       _showPollEditor = false;
       _replyType = 1;
       _location = null;
@@ -185,29 +199,33 @@ class ComposePostState extends State<ComposePost> {
     widget.onCancel?.call();
   }
 
-  void _addImage(File file) {
-    final totalImages = _imageFiles.length + _imageUrls.length;
-    if (totalImages >= _maxImages) return;
+  // ─── Media ────────────────────────────────────────────────
+
+  /// 通用添加媒体入口（含互斥检查：开启投票会清空已有媒体）
+  void _addMedia(MediaDraftItem item) {
+    if (!_canAddMoreMedia) return;
     setState(() {
-      // 添加图片时关闭投票（互斥）
+      // 添加媒体时关闭投票（互斥）
       if (_showPollEditor) {
         _showPollEditor = false;
         for (final c in _pollControllers) {
           c.clear();
         }
       }
-      // 新选图加到头部；_imageUrls（草稿恢复的）保留，用户可混用
-      _imageFiles.insert(0, file);
+      _mediaDrafts.insert(0, item);
     });
   }
 
-  void _removeImage(int index) {
+  void _removeMedia(int index) {
     setState(() {
-      if (index < _imageFiles.length) {
-        _imageFiles.removeAt(index);
-      } else {
-        _imageUrls.removeAt(index - _imageFiles.length);
-      }
+      _mediaDrafts.removeAt(index);
+    });
+  }
+
+  /// 替换某个本地草稿为已上传版本（上传成功后回调）
+  void _replaceMedia(int index, MediaDraftItem updated) {
+    setState(() {
+      _mediaDrafts[index] = updated;
     });
   }
 
@@ -215,9 +233,8 @@ class ComposePostState extends State<ComposePost> {
     setState(() {
       _showPollEditor = !_showPollEditor;
       if (_showPollEditor) {
-        // 开启投票时清空所有图片（互斥）
-        _imageFiles.clear();
-        _imageUrls.clear();
+        // 开启投票时清空所有媒体（互斥）
+        _mediaDrafts.clear();
         _initPollControllers();
       }
     });
@@ -249,24 +266,230 @@ class ComposePostState extends State<ComposePost> {
     return options.length >= _minPollOptions ? options : null;
   }
 
+  // ─── Media pickers ────────────────────────────────────────
+
   Future<void> _pickImage() async {
+    if (!_canAddMoreMedia) {
+      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
+      return;
+    }
     final picker = ImagePicker();
     final xFile = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 100,
     );
     if (xFile != null) {
-      _addImage(File(xFile.path));
+      _addMedia(MediaDraftItem.fromLocalImage(File(xFile.path)));
     }
   }
 
-  void _openCamera() async {
-    final filePath = await Navigator.push<String>(
+  Future<void> _pickGif() async {
+    if (!_canAddMoreMedia) {
+      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
+      return;
+    }
+    final picker = ImagePicker();
+    final xFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      // imageQuality 对 GIF 无效；GIF 由 MIME 推断识别
+    );
+    if (xFile == null) return;
+
+    final file = File(xFile.path);
+    final size = await file.length();
+    if (size > _maxGifSizeBytes) {
+      _showSnack('GIF 超过 20MB 上限（当前 ${(size / 1024 / 1024).toStringAsFixed(1)}MB）');
+      return;
+    }
+    // 仅当扩展名为 .gif 时才当作 GIF 处理
+    final ext = xFile.path.toLowerCase();
+    if (!ext.endsWith('.gif')) {
+      _showSnack('请选择 .gif 格式的动图');
+      return;
+    }
+    _addMedia(MediaDraftItem.fromLocalGif(file, fileSizeBytes: size));
+  }
+
+  Future<void> _pickVideo() async {
+    if (!_canAddMoreMedia) {
+      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
+      return;
+    }
+    final picker = ImagePicker();
+    final xFile = await picker.pickVideo(source: ImageSource.gallery);
+    if (xFile == null) return;
+
+    final file = File(xFile.path);
+    final size = await file.length();
+    if (size > _maxVideoSizeBytes) {
+      _showSnack('视频超过 100MB 上限（当前 ${(size / 1024 / 1024).toStringAsFixed(1)}MB）');
+      return;
+    }
+
+    // 探测时长 / 宽高，校验不超过 60s
+    try {
+      final meta = await VideoProcessor.getMediaInfo(file.path);
+      if (meta.durationMs > _maxVideoDurationMs) {
+        _showSnack(
+          '视频时长 ${(meta.durationMs / 1000).toStringAsFixed(1)}s 超过 60s 上限',
+        );
+        return;
+      }
+    } on VideoProcessException catch (e) {
+      _showSnack('读取视频信息失败: ${e.message}');
+      return;
+    }
+
+    _addMedia(
+      MediaDraftItem.fromLocalVideo(
+        file,
+        durationMs: 0, // 由 _openCamera 路径精确写入；从相册选择暂以 0 占位
+        fileSizeBytes: size,
+      ),
+    );
+    // 异步获取精确 duration 并 patch 到 draft
+    _enrichVideoDuration(_mediaDrafts.indexWhere((d) => d.localFile?.path == file.path), file.path);
+  }
+
+  /// 异步从 metadata 补充视频精确时长（相册选择路径）
+  void _enrichVideoDuration(int draftIndex, String path) {
+    if (draftIndex < 0) return;
+    VideoProcessor.getMediaInfo(path).then((meta) {
+      if (!mounted) return;
+      if (draftIndex >= _mediaDrafts.length) return;
+      final current = _mediaDrafts[draftIndex];
+      if (current.localFile?.path != path) return;
+      _replaceMedia(
+        draftIndex,
+        current.copyWith(durationMs: meta.durationMs),
+      );
+    }).catchError((_) {
+      // 静默：duration 缺失时 UI 仅不显示时长标签
+    });
+  }
+
+  /// 「+」按钮弹出底部 sheet：图片 / 视频 / GIF
+  void _showMediaPickerSheet() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: appColors.surfaceTertiary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _sheetItem(
+                context: sheetContext,
+                icon: Iconsax.gallery,
+                label: '图片',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickImage();
+                },
+              ),
+              _sheetItem(
+                context: sheetContext,
+                icon: Iconsax.video,
+                label: '视频',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickVideo();
+                },
+              ),
+              _sheetItem(
+                context: sheetContext,
+                icon: Iconsax.image,
+                label: 'GIF',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickGif();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _sheetItem({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    return ListTile(
+      leading: Icon(icon, color: appColors.textPrimary, size: 22),
+      title: Text(label,
+          style: TextStyle(color: appColors.textPrimary, fontSize: 16)),
+      onTap: onTap,
+    );
+  }
+
+  void _showSnack(String message) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: appColors.destructive,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // ─── Camera ───────────────────────────────────────────────
+
+  Future<void> _openCamera() async {
+    if (!_canAddMoreMedia) {
+      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
+      return;
+    }
+    final result = await Navigator.push<CameraCaptureResult>(
       context,
       CupertinoPageRoute(builder: (_) => const ComposeCameraPage()),
     );
-    if (filePath != null) {
-      _addImage(File(filePath));
+    if (result == null) return;
+
+    if (result.isVideo) {
+      // 视频：从 thumbnail 提取首帧图路径
+      _addMedia(
+        MediaDraftItem.fromLocalVideo(
+          File(result.path),
+          durationMs: result.durationMs,
+          thumbPath: result.thumbnail?.path,
+        ),
+      );
+    } else {
+      _addMedia(MediaDraftItem.fromLocalImage(File(result.path)));
+    }
+  }
+
+  Future<void> _openVideoCamera() async {
+    if (!_canAddMoreMedia) {
+      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
+      return;
+    }
+    final result = await Navigator.push<CameraCaptureResult>(
+      context,
+      CupertinoPageRoute(
+        builder: (_) => const ComposeCameraPage(initialMode: CameraMode.video),
+      ),
+    );
+    if (result == null) return;
+    if (result.isVideo) {
+      _addMedia(
+        MediaDraftItem.fromLocalVideo(
+          File(result.path),
+          durationMs: result.durationMs,
+          thumbPath: result.thumbnail?.path,
+        ),
+      );
     }
   }
 
@@ -285,7 +508,7 @@ class ComposePostState extends State<ComposePost> {
   }
 
   /// 从草稿列表选中草稿：先用 list 数据立即恢复基本字段（保持 UI 响应即时），
-  /// 再异步调 loadDraftForEditing 拉详情，补全 mediaUrls / location。
+  /// 再异步调 loadDraftForEditing 拉详情，补全 mediaList / location。
   Future<void> _onDraftSelected(DraftInfo draft) async {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final l10n = AppLocalizations.of(context)!;
@@ -296,8 +519,7 @@ class ComposePostState extends State<ComposePost> {
       _textEditingController.text = draft.content;
       if (draft.pollOptions != null && draft.pollOptions!.isNotEmpty) {
         _showPollEditor = true;
-        _imageFiles.clear();
-        _imageUrls.clear();
+        _mediaDrafts.clear();
         _pollControllers = draft.pollOptions!
             .map((opt) => TextEditingController(text: opt))
             .toList();
@@ -307,8 +529,7 @@ class ComposePostState extends State<ComposePost> {
           }
         }
       } else {
-        _imageFiles.clear();
-        _imageUrls.clear();
+        _mediaDrafts.clear();
         _showPollEditor = false;
       }
       if (draft.replyType != null) {
@@ -316,68 +537,117 @@ class ComposePostState extends State<ComposePost> {
       }
     });
 
-    // Step 2: 异步拉详情补全 mediaUrls / location
+    // Step 2: 异步拉详情补全 mediaList / location
     final detail = await draftState.loadDraftForEditing(draft.id);
     if (!mounted) return;
     if (detail == null) return; // 拉取失败时基本字段已恢复，忽略
     setState(() {
       if (detail.mediaUrls.isNotEmpty) {
-        _imageUrls = List<String>.from(detail.mediaUrls);
+        _mediaDrafts = _buildDraftsFromMediaList(
+          detail.mediaUrls,
+          detail.mediaTypes,
+        );
       }
       if (detail.location != null && detail.location!.isNotEmpty) {
         _location = detail.location;
       }
     });
-    // 静默提示
-    if (detail.mediaUrls.isNotEmpty || (detail.location?.isNotEmpty ?? false)) {
+    if (_mediaDrafts.isNotEmpty || (detail.location?.isNotEmpty ?? false)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.draftLoaded),
           backgroundColor: appColors.surface,
-          duration: Duration(seconds: 1),
+          duration: const Duration(seconds: 1),
         ),
       );
     }
   }
 
-  Future<void> _saveCurrentDraft() async {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    final content = _textEditingController.text.trim();
-    final hasImage = _imageFiles.isNotEmpty || _imageUrls.isNotEmpty;
-    if (content.isEmpty && !hasImage && !_showPollEditor) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.nothingToSaveDraft),
-          backgroundColor: appColors.surface,
-          duration: Duration(seconds: 1),
+  /// 从后端返回的 mediaUrls + mediaTypes 重建草稿列表。
+  /// 仅保留首个能解析的 mediaType（与服务端约定对齐）。
+  List<MediaDraftItem> _buildDraftsFromMediaList(
+    List<String> mediaUrls,
+    List<int>? mediaTypes,
+  ) {
+    final out = <MediaDraftItem>[];
+    for (int i = 0; i < mediaUrls.length; i++) {
+      final url = mediaUrls[i];
+      if (url.isEmpty) continue;
+      final mt = (mediaTypes != null && i < mediaTypes.length) ? mediaTypes[i] : 1;
+      out.add(
+        MediaDraftItem.fromRemote(
+          url: url,
+          type: DraftMediaType.fromMediaTypeInt(mt),
         ),
       );
-      return;
     }
-    final draftState = Provider.of<DraftState>(context, listen: false);
-    final uploadService = Provider.of<PostState>(context, listen: false).uploadService;
+    return out;
+  }
 
-    // 先把本地图片逐个上传拿 cos_url，再与已上传的 url 合并
-    final List<String> mediaUrls = List<String>.from(_imageUrls);
-    for (int i = 0; i < _imageFiles.length; i++) {
+  /// 把当前内容（本地 + 远端）打包成可保存的草稿数据
+  /// - 本地文件全部上传
+  /// - 返回 (mediaUrls, mediaTypes) 平行数组
+  Future<List<MapEntry<String, int>>?> _resolveDraftMedia() async {
+    if (_mediaDrafts.isEmpty) return null;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final uploadService =
+        Provider.of<PostState>(context, listen: false).uploadService;
+
+    final out = <MapEntry<String, int>>[];
+    for (int i = 0; i < _mediaDrafts.length; i++) {
+      final item = _mediaDrafts[i];
       try {
-        final cosUrl = await uploadService.uploadImage(_imageFiles[i]);
-        mediaUrls.add(cosUrl);
+        final url = item.needsUpload && item.localFile != null
+            ? await uploadService.uploadMedia(
+                item.localFile!,
+                mediaType: item.mediaTypeInt,
+                durationMs: item.durationMs,
+              )
+            : (item.remoteUrl ?? '');
+        if (url.isEmpty) continue;
+        out.add(MapEntry(url, item.mediaTypeInt));
       } catch (_) {
-        if (!mounted) return;
+        if (!mounted) return null;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.draftSaveFailed),
             backgroundColor: appColors.destructive,
           ),
         );
-        return;
+        return null;
       }
     }
+    return out;
+  }
+
+  Future<void> _saveCurrentDraft() async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final content = _textEditingController.text.trim();
+    final hasMedia = _mediaDrafts.isNotEmpty;
+    if (content.isEmpty && !hasMedia && !_showPollEditor) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.nothingToSaveDraft),
+          backgroundColor: appColors.surface,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+    final draftState = Provider.of<DraftState>(context, listen: false);
+
+    // 上传本地媒体，收集 (url, mediaType) 平行数组
+    final resolved = await _resolveDraftMedia();
+    if (!mounted) return;
+    if (hasMedia && resolved == null) return; // 上传失败已提示
+
+    final mediaUrls = resolved?.map((e) => e.key).toList();
+    final mediaTypes = resolved?.map((e) => e.value).toList();
 
     final saved = await draftState.saveDraft(
       content: content,
-      mediaUrls: mediaUrls.isNotEmpty ? mediaUrls : null,
+      mediaUrls: (mediaUrls != null && mediaUrls.isNotEmpty) ? mediaUrls : null,
+      mediaTypes: (mediaTypes != null && mediaTypes.isNotEmpty) ? mediaTypes : null,
       pollOptions: _getValidPollOptions(),
       replyType: _replyType != 1 ? _replyType : null,
       location: _location,
@@ -388,7 +658,7 @@ class ComposePostState extends State<ComposePost> {
         SnackBar(
           content: Text(AppLocalizations.of(context)!.draftSaved),
           backgroundColor: appColors.repost,
-          duration: Duration(seconds: 1),
+          duration: const Duration(seconds: 1),
         ),
       );
     } else {
@@ -436,8 +706,7 @@ class ComposePostState extends State<ComposePost> {
 
     final postId = await state.createPost(
       postModel,
-      imageFiles: _imageFiles.isNotEmpty ? _imageFiles : null,
-      preUploadedUrls: _imageUrls.isNotEmpty ? _imageUrls : null,
+      mediaDrafts: _mediaDrafts.isNotEmpty ? _mediaDrafts : null,
       pollOptions: pollOptions,
       replyType: _replyType != 1 ? _replyType : null,
       location: _location,
@@ -456,7 +725,7 @@ class ComposePostState extends State<ComposePost> {
               ? AppLocalizations.of(context)!.schedulePublishSuccess
               : AppLocalizations.of(context)!.publishSuccess),
           backgroundColor: appColors.repost,
-          duration: Duration(seconds: 1),
+          duration: const Duration(seconds: 1),
         ),
       );
       _textEditingController.clear();
@@ -464,8 +733,7 @@ class ComposePostState extends State<ComposePost> {
         c.clear();
       }
       setState(() {
-        _imageFiles.clear();
-        _imageUrls.clear();
+        _mediaDrafts.clear();
         _showPollEditor = false;
         _replyType = 1;
         _location = null;
@@ -542,8 +810,8 @@ class ComposePostState extends State<ComposePost> {
     final l10n = AppLocalizations.of(context)!;
 
     DateTime initialTime =
-        _scheduledTime ?? DateTime.now().add(Duration(hours: 1));
-    final minimumTime = DateTime.now().add(Duration(minutes: 5));
+        _scheduledTime ?? DateTime.now().add(const Duration(hours: 1));
+    final minimumTime = DateTime.now().add(const Duration(minutes: 5));
     if (initialTime.isBefore(minimumTime)) {
       initialTime = minimumTime;
     }
@@ -553,7 +821,7 @@ class ComposePostState extends State<ComposePost> {
       context: context,
       builder: (modalContext) => Container(
         height: 280,
-        padding: EdgeInsets.only(top: 6),
+        padding: const EdgeInsets.only(top: 6),
         margin: EdgeInsets.only(
           bottom: MediaQuery.of(modalContext).viewInsets.bottom,
         ),
@@ -582,11 +850,11 @@ class ComposePostState extends State<ComposePost> {
                           color: appColors.accent, fontWeight: FontWeight.w600)),
                   onPressed: () {
                     if (selectedTime
-                        .isBefore(DateTime.now().add(Duration(minutes: 5)))) {
+                        .isBefore(DateTime.now().add(const Duration(minutes: 5)))) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(l10n.scheduleTimeTooEarly),
                         backgroundColor: appColors.destructive,
-                        duration: Duration(seconds: 2),
+                        duration: const Duration(seconds: 2),
                       ));
                       return;
                     }
@@ -601,7 +869,7 @@ class ComposePostState extends State<ComposePost> {
                 mode: CupertinoDatePickerMode.dateAndTime,
                 initialDateTime: initialTime,
                 minimumDate: minimumTime,
-                maximumDate: DateTime.now().add(Duration(days: 365)),
+                maximumDate: DateTime.now().add(const Duration(days: 365)),
                 use24hFormat: true,
                 onDateTimeChanged: (DateTime newTime) {
                   selectedTime = newTime;
@@ -621,7 +889,7 @@ class ComposePostState extends State<ComposePost> {
     showModalBottomSheet(
       context: context,
       backgroundColor: appColors.surfaceTertiary,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
       builder: (context) {
@@ -630,7 +898,7 @@ class ComposePostState extends State<ComposePost> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
                   AppLocalizations.of(context)!.whoCanReply,
                   style: TextStyle(
@@ -645,7 +913,7 @@ class ComposePostState extends State<ComposePost> {
               _replyTypeOption(2, Iconsax.user, AppLocalizations.of(context)!.followersCanReply),
               _replyTypeOption(3, Iconsax.people, AppLocalizations.of(context)!.followingCanReply),
               _replyTypeOption(4, Icons.alternate_email, AppLocalizations.of(context)!.mentionedCanReply),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
             ],
           ),
         );
@@ -700,7 +968,7 @@ class ComposePostState extends State<ComposePost> {
         flexibleSpace: SafeArea(
           child: Container(
             height: 56,
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
                 GestureDetector(
@@ -717,7 +985,7 @@ class ComposePostState extends State<ComposePost> {
                             fontWeight: FontWeight.w700)),
                   ),
                 ),
-                SizedBox(width: 48), // balance Cancel width
+                const SizedBox(width: 48), // balance Cancel width
               ],
             ),
           ),
@@ -729,7 +997,7 @@ class ComposePostState extends State<ComposePost> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(14),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -741,7 +1009,7 @@ class ComposePostState extends State<ComposePost> {
                       Column(
                         children: [
                           _buildAvatar(appColors, profilePic, 40),
-                          SizedBox(height: 6),
+                          const SizedBox(height: 6),
                           Container(
                             width: 2,
                             height: 30,
@@ -749,7 +1017,7 @@ class ComposePostState extends State<ComposePost> {
                           ),
                         ],
                       ),
-                      SizedBox(width: 12),
+                      const SizedBox(width: 12),
                       // Right: name + text field + char count
                       Expanded(
                         child: Column(
@@ -783,7 +1051,7 @@ class ComposePostState extends State<ComposePost> {
                             ),
                             if (charCount > 0)
                               Padding(
-                                padding: EdgeInsets.only(top: 4),
+                                padding: const EdgeInsets.only(top: 4),
                                 child: Text(
                                   '$charCount / $_maxContentLength',
                                   style: TextStyle(
@@ -798,23 +1066,17 @@ class ComposePostState extends State<ComposePost> {
                     ],
                   ),
 
-                  // ── Image previews ──
-                  if (_imageFiles.isNotEmpty || _imageUrls.isNotEmpty)
+                  // ── Media previews ──
+                  if (_mediaDrafts.isNotEmpty)
                     Padding(
-                      padding: EdgeInsets.only(left: 52, top: 8),
+                      padding: const EdgeInsets.only(left: 52, top: 8),
                       child: Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          for (int i = 0; i < _imageFiles.length; i++)
-                            _buildImagePreview(
-                                appColors, _imageFiles[i], i, isLocal: true),
-                          for (int j = 0; j < _imageUrls.length; j++)
-                            _buildImagePreview(
-                                appColors, _imageUrls[j], _imageFiles.length + j,
-                                isLocal: false),
-                          if (_imageFiles.length + _imageUrls.length < _maxImages)
-                            _buildAddImageTile(appColors),
+                          for (int i = 0; i < _mediaDrafts.length; i++)
+                            _buildMediaPreview(appColors, _mediaDrafts[i], i),
+                          if (_canAddMoreMedia) _buildAddMediaTile(appColors),
                         ],
                       ),
                     ),
@@ -822,21 +1084,21 @@ class ComposePostState extends State<ComposePost> {
                   // ── Poll editor ──
                   if (_showPollEditor)
                     Padding(
-                      padding: EdgeInsets.only(left: 52, top: 12),
+                      padding: const EdgeInsets.only(left: 52, top: 12),
                       child: _buildPollEditor(appColors),
                     ),
 
                   // ── Location chip ──
                   if (_location != null)
                     Padding(
-                      padding: EdgeInsets.only(left: 52, top: 8),
+                      padding: const EdgeInsets.only(left: 52, top: 8),
                       child: GestureDetector(
                         onTap: _showLocationDialog,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Iconsax.location, size: 14, color: appColors.textMuted),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Flexible(
                               child: Text(
                                 _location!,
@@ -852,14 +1114,14 @@ class ComposePostState extends State<ComposePost> {
                   // ── Schedule time indicator ──
                   if (_scheduledTime != null)
                     Padding(
-                      padding: EdgeInsets.only(left: 52, top: 8),
+                      padding: const EdgeInsets.only(left: 52, top: 8),
                       child: GestureDetector(
                         onTap: _showSchedulePicker,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Iconsax.clock, size: 14, color: appColors.accent),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
                               '${_scheduledTime!.year}-${_scheduledTime!.month.toString().padLeft(2, '0')}-${_scheduledTime!.day.toString().padLeft(2, '0')} '
                               '${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
@@ -924,39 +1186,43 @@ class ComposePostState extends State<ComposePost> {
     );
   }
 
-  Widget _buildImagePreview(AppColors appColors, Object source, int index,
-      {required bool isLocal}) {
+  /// 通用媒体预览：图片 / 视频缩略图（带 ▶ + 时长）/ GIF（动画）
+  Widget _buildMediaPreview(AppColors appColors, MediaDraftItem item, int index) {
     return Stack(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: isLocal
-              ? Image.file(source as File,
-                  width: 80, height: 80, fit: BoxFit.cover)
-              : CachedNetworkImage(
-                  imageUrl: source as String,
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(
-                    width: 80,
-                    height: 80,
-                    color: appColors.surface,
-                  ),
-                  errorWidget: (_, __, ___) => Container(
-                    width: 80,
-                    height: 80,
-                    color: appColors.surface,
-                    child: Icon(Icons.broken_image,
-                        color: appColors.textMuted, size: 20),
-                  ),
-                ),
+          child: SizedBox(
+            width: 80,
+            height: 80,
+            child: _buildMediaThumb(appColors, item),
+          ),
         ),
+        if (item.isVideo && item.durationLabel.isNotEmpty)
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                item.durationLabel,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         Positioned(
           right: -4,
           top: -4,
           child: GestureDetector(
-            onTap: () => _removeImage(index),
+            onTap: () => _removeMedia(index),
             child: Container(
               width: 22,
               height: 22,
@@ -972,9 +1238,87 @@ class ComposePostState extends State<ComposePost> {
     );
   }
 
-  Widget _buildAddImageTile(AppColors appColors) {
+  Widget _buildMediaThumb(AppColors appColors, MediaDraftItem item) {
+    // 视频：缩略图（本地或远端） + ▶ 角标
+    if (item.isVideo) {
+      final thumbWidget = item.thumbPath != null
+          ? Image.file(File(item.thumbPath!), fit: BoxFit.cover, width: 80, height: 80)
+          : item.remoteThumbUrl != null
+              ? CachedNetworkImage(
+                  imageUrl: item.remoteThumbUrl!,
+                  fit: BoxFit.cover,
+                  width: 80,
+                  height: 80,
+                  placeholder: (_, __) => Container(color: appColors.surface),
+                  errorWidget: (_, __, ___) =>
+                      Container(color: appColors.surface, child: const Icon(Icons.videocam)),
+                )
+              : Container(
+                  color: appColors.surface,
+                  child: const Icon(Icons.videocam, color: Colors.white54),
+                );
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          thumbWidget,
+          Container(color: Colors.black.withValues(alpha: 0.18)),
+          const Center(
+            child: Icon(
+              Icons.play_circle_filled,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 图片
+    if (item.isImage) {
+      if (item.localFile != null) {
+        return Image.file(item.localFile!, fit: BoxFit.cover, width: 80, height: 80);
+      }
+      if (item.remoteUrl != null) {
+        return CachedNetworkImage(
+          imageUrl: item.remoteUrl!,
+          fit: BoxFit.cover,
+          width: 80,
+          height: 80,
+          placeholder: (_, __) => Container(color: appColors.surface),
+          errorWidget: (_, __, ___) => Container(
+            color: appColors.surface,
+            child: Icon(Icons.broken_image, color: appColors.textMuted, size: 20),
+          ),
+        );
+      }
+    }
+
+    // GIF
+    if (item.isGif) {
+      if (item.localFile != null) {
+        return Image.file(item.localFile!, fit: BoxFit.cover, width: 80, height: 80);
+      }
+      if (item.remoteUrl != null) {
+        return CachedNetworkImage(
+          imageUrl: item.remoteUrl!,
+          fit: BoxFit.cover,
+          width: 80,
+          height: 80,
+          placeholder: (_, __) => Container(color: appColors.surface),
+          errorWidget: (_, __, ___) => Container(
+            color: appColors.surface,
+            child: Icon(Icons.broken_image, color: appColors.textMuted, size: 20),
+          ),
+        );
+      }
+    }
+
+    return Container(color: appColors.surface);
+  }
+
+  Widget _buildAddMediaTile(AppColors appColors) {
     return GestureDetector(
-      onTap: _pickImage,
+      onTap: _showMediaPickerSheet,
       child: Container(
         width: 80,
         height: 80,
@@ -990,7 +1334,7 @@ class ComposePostState extends State<ComposePost> {
 
   Widget _buildPollEditor(AppColors appColors) {
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: appColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -1000,7 +1344,7 @@ class ComposePostState extends State<ComposePost> {
         children: [
           for (int i = 0; i < _pollControllers.length; i++)
             Padding(
-              padding: EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 children: [
                   Expanded(
@@ -1012,7 +1356,7 @@ class ComposePostState extends State<ComposePost> {
                         hintStyle: TextStyle(color: appColors.textSecondary, fontSize: 14),
                         filled: true,
                         fillColor: appColors.surface,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: appColors.divider),
@@ -1041,18 +1385,18 @@ class ComposePostState extends State<ComposePost> {
             GestureDetector(
               onTap: _addPollOption,
               child: Padding(
-                padding: EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
                     Icon(Icons.add, size: 18, color: appColors.textMuted),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(AppLocalizations.of(context)!.addOption,
                         style: TextStyle(color: appColors.textMuted, fontSize: 14)),
                   ],
                 ),
               ),
             ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Center(
             child: GestureDetector(
               onTap: _togglePollEditor,
@@ -1067,7 +1411,7 @@ class ComposePostState extends State<ComposePost> {
 
   Widget _buildBottomToolbar(AppColors appColors) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: appColors.divider, width: 0.5)),
       ),
@@ -1081,16 +1425,19 @@ class ComposePostState extends State<ComposePost> {
               color: _showPollEditor ? appColors.divider : appColors.textPrimary,
             ),
             _toolbarIcon(
-              onTap: _showPollEditor ? null : _pickImage,
+              onTap: _showPollEditor ? null : _showMediaPickerSheet,
               icon: Iconsax.picture_frame,
               color: _showPollEditor ? appColors.divider : appColors.textPrimary,
             ),
             _toolbarIcon(
-              onTap: (_imageFiles.isNotEmpty || _imageUrls.isNotEmpty)
-                  ? null
-                  : _togglePollEditor,
+              onTap: _showPollEditor ? null : _openVideoCamera,
+              icon: Iconsax.video,
+              color: _showPollEditor ? appColors.divider : appColors.textPrimary,
+            ),
+            _toolbarIcon(
+              onTap: _mediaDrafts.isNotEmpty ? null : _togglePollEditor,
               icon: Iconsax.chart_square,
-              color: (_imageFiles.isNotEmpty || _imageUrls.isNotEmpty)
+              color: _mediaDrafts.isNotEmpty
                   ? appColors.divider
                   : (_showPollEditor ? appColors.accent : appColors.textPrimary),
             ),
@@ -1114,12 +1461,12 @@ class ComposePostState extends State<ComposePost> {
               icon: Iconsax.clock,
               color: _scheduledTime != null ? appColors.accent : appColors.textMuted,
             ),
-            Spacer(),
+            const Spacer(),
             if (_hasContent)
               GestureDetector(
                 onTap: _saveCurrentDraft,
                 child: Padding(
-                  padding: EdgeInsets.only(right: 10),
+                  padding: const EdgeInsets.only(right: 10),
                   child: Text(
                     AppLocalizations.of(context)!.draft,
                     style: TextStyle(
@@ -1166,7 +1513,7 @@ class ComposePostState extends State<ComposePost> {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: EdgeInsets.all(6),
+        padding: const EdgeInsets.all(6),
         child: Icon(icon, size: 22, color: color),
       ),
     );

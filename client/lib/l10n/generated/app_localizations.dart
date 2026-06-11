@@ -2066,6 +2066,18 @@ abstract class AppLocalizations {
   /// **'Go Back'**
   String get cameraGoBack;
 
+  /// No description provided for @cameraModePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get cameraModePhoto;
+
+  /// No description provided for @cameraModeVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get cameraModeVideo;
+
   /// No description provided for @remove.
   ///
   /// In en, this message translates to:
@@ -2707,6 +2719,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading...'**
   String get loadingMore;
+
+  /// No description provided for @cameraMicRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please allow microphone access in Settings to record video'**
+  String get cameraMicRequired;
+
+  /// No description provided for @cameraStartRecordingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start recording. Please check microphone access.'**
+  String get cameraStartRecordingFailed;
+
+  /// No description provided for @cameraStopRecordingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to stop recording'**
+  String get cameraStopRecordingFailed;
+
+  /// No description provided for @mediaPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add media'**
+  String get mediaPickerTitle;
+
+  /// No description provided for @mediaPickerPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get mediaPickerPhoto;
+
+  /// No description provided for @mediaPickerVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get mediaPickerVideo;
+
+  /// No description provided for @mediaPickerGif.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF'**
+  String get mediaPickerGif;
+
+  /// No description provided for @mediaLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Media limit reached ({max})'**
+  String mediaLimitReached(int max);
+
+  /// No description provided for @gifTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF exceeds 20MB limit (current {size}MB)'**
+  String gifTooLarge(String size);
+
+  /// No description provided for @notGifFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Please choose a .gif animated image'**
+  String get notGifFormat;
+
+  /// No description provided for @videoTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Video exceeds 100MB limit (current {size}MB)'**
+  String videoTooLarge(String size);
+
+  /// No description provided for @videoTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Video is {duration}s, exceeds 60s limit'**
+  String videoTooLong(String duration);
+
+  /// No description provided for @videoMetaReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to read video info'**
+  String get videoMetaReadFailed;
+
+  /// No description provided for @tapToPlayVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to play video'**
+  String get tapToPlayVideo;
 }
 
 class _AppLocalizationsDelegate
