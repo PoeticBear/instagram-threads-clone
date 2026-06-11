@@ -2803,6 +2803,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to play video'**
   String get tapToPlayVideo;
+
+  /// No description provided for @mediaSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get mediaSettings;
+
+  /// No description provided for @feedVideoAutoPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-play videos in feed'**
+  String get feedVideoAutoPlay;
+
+  /// No description provided for @feedVideoAutoPlayDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos will play muted and loop while scrolling'**
+  String get feedVideoAutoPlayDesc;
 }
 
 class _AppLocalizationsDelegate

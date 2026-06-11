@@ -7,6 +7,7 @@ import 'package:threads/state/locale.state.dart';
 import 'package:threads/state/theme.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/common/settings/notification_settings.dart';
+import 'package:threads/common/settings/media_settings.dart';
 import 'package:threads/common/settings/privacy_settings.dart';
 import 'package:threads/common/settings/relation_control_page.dart';
 import 'package:threads/common/settings/collections_page.dart';
@@ -124,6 +125,24 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             const SizedBox(height: 20),
+
+            // ===== feed autoplay (pure client) =====
+            // Media (auto-play 等本地偏好)
+            _buildMenuRow(
+              icon: CupertinoIcons.play_rectangle,
+              title: l10n.mediaSettings,
+              showArrow: true,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (_) => const MediaSettingsPage(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            // =======================================
 
             // Privacy
             _buildMenuRow(

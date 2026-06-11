@@ -563,5 +563,8 @@
     }
   },
   "videoMetaReadFailed": "Failed to read video info",
-  "tapToPlayVideo": "Tap to play video"
+  "tapToPlayVideo": "Tap to play video",
+  "mediaSettings": "Media",
+  "feedVideoAutoPlay": "Auto-play videos in feed",
+  "feedVideoAutoPlayDesc": "Videos will play muted and loop while scrolling"
 }

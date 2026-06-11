@@ -372,11 +372,14 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     final hasRatio = w > 0 && h > 0;
     final aspectRatio = hasRatio ? w / h : 1.0; // 缺值时 1:1 兜底
 
+    // 视频的池 key 用 (postId, mediaIndex) 唯一定位，避免与多图网格里的其它视频冲突
+    final mediaKey = 'feed_video_${widget.postModel.id}_$index';
+
     final child = ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: AspectRatio(
         aspectRatio: aspectRatio,
-        child: _buildMediaImage(appColors, item),
+        child: _buildMediaImage(appColors, item, mediaKey: mediaKey),
       ),
     );
 
@@ -390,7 +393,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
 
     // 视频：包 VisibilityDetector，可见时让 VideoPlayerPool 接管自动播放
     final videoUrl = item.url!;
-    final key = 'feed_video_${widget.postModel.id}';
     return GestureDetector(
       onTap: () {
         // 进入大图前先暂停所有
@@ -398,14 +400,14 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         _openMediaViewer(context, tappedIndex: index);
       },
       child: VisibilityDetector(
-        key: ValueKey('vd_$key'),
+        key: ValueKey('vd_$mediaKey'),
         onVisibilityChanged: (info) {
           // visibleFraction > 0.5 视为「可见」
           if (info.visibleFraction > 0.5) {
-            VideoPlayerPool.instance.acquire(key, videoUrl);
-            VideoPlayerPool.instance.playVisible(key);
+            VideoPlayerPool.instance.acquire(mediaKey, videoUrl);
+            VideoPlayerPool.instance.playVisible(mediaKey);
           } else {
-            VideoPlayerPool.instance.pauseVisible(key);
+            VideoPlayerPool.instance.pauseVisible(mediaKey);
           }
         },
         child: child,
@@ -442,30 +444,61 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           final item = items[i];
           final isLast = i == displayCount - 1;
           final overflow = items.length - displayCount;
-          return GestureDetector(
-            onTap: () => _openMediaViewer(context, tappedIndex: i),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildMediaImage(appColors, item),
-                  if (isLast && overflow > 0)
-                    Container(
-                      color: Colors.black54,
-                      alignment: Alignment.center,
-                      child: Text(
-                        '+$overflow',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
+
+          // 视频子项：用 (postId, mediaIndex) 唯一定位池 key，并包 VisibilityDetector
+          final mediaKey = 'feed_video_${widget.postModel.id}_$i';
+          final isPlayableVideo =
+              item.isVideo && (item.url != null && item.url!.isNotEmpty);
+
+          Widget tile = ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _buildMediaImage(appColors, item, mediaKey: mediaKey),
+                if (isLast && overflow > 0)
+                  Container(
+                    color: Colors.black54,
+                    alignment: Alignment.center,
+                    child: Text(
+                      '+$overflow',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
+          );
+
+          // 视频子项：包 VisibilityDetector，可见时让 VideoPlayerPool 接管自动播放
+          if (isPlayableVideo) {
+            final videoUrl = item.url!;
+            tile = VisibilityDetector(
+              key: ValueKey('vd_$mediaKey'),
+              onVisibilityChanged: (info) {
+                if (info.visibleFraction > 0.5) {
+                  VideoPlayerPool.instance.acquire(mediaKey, videoUrl);
+                  VideoPlayerPool.instance.playVisible(mediaKey);
+                } else {
+                  VideoPlayerPool.instance.pauseVisible(mediaKey);
+                }
+              },
+              child: tile,
+            );
+          }
+
+          return GestureDetector(
+            onTap: () {
+              if (isPlayableVideo) {
+                // 进入大图前先暂停所有
+                VideoPlayerPool.instance.pauseAll();
+              }
+              _openMediaViewer(context, tappedIndex: i);
+            },
+            child: tile,
           );
         },
       ),
@@ -475,7 +508,14 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   /// 通用单图块（缩略图，点击进大图预览）
   /// - 图片 / GIF：直接显示缩略图（CachedNetworkImage 支持 GIF 动画）
   /// - 视频：缩略图 + 视频播放器（如果在池中已就绪）+ ▶ 角标 + 右下角时长标签
-  Widget _buildMediaImage(AppColors appColors, MediaItemModel item) {
+  ///
+  /// [mediaKey]：当 [item] 是视频时，从 VideoPlayerPool 查找 controller 用的 key。
+  /// 多图网格里同一帖子可能有多段视频，必须用 (postId, mediaIndex) 唯一定位。
+  Widget _buildMediaImage(
+    AppColors appColors,
+    MediaItemModel item, {
+    String? mediaKey,
+  }) {
     final url = item.thumbUrl ?? item.url;
     if (url == null || url.isEmpty) {
       return Container(
@@ -485,8 +525,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     }
 
     if (item.isVideo) {
-      // 尝试从 VideoPlayerPool 拿到当前帖子的 controller；已就绪时叠加 VideoPlayer
-      final key = 'feed_video_${widget.postModel.id}';
+      // 视频：用 (postId, mediaIndex) 唯一定位池中的 controller
+      final key = mediaKey ?? 'feed_video_${widget.postModel.id}';
       final controller = VideoPlayerPool.instance.controllerOf(key);
       return Stack(
         fit: StackFit.expand,

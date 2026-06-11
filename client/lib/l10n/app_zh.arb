@@ -563,5 +563,8 @@
     }
   },
   "videoMetaReadFailed": "读取视频信息失败",
-  "tapToPlayVideo": "点击播放视频"
+  "tapToPlayVideo": "点击播放视频",
+  "mediaSettings": "媒体播放",
+  "feedVideoAutoPlay": "信息流自动播放视频",
+  "feedVideoAutoPlayDesc": "滚动时视频将以静音循环方式自动播放"
 }

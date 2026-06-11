@@ -1402,4 +1402,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tapToPlayVideo => '点击播放视频';
+
+  @override
+  String get mediaSettings => '媒体播放';
+
+  @override
+  String get feedVideoAutoPlay => '信息流自动播放视频';
+
+  @override
+  String get feedVideoAutoPlayDesc => '滚动时视频将以静音循环方式自动播放';
 }

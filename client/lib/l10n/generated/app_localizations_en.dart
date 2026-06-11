@@ -1415,4 +1415,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapToPlayVideo => 'Tap to play video';
+
+  @override
+  String get mediaSettings => 'Media';
+
+  @override
+  String get feedVideoAutoPlay => 'Auto-play videos in feed';
+
+  @override
+  String get feedVideoAutoPlayDesc =>
+      'Videos will play muted and loop while scrolling';
 }

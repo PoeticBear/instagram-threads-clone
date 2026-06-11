@@ -23,6 +23,7 @@ import 'package:threads/state/community.state.dart';
 import 'package:threads/state/follow_request.state.dart';
 import 'package:threads/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:threads/state/media_preferences.state.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -87,6 +88,11 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<SearchState>(create: (_) => SearchState()),
         ChangeNotifierProvider<NotificationState>(create: (_) => NotificationState()),
         ChangeNotifierProvider<SettingsState>(create: (_) => SettingsState()..loadSettings()),
+        // ===== feed autoplay (pure client) =====
+        ChangeNotifierProvider<MediaPreferences>(
+          create: (_) => MediaPreferences(widget.sharedPreferences),
+        ),
+        // ======================================
         ChangeNotifierProvider<DraftState>(create: (_) => DraftState()),
         ChangeNotifierProvider<MessageState>(create: (_) => MessageState()),
         ChangeNotifierProvider<CommunityState>(create: (_) => CommunityState()),
