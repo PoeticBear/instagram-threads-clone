@@ -22,7 +22,13 @@ class Utility {
     if (date == null || date.isEmpty) {
       return '';
     }
-    var dt = DateTime.parse(date).toLocal();
+    // 后端时间字符串是 naive 格式（无 `Z`/无 `+HH:MM`），实际语义为 UTC。
+    // Dart `DateTime.parse` 对无时区后缀的字符串会按本地时区解析，
+    // 在 +08:00 客户端上会出现"刚刚发布却显示 8 小时前"的偏差。
+    // 此处兜底：没有时区标识时强制按 UTC 解析。
+    final hasZone = date.endsWith('Z') ||
+        RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(date);
+    final dt = DateTime.parse(hasZone ? date : '${date}Z').toLocal();
     final now = DateTime.now();
     final difference = now.difference(dt);
 

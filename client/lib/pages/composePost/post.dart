@@ -352,7 +352,7 @@ class ComposePostState extends State<ComposePost> {
     return PostModel(
       user: commentedUser,
       bio: _textEditingController.text,
-      createdAt: DateTime.now().toUtc().toString(),
+      createdAt: DateTime.now().toUtc().toIso8601String(),
       key: myUser.userId?.toString(),
     );
   }

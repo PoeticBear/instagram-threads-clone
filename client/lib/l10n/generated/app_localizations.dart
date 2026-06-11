@@ -320,6 +320,18 @@ abstract class AppLocalizations {
   /// **'Continue with Google'**
   String get loginWithGoogle;
 
+  /// No description provided for @appleSignInSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple credential obtained. Backend integration pending.'**
+  String get appleSignInSuccess;
+
+  /// No description provided for @appleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Sign In failed'**
+  String get appleSignInFailed;
+
   /// No description provided for @createNewAccount.
   ///
   /// In en, this message translates to:

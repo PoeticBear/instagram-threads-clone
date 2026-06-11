@@ -17,6 +17,7 @@ import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/poll_widget.dart';
+import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/pages/post/post_detail_page.dart';
 import 'package:threads/widget/edit_history_sheet.dart';
 import 'package:threads/widget/reply_bottom_sheet.dart';
@@ -164,8 +165,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                   widget.postModel.bio ?? '',
                   style: TextStyle(
                       color: appColors.textPrimary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 18),
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16),
                 ),
               ),
             ),
@@ -224,38 +225,42 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 //       ),
                 //     ],
                 //   ),
-                : !hasImage
-                    ? SizedBox.shrink()
-                    : Padding(
-                        padding: EdgeInsets.only(left: 40, right: 10),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: CachedNetworkImage(
-                            height: 300,
-                            width: 280,
-                            fit: BoxFit.cover,
-                            imageUrl: widget.postModel.imagePath!,
-                            placeholder: (context, url) => Container(
-                              height: 300,
-                              width: 280,
-                              color: appColors.surface,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: appColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              height: 300,
-                              width: 280,
-                              color: appColors.surface,
-                              child: Icon(Icons.broken_image, color: appColors.textSecondary),
-                            ),
+                : SizedBox.shrink(),
+            ),
+            // ── 帖子图片 ── 点击进入大图预览（不跳转详情页）
+            if (!hasPoll && hasImage)
+              GestureDetector(
+                onTap: () => _openMediaViewer(context),
+                child: Padding(
+                  padding: EdgeInsets.only(left: 40, right: 10),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: CachedNetworkImage(
+                      height: 300,
+                      width: 280,
+                      fit: BoxFit.cover,
+                      imageUrl: widget.postModel.imagePath!,
+                      placeholder: (context, url) => Container(
+                        height: 300,
+                        width: 280,
+                        color: appColors.surface,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: appColors.textSecondary,
                           ),
                         ),
                       ),
-            ),
+                      errorWidget: (context, url, error) => Container(
+                        height: 300,
+                        width: 280,
+                        color: appColors.surface,
+                        child: Icon(Icons.broken_image, color: appColors.textSecondary),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             Container(
               height: 10,
             ),
@@ -527,6 +532,27 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       ProfilePage.getRoute(
         profileId: quotePost.user!.userId.toString(),
         username: quotePost.user!.userName,
+      ),
+    );
+  }
+
+  /// 打开大图预览：优先用 mediaList，否则用 imagePath 兜底为单图
+  void _openMediaViewer(BuildContext context) {
+    final mediaList = widget.postModel.mediaList;
+    final List<MediaItemModel> items;
+    if (mediaList != null && mediaList.isNotEmpty) {
+      items = mediaList;
+    } else {
+      final imagePath = widget.postModel.imagePath;
+      if (imagePath == null || imagePath.isEmpty) return;
+      items = [
+        MediaItemModel(mediaType: MediaType.image, url: imagePath),
+      ];
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MediaViewerPage(mediaItems: items),
       ),
     );
   }

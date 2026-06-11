@@ -1,6 +1,15 @@
 import '../network/api_client.dart';
 import '../network/api_exception.dart';
 
+/// 后端时间字符串是 naive 格式（无 `Z`/无 `+HH:MM`），实际语义为 UTC。
+/// Dart `DateTime.parse` 对无时区后缀的字符串会按本地时区解析，
+/// 在 +08:00 客户端上会出现 N 小时偏差。此处兜底为 UTC。
+DateTime _parseUtc(String s) {
+  final hasZone = s.endsWith('Z') ||
+      RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(s);
+  return DateTime.parse(hasZone ? s : '${s}Z');
+}
+
 class NotificationService {
   final ApiClient _apiClient;
 
@@ -101,7 +110,7 @@ class NotificationItem {
           : null,
       isRead: json['is_read'] == true || json['is_read'] == 1,
       createdAt: json['create_time'] != null
-          ? DateTime.parse(json['create_time'])
+          ? _parseUtc(json['create_time'].toString())
           : DateTime.now(),
     );
   }

@@ -122,6 +122,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginWithGoogle => 'Continue with Google';
 
   @override
+  String get appleSignInSuccess =>
+      'Apple credential obtained. Backend integration pending.';
+
+  @override
+  String get appleSignInFailed => 'Apple Sign In failed';
+
+  @override
   String get createNewAccount => 'Create new account';
 
   @override

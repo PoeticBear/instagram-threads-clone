@@ -6,6 +6,16 @@ import '../network/api_client.dart';
 import '../network/api_config.dart';
 import '../network/api_exception.dart';
 
+/// 后端返回的时间字符串是 naive 格式（无 `Z` 也无 `+HH:MM` 后缀），
+/// 实际语义为 UTC。Dart `DateTime.parse` 对无时区后缀的字符串会按本地时区解析，
+/// 在 +08:00 客户端上会出现"刚刚发布却显示 8 小时前"的偏差。
+/// 此处兜底：没有时区标识时强制按 UTC 解析。
+DateTime _parseUtc(String s) {
+  final hasZone = s.endsWith('Z') ||
+      RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(s);
+  return DateTime.parse(hasZone ? s : '${s}Z');
+}
+
 class PostService {
   final ApiClient _apiClient;
 
@@ -756,7 +766,7 @@ class Post {
 
     // Parse created_at / create_time
     final createdAtStr = json['created_at'] ?? json['createdAt'] ?? json['create_time'] ?? json['createTime'];
-    final createdAt = createdAtStr != null ? DateTime.parse(createdAtStr.toString()) : DateTime.now();
+    final createdAt = createdAtStr != null ? _parseUtc(createdAtStr.toString()) : DateTime.now();
 
     // Parse poll data
     final pollOptionsRaw = json['poll_options'];
@@ -1011,7 +1021,7 @@ class Reply {
 
     // Parse create_time (API spec) or created_at / createdAt
     final createdAtStr = json['create_time'] ?? json['created_at'] ?? json['createdAt'] ?? json['createTime'];
-    final createdAt = createdAtStr != null ? DateTime.parse(createdAtStr.toString()) : DateTime.now();
+    final createdAt = createdAtStr != null ? _parseUtc(createdAtStr.toString()) : DateTime.now();
 
     return Reply(
       id: json['id']?.toString() ?? json['reply_id']?.toString() ?? '',
@@ -1088,8 +1098,8 @@ class EditHistory {
       postId: json['post_id']?.toString() ?? '',
       content: json['content'] ?? '',
       editedAt: json['edited_at'] != null
-          ? DateTime.parse(json['edited_at'])
-          : (json['editedAt'] != null ? DateTime.parse(json['editedAt']) : DateTime.now()),
+          ? _parseUtc(json['edited_at'].toString())
+          : (json['editedAt'] != null ? _parseUtc(json['editedAt'].toString()) : DateTime.now()),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:threads/auth/signup/register.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/pages/home.dart';
@@ -61,6 +62,50 @@ class _NamePageState extends State<NamePage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.loginFailedCheckCredentials)),
+      );
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      if (!mounted) return;
+
+      // 凭据已拿到：identityToken / authorizationCode / userIdentifier / email 等。
+      // 当前阶段：仅做客户端获取，不与后端校验，提示用户后续接入。
+      // TODO: 后端就绪后，把 credential 交给 AuthState 调 /user/social-signin。
+      debugPrint('[Apple SignIn] userIdentifier=${credential.userIdentifier} '
+          'email=${credential.email} '
+          'authorizationCode=${credential.authorizationCode} '
+          'hasToken=${credential.identityToken != null}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.appleSignInSuccess),
+        ),
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppLocalizations.of(context)!.appleSignInFailed}: ${e.message}',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppLocalizations.of(context)!.appleSignInFailed}: $e',
+          ),
+        ),
       );
     }
   }
@@ -164,6 +209,7 @@ class _NamePageState extends State<NamePage> {
               ),
               const SizedBox(height: 32),
               GestureDetector(
+                onTap: _handleAppleSignIn,
                 child: Container(
                   height: 50,
                   decoration: BoxDecoration(

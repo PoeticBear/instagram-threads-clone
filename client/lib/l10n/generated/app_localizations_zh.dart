@@ -122,6 +122,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginWithGoogle => '通过 Google 继续';
 
   @override
+  String get appleSignInSuccess => '已获取 Apple 凭据，等待后端对接';
+
+  @override
+  String get appleSignInFailed => 'Apple 登录失败';
+
+  @override
   String get createNewAccount => '创建新账号';
 
   @override
