@@ -112,6 +112,55 @@ class AuthState extends AppStates {
     }
   }
 
+  /// Apple 登录流程：拿到的 authorizationCode → /auth/apple/login → 保存 token →
+  /// 加载用户资料 → 设置 LOGGED_IN。失败一律走 scaffoldKey snackbar，与 signIn 行为一致。
+  ///
+  /// 状态机顺序（与 signIn 严格一致，避免 AuthState 与 HomePage 之间状态错乱）：
+  ///   1) isBusy = true
+  ///   2) 调 authService.signInWithApple(code)
+  ///   3) userId = ...; authStatus = LOGGED_IN
+  ///   4) await getProfileUser()
+  ///   5) 防御：userId 为空则回退到 NOT_LOGGED_IN
+  ///   6) notifyListeners(); return userId
+  ///
+  /// TODO(后端对齐): 首次 Apple 登录的 username 由后端自动生成（假设）。
+  /// 若后端要求前端补填 username / displayName，需在 userId 非空但 username 为空
+  /// 时路由到 "完善资料" 页。
+  Future<String?> signInWithApple(
+    String code,
+    BuildContext context, {
+    required GlobalKey<ScaffoldState> scaffoldKey,
+  }) async {
+    try {
+      isBusy = true;
+      notifyListeners();
+
+      final response = await authService.signInWithApple(code: code);
+
+      userId = response.userId?.toString() ?? '';
+      authStatus = AuthStatus.LOGGED_IN;
+
+      // Load user profile（与 signIn 行为一致，后续 getProfileUser 会拉 /user/me + /user/profile/{id}）
+      await getProfileUser();
+
+      if (userId.isEmpty) {
+        authStatus = AuthStatus.NOT_LOGGED_IN;
+        return null;
+      }
+
+      return userId;
+    } on AuthException catch (error) {
+      Utility.customSnackBar(scaffoldKey, error.message, context);
+      return null;
+    } catch (error) {
+      Utility.customSnackBar(scaffoldKey, error.toString(), context);
+      return null;
+    } finally {
+      isBusy = false;
+      notifyListeners();
+    }
+  }
+
   Future<String?> signUp(
     UserModel userModel,
     BuildContext context, {

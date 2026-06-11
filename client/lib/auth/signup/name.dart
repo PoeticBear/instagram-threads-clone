@@ -67,6 +67,13 @@ class _NamePageState extends State<NamePage> {
   }
 
   Future<void> _handleAppleSignIn() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+    String? result;
+
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -77,17 +84,22 @@ class _NamePageState extends State<NamePage> {
 
       if (!mounted) return;
 
-      // 凭据已拿到：identityToken / authorizationCode / userIdentifier / email 等。
-      // 当前阶段：仅做客户端获取，不与后端校验，提示用户后续接入。
-      // TODO: 后端就绪后，把 credential 交给 AuthState 调 /user/social-signin。
-      debugPrint('[Apple SignIn] userIdentifier=${credential.userIdentifier} '
-          'email=${credential.email} '
-          'authorizationCode=${credential.authorizationCode} '
+      // 不再打印 authorizationCode / identityToken 全量到日志，避免开发期泄露。
+      // userIdentifier 是 Apple 稳定 sub，相对不敏感，但仍只截前 8 位。
+      final sub = credential.userIdentifier;
+      final subPreview = sub == null
+          ? 'null'
+          : (sub.length <= 8 ? sub : '${sub.substring(0, 8)}...');
+      debugPrint('[Apple SignIn] userIdentifier=$subPreview '
+          'hasEmail=${credential.email != null} '
           'hasToken=${credential.identityToken != null}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.appleSignInSuccess),
-        ),
+
+      // sign_in_with_apple 6.x 中 authorizationCode 是非空 String，
+      // 直接使用即可，identityToken 仍可能为 null（如 Web / 旧 iOS）。
+      result = await authState.signInWithApple(
+        credential.authorizationCode,
+        context,
+        scaffoldKey: scaffoldKey,
       );
     } on SignInWithAppleAuthorizationException catch (e) {
       if (!mounted) return;
@@ -106,6 +118,19 @@ class _NamePageState extends State<NamePage> {
             '${AppLocalizations.of(context)!.appleSignInFailed}: $e',
           ),
         ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+
+    if (!mounted) return;
+
+    if (result != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
       );
     }
   }
@@ -209,28 +234,40 @@ class _NamePageState extends State<NamePage> {
               ),
               const SizedBox(height: 32),
               GestureDetector(
-                onTap: _handleAppleSignIn,
+                onTap: _isLoading ? null : _handleAppleSignIn,
+                behavior: HitTestBehavior.opaque,
                 child: Container(
                   height: 50,
                   decoration: BoxDecoration(
                     color: Colors.black,
                     borderRadius: BorderRadius.circular(25),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.apple, color: Colors.white, size: 28),
-                      const SizedBox(width: 12),
-                      Text(
-                        AppLocalizations.of(context)!.loginWithApple,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                  child: _isLoading
+                      ? const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.apple, color: Colors.white, size: 28),
+                            const SizedBox(width: 12),
+                            Text(
+                              AppLocalizations.of(context)!.loginWithApple,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: 12),

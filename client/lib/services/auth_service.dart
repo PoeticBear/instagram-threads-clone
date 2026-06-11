@@ -65,6 +65,36 @@ class AuthService {
     }
   }
 
+  /// Apple 登录：把插件拿到的 authorizationCode 交给后端兑换 access_token。
+  /// 后端用 code + client_secret 与 Apple 走 server-to-server 流程，自行验签后
+  /// 创建或查找账号，返回本应用的 token + 用户信息。客户端只持有短期 code，
+  /// 无法重放，identityToken 不外发。
+  ///
+  /// 响应结构与 signIn 兼容（data.id / data.access_token / data.refresh_token），
+  /// 因此直接复用 LoginResponse.fromJson。
+  Future<LoginResponse> signInWithApple({required String code}) async {
+    try {
+      final response = await _apiClient.post(
+        'auth/apple/login',
+        body: {'code': code},
+      );
+
+      final data = response['data'];
+      await _saveTokens(
+        accessToken: data['access_token'],
+        refreshToken: data['refresh_token'],
+        // 与 signIn 保持一致的字段兼容：服务端 Apple 登录响应 schema 是 `id`
+        userId: (data['user_id'] ?? data['id'])?.toString(),
+      );
+
+      return LoginResponse.fromJson(data);
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException(message: 'Apple 登录失败: $e');
+    }
+  }
+
   Future<RegisterResponse> register({
     required String username,
     required String password,
