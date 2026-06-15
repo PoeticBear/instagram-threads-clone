@@ -52,20 +52,51 @@ class _EditHistorySheetState extends State<EditHistorySheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 编辑前
+          if (entry.oldContent.isNotEmpty) ...[
+            Text(
+              entry.oldContent,
+              style: TextStyle(
+                color: appColors.textHint,
+                fontSize: 13,
+                decoration: TextDecoration.lineThrough,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 4),
+          ],
+          // 编辑后
           Text(
-            entry.content,
+            entry.newContent,
             style: TextStyle(
               color: appColors.textPrimary,
               fontSize: 14,
             ),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 8),
-          Text(
-            Utility.getdob(entry.editedAt.toIso8601String(), context: context),
-            style: TextStyle(
-              color: appColors.textHint,
-              fontSize: 12,
-            ),
+          Row(
+            children: [
+              // 第 N 次编辑（API edit_count）
+              Text(
+                '#${entry.editCount}',
+                style: TextStyle(
+                  color: appColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(
+                Utility.getdob(entry.editedAt.toIso8601String(), context: context),
+                style: TextStyle(
+                  color: appColors.textHint,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
         ],
       ),

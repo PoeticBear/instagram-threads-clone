@@ -124,6 +124,13 @@ class PostModel {
   int? quotesCount;
   // Media list (from API media_list)
   List<MediaItemModel>? mediaList;
+  // Edit-related fields (POST /post/{post_id})
+  bool? isEdited;
+  int? editCount;
+  DateTime? lastEditTime;
+  // Sensitive content fields
+  bool? isSensitive;
+  String? contentWarning;
 
   PostModel({
     this.key,
@@ -160,6 +167,11 @@ class PostModel {
     this.threadPostIds,
     this.quotesCount,
     this.mediaList,
+    this.isEdited,
+    this.editCount,
+    this.lastEditTime,
+    this.isSensitive,
+    this.contentWarning,
   });
 
   static bool? _parseBool(dynamic value) {
@@ -237,6 +249,15 @@ class PostModel {
       threadPostIds: threadPostIds,
       quotesCount: map['quotes_count'] ?? map['quotesCount'],
       mediaList: mediaList,
+      // Edit-related fields
+      isEdited: _parseBool(map['is_edited'] ?? map['isEdited']),
+      editCount: map['edit_count'] ?? map['editCount'],
+      lastEditTime: (map['last_edit_time'] ?? map['lastEditTime']) != null
+          ? PostModel.parseTimestamp(map['last_edit_time'] ?? map['lastEditTime'])
+          : null,
+      // Sensitive content fields
+      isSensitive: _parseBool(map['is_sensitive'] ?? map['isSensitive']),
+      contentWarning: map['content_warning']?.toString() ?? map['contentWarning']?.toString(),
     );
   }
 
@@ -277,6 +298,13 @@ class PostModel {
       'thread_post_ids': threadPostIds,
       'quotes_count': quotesCount,
       'media_list': mediaList?.map((e) => e.toJson()).toList(),
+      // Edit-related fields
+      'is_edited': isEdited,
+      'edit_count': editCount,
+      'last_edit_time': lastEditTime?.toIso8601String(),
+      // Sensitive content fields
+      'is_sensitive': isSensitive,
+      'content_warning': contentWarning,
     };
   }
 
@@ -315,6 +343,11 @@ class PostModel {
     List<int>? threadPostIds,
     int? quotesCount,
     List<MediaItemModel>? mediaList,
+    bool? isEdited,
+    int? editCount,
+    DateTime? lastEditTime,
+    bool? isSensitive,
+    String? contentWarning,
   }) {
     return PostModel(
       key: key ?? this.key,
@@ -351,6 +384,13 @@ class PostModel {
       threadPostIds: threadPostIds ?? this.threadPostIds,
       quotesCount: quotesCount ?? this.quotesCount,
       mediaList: mediaList ?? this.mediaList,
+      // Edit-related fields
+      isEdited: isEdited ?? this.isEdited,
+      editCount: editCount ?? this.editCount,
+      lastEditTime: lastEditTime ?? this.lastEditTime,
+      // Sensitive content fields
+      isSensitive: isSensitive ?? this.isSensitive,
+      contentWarning: contentWarning ?? this.contentWarning,
     );
   }
 

@@ -95,19 +95,30 @@ class PostService {
     }
   }
 
+  /// 编辑帖子（PUT /post/{post_id}）
+  ///
+  /// 服务端约束：帖子发布后 15 分钟内允许编辑，最多编辑 5 次。
+  /// 仅可编辑 [content] / [isSensitive] / [contentWarning]，媒体不可编辑。
+  /// 服务端拒绝时会抛出 [ApiException]，调用方需捕获并展示 message。
   Future<Post> updatePost({
     required String postId,
     String? content,
-    String? imageUrl,
+    bool? isSensitive,
+    String? contentWarning,
   }) async {
     try {
       final body = <String, dynamic>{};
       if (content != null) body['content'] = content;
-      if (imageUrl != null) body['image_url'] = imageUrl;
+      if (isSensitive != null) body['is_sensitive'] = isSensitive ? 1 : 0;
+      if (contentWarning != null) body['content_warning'] = contentWarning;
 
       final response = await _apiClient.put('post/$postId', body: body);
       return Post.fromJson(response['data']);
-    } on ApiException {
+    } on ApiException catch (e) {
+      developer.log('❌ updatePost API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})', name: 'PostService');
+      rethrow;
+    } catch (e, stackTrace) {
+      developer.log('❌ updatePost 未知异常: $e\n$stackTrace', name: 'PostService');
       rethrow;
     }
   }
@@ -704,6 +715,13 @@ class Post {
   final List<Post> threadPosts;
   final List<int> threadPostIds;
   final int quotesCount;
+  // Edit-related fields (POST /post/{post_id})
+  final bool isEdited;
+  final int editCount;
+  final DateTime? lastEditTime;
+  // Sensitive content fields
+  final bool isSensitive;
+  final String? contentWarning;
 
   Post({
     required this.id,
@@ -740,6 +758,11 @@ class Post {
     this.threadPosts = const [],
     this.threadPostIds = const [],
     this.quotesCount = 0,
+    this.isEdited = false,
+    this.editCount = 0,
+    this.lastEditTime,
+    this.isSensitive = false,
+    this.contentWarning,
   });
 
   /// First image URL from mediaList, or null
@@ -870,6 +893,15 @@ class Post {
       threadPosts: threadPosts,
       threadPostIds: threadPostIds,
       quotesCount: json['quotes_count'] ?? json['quotesCount'] ?? 0,
+      // Edit-related fields
+      isEdited: json['is_edited'] ?? json['isEdited'] ?? false,
+      editCount: json['edit_count'] ?? json['editCount'] ?? 0,
+      lastEditTime: json['last_edit_time'] != null || json['lastEditTime'] != null
+          ? _parseUtc((json['last_edit_time'] ?? json['lastEditTime']).toString())
+          : null,
+      // Sensitive content fields
+      isSensitive: json['is_sensitive'] ?? json['isSensitive'] ?? false,
+      contentWarning: json['content_warning'] ?? json['contentWarning'],
     );
   }
 
@@ -1127,27 +1159,44 @@ class GuestReplyRequest {
   }
 }
 
+/// 编辑历史记录（GET /post/{post_id}/edit-history）
+///
+/// API schema: id, post_id, old_content, new_content, edit_count, create_time
 class EditHistory {
   final int id;
-  final String postId;
-  final String content;
+  final int postId;
+  final String oldContent;
+  final String newContent;
+  final int editCount;
   final DateTime editedAt;
 
   EditHistory({
     required this.id,
     required this.postId,
-    required this.content,
+    required this.oldContent,
+    required this.newContent,
+    required this.editCount,
     required this.editedAt,
   });
 
   factory EditHistory.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse(v.toString()) ?? 0;
+    }
+
+    final editedAtStr = json['create_time'] ?? json['edited_at'] ?? json['editedAt'];
     return EditHistory(
-      id: json['id'] ?? 0,
-      postId: json['post_id']?.toString() ?? '',
-      content: json['content'] ?? '',
-      editedAt: json['edited_at'] != null
-          ? _parseUtc(json['edited_at'].toString())
-          : (json['editedAt'] != null ? _parseUtc(json['editedAt'].toString()) : DateTime.now()),
+      id: parseInt(json['id']),
+      postId: parseInt(json['post_id'] ?? json['postId']),
+      oldContent: json['old_content']?.toString() ?? '',
+      newContent: json['new_content']?.toString() ?? '',
+      editCount: parseInt(json['edit_count'] ?? json['editCount']),
+      editedAt: editedAtStr != null
+          ? _parseUtc(editedAtStr.toString())
+          : DateTime.now(),
     );
   }
 }
