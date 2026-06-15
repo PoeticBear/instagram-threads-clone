@@ -211,13 +211,24 @@ class _ProfilePageState extends State<ProfilePage>
               color: appColors.textPrimary,
               backgroundColor: appColors.background,
               onRefresh: _refreshAll,
-              child: Center(
-                child: ListView(children: [
-              Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 15),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
+              // NestedScrollView 是关键:
+              //   - 头部 (头像/简介/统计/按钮/TabBar) 放进 headerSliverBuilder 的
+              //     SliverToBoxAdapter,作为可滚动的 sliver 头;
+              //   - TabBarView 作为 body,可以拿到 NestedScrollView 提供的有界高度,
+              //     不再出现 PageView 在无界 Column 里的 layout assertion。
+              //   - physics 强制 AlwaysScrollable,即使 TabBarView 子项很短,
+              //     内部 ListView/GridView 也能把 overscroll 事件传上来触发下拉刷新。
+              child: NestedScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                headerSliverBuilder:
+                    (BuildContext context, bool innerBoxIsScrolled) {
+                  return [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
                         // Name + Avatar row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -420,22 +431,29 @@ class _ProfilePageState extends State<ProfilePage>
                             ],
                           ),
                         ),
-                        // 之前用 height: MediaQuery.of(context).size.height 给 TabBarView
-                        // 圈了一个固定高度,导致 _buildThreadsTab 里的内层 ListView
-                        // (shrinkWrap + NeverScrollableScrollPhysics) 撑不开,长文帖子的
-                        // 媒体区域被裁掉,且内层 ListView 拦下手势导致外层 ListView 收不到滚动事件。
-                        // 改为不设高度,让内层 ListView 按内容自然展开,手势上抛给外层 ListView。
-                        Container(
-                            width: MediaQuery.of(context).size.width,
-                            child: TabBarView(
-                                controller: _tabController,
-                                children: [
-                                  _buildThreadsTab(),
-                                  _buildMediaTab(),
-                                ]))
-                      ]))
-            ])),
-            ));
+                        // TabBar 留在 SliverToBoxAdapter 里,会随头部一起滚走。
+                        // 不再在头部末尾放 TabBarView:
+                        //   - 旧做法把 TabBarView 塞进 Column,处于无界垂直空间,
+                        //     PageView 内部 layout 失败 -> parentDataDirty 渲染断言 +
+                        //     个人中心页面整页空白。
+                        //   - 新做法 TabBarView 作为 NestedScrollView.body,
+                        //     拿到 NestedScrollView 提供的有界高度,正常 layout。
+                      ],
+                        ),
+                      ),
+                    ),
+                  ];
+                },
+                body: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildThreadsTab(),
+                    _buildMediaTab(),
+                  ],
+                ),
+              ),
+            ),
+          );
   }
 
   Widget _buildThreadsTab() {
@@ -453,9 +471,11 @@ class _ProfilePageState extends State<ProfilePage>
         ),
       );
     }
+    // NestedScrollView 模式下,TabBarView 的每个子页面必须自己独立可滚动,
+    // 否则 overscroll 不会传上去,触发不了下拉刷新;也必须不设 shrinkWrap,
+    // 否则高度约束不对。
     return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: _userPosts.length,
       itemBuilder: (context, index) {
         return FeedPostWidget(postModel: _userPosts[index]);
@@ -489,9 +509,10 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
+    // 同 _buildThreadsTab:必须用普通 GridView + AlwaysScrollableScrollPhysics,
+    // 让 overscroll 能传给 NestedScrollView 触发下拉刷新。
     return GridView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 2,
