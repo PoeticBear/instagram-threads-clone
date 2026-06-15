@@ -1411,4 +1411,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get feedVideoAutoPlayDesc => '滚动时视频将以静音循环方式自动播放';
+
+  @override
+  String get markAsSensitive => '标记为敏感内容';
+
+  @override
+  String get contentWarningHint => '内容警告（如剧透、暴力等） - 可选';
+
+  @override
+  String get saveEdits => '保存';
+
+  @override
+  String get editedBadge => '已编辑';
 }

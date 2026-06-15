@@ -566,5 +566,9 @@
   "tapToPlayVideo": "点击播放视频",
   "mediaSettings": "媒体播放",
   "feedVideoAutoPlay": "信息流自动播放视频",
-  "feedVideoAutoPlayDesc": "滚动时视频将以静音循环方式自动播放"
+  "feedVideoAutoPlayDesc": "滚动时视频将以静音循环方式自动播放",
+  "markAsSensitive": "标记为敏感内容",
+  "contentWarningHint": "内容警告（如剧透、暴力等） - 可选",
+  "saveEdits": "保存",
+  "editedBadge": "已编辑"
 }

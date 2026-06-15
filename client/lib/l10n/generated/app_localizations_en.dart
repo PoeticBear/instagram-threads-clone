@@ -1425,4 +1425,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get feedVideoAutoPlayDesc =>
       'Videos will play muted and loop while scrolling';
+
+  @override
+  String get markAsSensitive => 'Mark as sensitive content';
+
+  @override
+  String get contentWarningHint =>
+      'Content warning (e.g., spoiler, violence) - optional';
+
+  @override
+  String get saveEdits => 'Save';
+
+  @override
+  String get editedBadge => 'Edited';
 }

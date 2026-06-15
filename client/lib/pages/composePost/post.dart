@@ -23,7 +23,23 @@ import 'package:threads/pages/composePost/compose_camera_page.dart';
 class ComposePost extends StatefulWidget {
   final VoidCallback? onPostSuccess;
   final VoidCallback? onCancel;
-  const ComposePost({Key? key, this.onPostSuccess, this.onCancel}) : super(key: key);
+  /// 编辑模式：传非空 postId 即进入编辑模式
+  final String? editingPostId;
+  /// 编辑模式：预填的帖子内容
+  final String? initialContent;
+  /// 编辑模式：原帖是否标记为敏感
+  final bool? initialIsSensitive;
+  /// 编辑模式：原帖的敏感内容警告
+  final String? initialContentWarning;
+  const ComposePost({
+    Key? key,
+    this.onPostSuccess,
+    this.onCancel,
+    this.editingPostId,
+    this.initialContent,
+    this.initialIsSensitive,
+    this.initialContentWarning,
+  }) : super(key: key);
 
   @override
   State<ComposePost> createState() => ComposePostState();
@@ -44,6 +60,9 @@ class ComposePostState extends State<ComposePost> {
   bool _isSubmitting = false;
   String? _location;
   DateTime? _scheduledTime;
+  // 编辑模式：敏感内容
+  bool _isSensitive = false;
+  late TextEditingController _contentWarningController;
 
   static const int _maxMediaCount = 10;
   static const int _maxPollOptions = 4;
@@ -55,10 +74,14 @@ class ComposePostState extends State<ComposePost> {
   static const int _maxVideoSizeBytes = 100 * 1024 * 1024;
   static const int _maxGifSizeBytes = 20 * 1024 * 1024;
 
+  bool get _isEditing => widget.editingPostId != null;
+
   @override
   void initState() {
     super.initState();
-    _textEditingController = TextEditingController();
+    _textEditingController = TextEditingController(text: widget.initialContent ?? '');
+    _contentWarningController = TextEditingController(text: widget.initialContentWarning ?? '');
+    _isSensitive = widget.initialIsSensitive ?? false;
     _initPollControllers();
   }
 
@@ -72,6 +95,7 @@ class ComposePostState extends State<ComposePost> {
   @override
   void dispose() {
     _textEditingController.dispose();
+    _contentWarningController.dispose();
     for (final c in _pollControllers) {
       c.dispose();
     }
@@ -96,6 +120,11 @@ class ComposePostState extends State<ComposePost> {
   bool get _canAddMoreMedia => _mediaDrafts.length < _maxMediaCount;
 
   void _handleBack(BuildContext context) {
+    // 编辑模式：直接退出，不触发草稿保存
+    if (_isEditing) {
+      _doBack();
+      return;
+    }
     if (!_hasContent) {
       _doBack();
       return;
@@ -115,6 +144,11 @@ class ComposePostState extends State<ComposePost> {
     VoidCallback? onSave,
     VoidCallback? onDiscard,
   }) {
+    // 编辑模式：直接退出，不触发草稿保存
+    if (_isEditing) {
+      onDiscard?.call();
+      return;
+    }
     if (!_hasContent) {
       onDiscard?.call();
       return;
@@ -700,11 +734,46 @@ class ComposePostState extends State<ComposePost> {
 
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     var state = Provider.of<PostState>(context, listen: false);
+
+    String? postId;
+    if (_isEditing) {
+      // ── 编辑模式：仅可改 content / is_sensitive / content_warning ──
+      final updated = await state.updatePost(
+        postId: widget.editingPostId!,
+        content: _textEditingController.text,
+        isSensitive: _isSensitive,
+        contentWarning: _isSensitive
+            ? (_contentWarningController.text.trim().isEmpty
+                ? null
+                : _contentWarningController.text.trim())
+            : null,
+      );
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      if (updated != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.postUpdated),
+            backgroundColor: appColors.repost,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+        widget.onPostSuccess?.call();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.publishFailed),
+            backgroundColor: appColors.destructive,
+          ),
+        );
+      }
+      return;
+    }
+
+    // ── 新建模式 ──
     PostModel postModel = await _createPostModel();
-
     final pollOptions = _getValidPollOptions();
-
-    final postId = await state.createPost(
+    postId = await state.createPost(
       postModel,
       mediaDrafts: _mediaDrafts.isNotEmpty ? _mediaDrafts : null,
       pollOptions: pollOptions,
@@ -978,7 +1047,10 @@ class ComposePostState extends State<ComposePost> {
                 ),
                 Expanded(
                   child: Center(
-                    child: Text(AppLocalizations.of(context)!.newPost,
+                    child: Text(
+                        _isEditing
+                            ? AppLocalizations.of(context)!.editPost
+                            : AppLocalizations.of(context)!.newPost,
                         style: TextStyle(
                             color: appColors.textPrimary,
                             fontSize: 18,
@@ -1060,6 +1132,67 @@ class ComposePostState extends State<ComposePost> {
                                   ),
                                 ),
                               ),
+                            // 编辑模式：敏感内容开关 + 内容警告
+                            if (_isEditing) ...[
+                              const SizedBox(height: 8),
+                              GestureDetector(
+                                onTap: () => setState(() => _isSensitive = !_isSensitive),
+                                behavior: HitTestBehavior.opaque,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _isSensitive
+                                          ? Iconsax.tick_circle5
+                                          : Iconsax.warning_2,
+                                      size: 16,
+                                      color: _isSensitive
+                                          ? appColors.accent
+                                          : appColors.textMuted,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      AppLocalizations.of(context)!.markAsSensitive,
+                                      style: TextStyle(
+                                        color: _isSensitive
+                                            ? appColors.textPrimary
+                                            : appColors.textSecondary,
+                                        fontSize: 14,
+                                        fontWeight: _isSensitive
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (_isSensitive) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: appColors.surface,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: appColors.divider),
+                                  ),
+                                  child: TextField(
+                                    controller: _contentWarningController,
+                                    maxLength: 200,
+                                    style: TextStyle(
+                                        color: appColors.textPrimary, fontSize: 14),
+                                    decoration: InputDecoration(
+                                      hintText: AppLocalizations.of(context)!
+                                          .contentWarningHint,
+                                      hintStyle: TextStyle(
+                                          color: appColors.textHint, fontSize: 14),
+                                      border: InputBorder.none,
+                                      counterText: '',
+                                      isDense: true,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ],
                         ),
                       ),
@@ -1410,6 +1543,45 @@ class ComposePostState extends State<ComposePost> {
   }
 
   Widget _buildBottomToolbar(AppColors appColors) {
+    // 编辑模式：仅显示提交按钮（不可改媒体/投票/草稿/位置/定时/回复权限）
+    if (_isEditing) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: appColors.divider, width: 0.5)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GestureDetector(
+                onTap: _canPost ? _submit : null,
+                child: _isSubmitting
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: appColors.accent,
+                        ),
+                      )
+                    : Text(
+                        AppLocalizations.of(context)!.postUpdated.isNotEmpty
+                            ? AppLocalizations.of(context)!.saveEdits
+                            : AppLocalizations.of(context)!.post,
+                        style: TextStyle(
+                          color: _canPost ? appColors.accent : appColors.divider,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

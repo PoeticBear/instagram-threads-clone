@@ -2821,6 +2821,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Videos will play muted and loop while scrolling'**
   String get feedVideoAutoPlayDesc;
+
+  /// No description provided for @markAsSensitive.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as sensitive content'**
+  String get markAsSensitive;
+
+  /// No description provided for @contentWarningHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Content warning (e.g., spoiler, violence) - optional'**
+  String get contentWarningHint;
+
+  /// No description provided for @saveEdits.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saveEdits;
+
+  /// No description provided for @editedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited'**
+  String get editedBadge;
 }
 
 class _AppLocalizationsDelegate

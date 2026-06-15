@@ -566,5 +566,9 @@
   "tapToPlayVideo": "Tap to play video",
   "mediaSettings": "Media",
   "feedVideoAutoPlay": "Auto-play videos in feed",
-  "feedVideoAutoPlayDesc": "Videos will play muted and loop while scrolling"
+  "feedVideoAutoPlayDesc": "Videos will play muted and loop while scrolling",
+  "markAsSensitive": "Mark as sensitive content",
+  "contentWarningHint": "Content warning (e.g., spoiler, violence) - optional",
+  "saveEdits": "Save",
+  "editedBadge": "Edited"
 }
