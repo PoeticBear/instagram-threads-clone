@@ -2480,6 +2480,66 @@ abstract class AppLocalizations {
   /// **'Failed to unpin reply'**
   String get failedToUnpinReply;
 
+  /// No description provided for @deleteReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete reply'**
+  String get deleteReply;
+
+  /// No description provided for @deleteReplyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this reply? This action cannot be undone.'**
+  String get deleteReplyConfirm;
+
+  /// No description provided for @replyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply deleted'**
+  String get replyDeleted;
+
+  /// No description provided for @failedToDeleteReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete reply'**
+  String get failedToDeleteReply;
+
+  /// No description provided for @replyToUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to @{name}'**
+  String replyToUser(String name);
+
+  /// No description provided for @writeAReplyTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply to {name}...'**
+  String writeAReplyTo(String name);
+
+  /// No description provided for @viewReplies.
+  ///
+  /// In en, this message translates to:
+  /// **'View {count} replies'**
+  String viewReplies(int count);
+
+  /// No description provided for @hideReplies.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide replies'**
+  String get hideReplies;
+
+  /// No description provided for @loadMoreReplies.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more replies'**
+  String get loadMoreReplies;
+
+  /// No description provided for @childReplyCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} replies'**
+  String childReplyCount(int count);
+
   /// No description provided for @followRequests.
   ///
   /// In en, this message translates to:
@@ -2735,8 +2795,8 @@ abstract class AppLocalizations {
   /// No description provided for @cameraStopRecordingFailed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to stop recording'**
-  String get cameraStopRecordingFailed;
+  /// **'Failed to stop recording: {error}'**
+  String cameraStopRecordingFailed(Object error);
 
   /// No description provided for @mediaPickerTitle.
   ///
@@ -2767,6 +2827,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Media limit reached ({max})'**
   String mediaLimitReached(int max);
+
+  /// No description provided for @mediaPicked.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {count} media item(s)'**
+  String mediaPicked(int count);
+
+  /// No description provided for @mediaTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Media limit reached. Only the first {max} are kept.'**
+  String mediaTruncated(int max);
+
+  /// No description provided for @imageTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Image exceeds 20MB limit (current {size}MB)'**
+  String imageTooLarge(String size);
 
   /// No description provided for @gifTooLarge.
   ///

@@ -1228,6 +1228,44 @@ class AppLocalizationsZh extends AppLocalizations {
   String get failedToUnpinReply => '取消置顶回复失败';
 
   @override
+  String get deleteReply => '删除回复';
+
+  @override
+  String get deleteReplyConfirm => '确定删除这条回复吗？此操作无法撤销。';
+
+  @override
+  String get replyDeleted => '回复已删除';
+
+  @override
+  String get failedToDeleteReply => '删除回复失败';
+
+  @override
+  String replyToUser(String name) {
+    return '回复 @$name';
+  }
+
+  @override
+  String writeAReplyTo(String name) {
+    return '回复 $name...';
+  }
+
+  @override
+  String viewReplies(int count) {
+    return '查看 $count 条回复';
+  }
+
+  @override
+  String get hideReplies => '收起回复';
+
+  @override
+  String get loadMoreReplies => '加载更多回复';
+
+  @override
+  String childReplyCount(int count) {
+    return '$count 条回复';
+  }
+
+  @override
   String get followRequests => '关注请求';
 
   @override
@@ -1360,7 +1398,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cameraStartRecordingFailed => '开始录制失败，请检查麦克风权限';
 
   @override
-  String get cameraStopRecordingFailed => '停止录制失败';
+  String cameraStopRecordingFailed(Object error) {
+    return '停止录制失败: $error';
+  }
 
   @override
   String get mediaPickerTitle => '添加媒体';
@@ -1377,6 +1417,21 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String mediaLimitReached(int max) {
     return '已达媒体数量上限 ($max)';
+  }
+
+  @override
+  String mediaPicked(int count) {
+    return '已添加 $count 个媒体';
+  }
+
+  @override
+  String mediaTruncated(int max) {
+    return '已达媒体数量上限，仅保留前 $max 个';
+  }
+
+  @override
+  String imageTooLarge(String size) {
+    return '图片超过 20MB 上限（当前 ${size}MB）';
   }
 
   @override

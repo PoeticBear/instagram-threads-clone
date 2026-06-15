@@ -467,6 +467,44 @@
   "failedToPostReply": "回复发送失败",
   "failedToPinReply": "置顶回复失败",
   "failedToUnpinReply": "取消置顶回复失败",
+  "deleteReply": "删除回复",
+  "deleteReplyConfirm": "确定删除这条回复吗？此操作无法撤销。",
+  "replyDeleted": "回复已删除",
+  "failedToDeleteReply": "删除回复失败",
+  "replyToUser": "回复 @{name}",
+  "@replyToUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "writeAReplyTo": "回复 {name}...",
+  "@writeAReplyTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "viewReplies": "查看 {count} 条回复",
+  "@viewReplies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hideReplies": "收起回复",
+  "loadMoreReplies": "加载更多回复",
+  "childReplyCount": "{count} 条回复",
+  "@childReplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "followRequests": "关注请求",
   "noPendingFollowRequests": "暂无待处理的关注请求",
   "confirmButton": "确认",
@@ -532,7 +570,7 @@
   "cameraModeVideo": "视频",
   "cameraMicRequired": "请在系统设置中允许麦克风权限以录制视频",
   "cameraStartRecordingFailed": "开始录制失败，请检查麦克风权限",
-  "cameraStopRecordingFailed": "停止录制失败",
+  "cameraStopRecordingFailed": "停止录制失败: {error}",
   "mediaPickerTitle": "添加媒体",
   "mediaPickerPhoto": "图片",
   "mediaPickerVideo": "视频",
@@ -541,6 +579,24 @@
   "@mediaLimitReached": {
     "placeholders": {
       "max": { "type": "int" }
+    }
+  },
+  "mediaPicked": "已添加 {count} 个媒体",
+  "@mediaPicked": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "mediaTruncated": "已达媒体数量上限，仅保留前 {max} 个",
+  "@mediaTruncated": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "imageTooLarge": "图片超过 20MB 上限（当前 {size}MB）",
+  "@imageTooLarge": {
+    "placeholders": {
+      "size": { "type": "String" }
     }
   },
   "gifTooLarge": "GIF 超过 20MB 上限（当前 {size}MB）",

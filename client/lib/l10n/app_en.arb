@@ -467,6 +467,44 @@
   "failedToPostReply": "Failed to post reply",
   "failedToPinReply": "Failed to pin reply",
   "failedToUnpinReply": "Failed to unpin reply",
+  "deleteReply": "Delete reply",
+  "deleteReplyConfirm": "Are you sure you want to delete this reply? This action cannot be undone.",
+  "replyDeleted": "Reply deleted",
+  "failedToDeleteReply": "Failed to delete reply",
+  "replyToUser": "Replying to @{name}",
+  "@replyToUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "writeAReplyTo": "Reply to {name}...",
+  "@writeAReplyTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "viewReplies": "View {count} replies",
+  "@viewReplies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hideReplies": "Hide replies",
+  "loadMoreReplies": "Load more replies",
+  "childReplyCount": "{count} replies",
+  "@childReplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "followRequests": "Follow Requests",
   "noPendingFollowRequests": "No pending follow requests",
   "confirmButton": "Confirm",
@@ -532,7 +570,7 @@
   "cameraModeVideo": "Video",
   "cameraMicRequired": "Please allow microphone access in Settings to record video",
   "cameraStartRecordingFailed": "Failed to start recording. Please check microphone access.",
-  "cameraStopRecordingFailed": "Failed to stop recording",
+  "cameraStopRecordingFailed": "Failed to stop recording: {error}",
   "mediaPickerTitle": "Add media",
   "mediaPickerPhoto": "Photo",
   "mediaPickerVideo": "Video",
@@ -541,6 +579,24 @@
   "@mediaLimitReached": {
     "placeholders": {
       "max": { "type": "int" }
+    }
+  },
+  "mediaPicked": "Added {count} media item(s)",
+  "@mediaPicked": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "mediaTruncated": "Media limit reached. Only the first {max} are kept.",
+  "@mediaTruncated": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "imageTooLarge": "Image exceeds 20MB limit (current {size}MB)",
+  "@imageTooLarge": {
+    "placeholders": {
+      "size": { "type": "String" }
     }
   },
   "gifTooLarge": "GIF exceeds 20MB limit (current {size}MB)",

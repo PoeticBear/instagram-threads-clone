@@ -1237,6 +1237,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToUnpinReply => 'Failed to unpin reply';
 
   @override
+  String get deleteReply => 'Delete reply';
+
+  @override
+  String get deleteReplyConfirm =>
+      'Are you sure you want to delete this reply? This action cannot be undone.';
+
+  @override
+  String get replyDeleted => 'Reply deleted';
+
+  @override
+  String get failedToDeleteReply => 'Failed to delete reply';
+
+  @override
+  String replyToUser(String name) {
+    return 'Replying to @$name';
+  }
+
+  @override
+  String writeAReplyTo(String name) {
+    return 'Reply to $name...';
+  }
+
+  @override
+  String viewReplies(int count) {
+    return 'View $count replies';
+  }
+
+  @override
+  String get hideReplies => 'Hide replies';
+
+  @override
+  String get loadMoreReplies => 'Load more replies';
+
+  @override
+  String childReplyCount(int count) {
+    return '$count replies';
+  }
+
+  @override
   String get followRequests => 'Follow Requests';
 
   @override
@@ -1373,7 +1412,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Failed to start recording. Please check microphone access.';
 
   @override
-  String get cameraStopRecordingFailed => 'Failed to stop recording';
+  String cameraStopRecordingFailed(Object error) {
+    return 'Failed to stop recording: $error';
+  }
 
   @override
   String get mediaPickerTitle => 'Add media';
@@ -1390,6 +1431,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String mediaLimitReached(int max) {
     return 'Media limit reached ($max)';
+  }
+
+  @override
+  String mediaPicked(int count) {
+    return 'Added $count media item(s)';
+  }
+
+  @override
+  String mediaTruncated(int max) {
+    return 'Media limit reached. Only the first $max are kept.';
+  }
+
+  @override
+  String imageTooLarge(String size) {
+    return 'Image exceeds 20MB limit (current ${size}MB)';
   }
 
   @override

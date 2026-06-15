@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -73,6 +74,7 @@ class ComposePostState extends State<ComposePost> {
   static const int _maxVideoDurationMs = 60 * 1000;
   static const int _maxVideoSizeBytes = 100 * 1024 * 1024;
   static const int _maxGifSizeBytes = 20 * 1024 * 1024;
+  static const int _maxImageSizeBytes = 20 * 1024 * 1024;
 
   bool get _isEditing => widget.editingPostId != null;
 
@@ -256,13 +258,6 @@ class ComposePostState extends State<ComposePost> {
     });
   }
 
-  /// 替换某个本地草稿为已上传版本（上传成功后回调）
-  void _replaceMedia(int index, MediaDraftItem updated) {
-    setState(() {
-      _mediaDrafts[index] = updated;
-    });
-  }
-
   void _togglePollEditor() {
     setState(() {
       _showPollEditor = !_showPollEditor;
@@ -300,169 +295,165 @@ class ComposePostState extends State<ComposePost> {
     return options.length >= _minPollOptions ? options : null;
   }
 
-  // ─── Media pickers ────────────────────────────────────────
+  // ─── Multi-select media picker (system PHPickerViewController) ───
 
-  Future<void> _pickImage() async {
-    if (!_canAddMoreMedia) {
-      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
+  /// 系统相册多选入口（图片 + 视频可混选）
+  /// - 追加到 _mediaDrafts，不清空已选
+  /// - 超出 _maxMediaCount 时截断前 N 张并提示
+  Future<void> _pickMultipleMedia() async {
+    // 1) 上限保护：剩余配额 = _maxMediaCount - _mediaDrafts.length
+    final remaining = _maxMediaCount - _mediaDrafts.length;
+    if (remaining <= 0) {
+      _showSnack(AppLocalizations.of(context)!.mediaLimitReached(_maxMediaCount));
       return;
     }
+
+    // 2) 调起系统多选
     final picker = ImagePicker();
-    final xFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 100,
-    );
-    if (xFile != null) {
-      _addMedia(MediaDraftItem.fromLocalImage(File(xFile.path)));
-    }
-  }
-
-  Future<void> _pickGif() async {
-    if (!_canAddMoreMedia) {
-      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
-      return;
-    }
-    final picker = ImagePicker();
-    final xFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      // imageQuality 对 GIF 无效；GIF 由 MIME 推断识别
-    );
-    if (xFile == null) return;
-
-    final file = File(xFile.path);
-    final size = await file.length();
-    if (size > _maxGifSizeBytes) {
-      _showSnack('GIF 超过 20MB 上限（当前 ${(size / 1024 / 1024).toStringAsFixed(1)}MB）');
-      return;
-    }
-    // 仅当扩展名为 .gif 时才当作 GIF 处理
-    final ext = xFile.path.toLowerCase();
-    if (!ext.endsWith('.gif')) {
-      _showSnack('请选择 .gif 格式的动图');
-      return;
-    }
-    _addMedia(MediaDraftItem.fromLocalGif(file, fileSizeBytes: size));
-  }
-
-  Future<void> _pickVideo() async {
-    if (!_canAddMoreMedia) {
-      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
-      return;
-    }
-    final picker = ImagePicker();
-    final xFile = await picker.pickVideo(source: ImageSource.gallery);
-    if (xFile == null) return;
-
-    final file = File(xFile.path);
-    final size = await file.length();
-    if (size > _maxVideoSizeBytes) {
-      _showSnack('视频超过 100MB 上限（当前 ${(size / 1024 / 1024).toStringAsFixed(1)}MB）');
-      return;
-    }
-
-    // 探测时长 / 宽高，校验不超过 60s
+    final List<XFile> picked;
     try {
-      final meta = await VideoProcessor.getMediaInfo(file.path);
-      if (meta.durationMs > _maxVideoDurationMs) {
-        _showSnack(
-          '视频时长 ${(meta.durationMs / 1000).toStringAsFixed(1)}s 超过 60s 上限',
-        );
-        return;
+      picked = await picker.pickMultipleMedia(
+        // 不传 imageQuality / maxWidth：保留原始尺寸
+        // 注：image_picker 0.8.x 的 pickMultipleMedia 不支持 limit 参数，
+        // 上限由下面客户端二次截断兜底。
+      );
+    } catch (e) {
+      developer.log('pickMultipleMedia failed: $e', name: 'ComposePost');
+      return; // 用户取消时也走这里，不打扰
+    }
+    if (picked.isEmpty || !mounted) return;
+
+    // 3) 解析 + 校验每张媒体
+    final accepted = <MediaDraftItem>[];
+    final rejected = <String>[]; // 失败原因，按文件聚合
+    for (final xfile in picked) {
+      if (accepted.length >= remaining) {
+        // 在客户端二次截断（覆盖 limit 参数不生效的低版本系统）
+        rejected.add(AppLocalizations.of(context)!.mediaTruncated(_maxMediaCount));
+        break;
       }
-    } on VideoProcessException catch (e) {
-      _showSnack('读取视频信息失败: ${e.message}');
-      return;
+      final result = await _buildMediaDraftFromXFile(xfile);
+      if (result.item != null) {
+        accepted.add(result.item!);
+      } else {
+        rejected.add(result.error ?? 'unknown');
+      }
     }
 
-    _addMedia(
-      MediaDraftItem.fromLocalVideo(
-        file,
-        durationMs: 0, // 由 _openCamera 路径精确写入；从相册选择暂以 0 占位
-        fileSizeBytes: size,
-      ),
-    );
-    // 异步获取精确 duration 并 patch 到 draft
-    _enrichVideoDuration(_mediaDrafts.indexWhere((d) => d.localFile?.path == file.path), file.path);
+    // 4) 写入 state（仅成功的）
+    if (accepted.isNotEmpty) {
+      setState(() {
+        // 开启投票时清空投票（与现有 _addMedia 互斥逻辑保持一致）
+        if (_showPollEditor) {
+          _showPollEditor = false;
+          for (final c in _pollControllers) {
+            c.clear();
+          }
+        }
+        _mediaDrafts.addAll(accepted);
+      });
+    }
+
+    // 5) 反馈：成功条数 + 失败原因（最多展示 1 条避免刷屏）
+    if (mounted) {
+      if (accepted.isNotEmpty) {
+        _showSnack(AppLocalizations.of(context)!.mediaPicked(accepted.length));
+      }
+      if (rejected.isNotEmpty) {
+        _showSnack(rejected.first);
+      }
+    }
   }
 
-  /// 异步从 metadata 补充视频精确时长（相册选择路径）
-  void _enrichVideoDuration(int draftIndex, String path) {
-    if (draftIndex < 0) return;
-    VideoProcessor.getMediaInfo(path).then((meta) {
-      if (!mounted) return;
-      if (draftIndex >= _mediaDrafts.length) return;
-      final current = _mediaDrafts[draftIndex];
-      if (current.localFile?.path != path) return;
-      _replaceMedia(
-        draftIndex,
-        current.copyWith(durationMs: meta.durationMs),
-      );
-    }).catchError((_) {
-      // 静默：duration 缺失时 UI 仅不显示时长标签
-    });
-  }
+  /// 内部辅助：把单个 XFile 解析为 MediaDraftItem
+  /// 返回 (item?, errorMessage?)
+  /// - 图片：只校验大小 ≤ 20MB
+  /// - 视频：校验大小 ≤ 100MB、时长 ≤ 60s（探测失败也允许通过，时长 UI 不显示即可）
+  /// - GIF：扩展名 .gif 且 ≤ 20MB
+  Future<({MediaDraftItem? item, String? error})> _buildMediaDraftFromXFile(
+    XFile xfile,
+  ) async {
+    final path = xfile.path;
+    final file = File(path);
+    final mime = xfile.mimeType?.toLowerCase() ?? '';
+    final ext = path.toLowerCase();
 
-  /// 「+」按钮弹出底部 sheet：图片 / 视频 / GIF
-  void _showMediaPickerSheet() {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: appColors.surfaceTertiary,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _sheetItem(
-                context: sheetContext,
-                icon: Iconsax.gallery,
-                label: '图片',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _pickImage();
-                },
-              ),
-              _sheetItem(
-                context: sheetContext,
-                icon: Iconsax.video,
-                label: '视频',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _pickVideo();
-                },
-              ),
-              _sheetItem(
-                context: sheetContext,
-                icon: Iconsax.image,
-                label: 'GIF',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _pickGif();
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
+    // ── 视频判断（mime 优先，扩展名兜底）
+    final isVideo = mime.startsWith('video/') ||
+        ext.endsWith('.mp4') ||
+        ext.endsWith('.mov') ||
+        ext.endsWith('.m4v');
+    final isGif = mime == 'image/gif' || ext.endsWith('.gif');
+
+    if (isVideo) {
+      // 大小校验
+      final size = await file.length();
+      if (size > _maxVideoSizeBytes) {
+        return (
+          item: null,
+          error: AppLocalizations.of(context)!.videoTooLarge(
+            (size / 1024 / 1024).toStringAsFixed(1),
           ),
         );
-      },
-    );
-  }
+      }
+      // 时长校验
+      try {
+        final meta = await VideoProcessor.getMediaInfo(path);
+        if (meta.durationMs > _maxVideoDurationMs) {
+          return (
+            item: null,
+            error: AppLocalizations.of(context)!.videoTooLong(
+              (meta.durationMs / 1000).toStringAsFixed(1),
+            ),
+          );
+        }
+        return (
+          item: MediaDraftItem.fromLocalVideo(
+            file,
+            durationMs: meta.durationMs,
+            fileSizeBytes: size,
+          ),
+          error: null,
+        );
+      } on VideoProcessException catch (e) {
+        // 探测失败：仍允许通过，时长显示为空即可
+        developer.log('getMediaInfo failed: ${e.message}', name: 'ComposePost');
+        return (
+          item: MediaDraftItem.fromLocalVideo(file, durationMs: 0, fileSizeBytes: size),
+          error: null,
+        );
+      }
+    }
 
-  Widget _sheetItem({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    return ListTile(
-      leading: Icon(icon, color: appColors.textPrimary, size: 22),
-      title: Text(label,
-          style: TextStyle(color: appColors.textPrimary, fontSize: 16)),
-      onTap: onTap,
+    if (isGif) {
+      final size = await file.length();
+      if (size > _maxGifSizeBytes) {
+        return (
+          item: null,
+          error: AppLocalizations.of(context)!.gifTooLarge(
+            (size / 1024 / 1024).toStringAsFixed(1),
+          ),
+        );
+      }
+      return (
+        item: MediaDraftItem.fromLocalGif(file, fileSizeBytes: size),
+        error: null,
+      );
+    }
+
+    // 兜底：图片
+    final size = await file.length();
+    if (size > _maxImageSizeBytes) {
+      return (
+        item: null,
+        error: AppLocalizations.of(context)!.imageTooLarge(
+          (size / 1024 / 1024).toStringAsFixed(1),
+        ),
+      );
+    }
+    return (
+      item: MediaDraftItem.fromLocalImage(file, fileSizeBytes: size),
+      error: null,
     );
   }
 
@@ -504,31 +495,9 @@ class ComposePostState extends State<ComposePost> {
     }
   }
 
-  Future<void> _openVideoCamera() async {
-    if (!_canAddMoreMedia) {
-      _showSnack('已达媒体数量上限 ($_maxMediaCount)');
-      return;
-    }
-    final result = await Navigator.push<CameraCaptureResult>(
-      context,
-      CupertinoPageRoute(
-        builder: (_) => const ComposeCameraPage(initialMode: CameraMode.video),
-      ),
-    );
-    if (result == null) return;
-    if (result.isVideo) {
-      _addMedia(
-        MediaDraftItem.fromLocalVideo(
-          File(result.path),
-          durationMs: result.durationMs,
-          thumbPath: result.thumbnail?.path,
-        ),
-      );
-    }
-  }
-
   // ─── Draft ────────────────────────────────────────────────
 
+  // ignore: unused_element  // TODO: 工具栏入口暂时隐藏，恢复时取消此 ignore
   void _showDraftListSheet() {
     final draftState = Provider.of<DraftState>(context, listen: false);
     draftState.loadDrafts();
@@ -1203,13 +1172,29 @@ class ComposePostState extends State<ComposePost> {
                   if (_mediaDrafts.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(left: 52, top: 8),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (int i = 0; i < _mediaDrafts.length; i++)
-                            _buildMediaPreview(appColors, _mediaDrafts[i], i),
-                          if (_canAddMoreMedia) _buildAddMediaTile(appColors),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (int i = 0; i < _mediaDrafts.length; i++)
+                                _buildMediaPreview(appColors, _mediaDrafts[i], i),
+                              if (_canAddMoreMedia) _buildAddMediaTile(appColors),
+                            ],
+                          ),
+                          // 媒体计数
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              '${_mediaDrafts.length} / $_maxMediaCount',
+                              style: TextStyle(
+                                color: appColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1451,7 +1436,7 @@ class ComposePostState extends State<ComposePost> {
 
   Widget _buildAddMediaTile(AppColors appColors) {
     return GestureDetector(
-      onTap: _showMediaPickerSheet,
+      onTap: _pickMultipleMedia,
       child: Container(
         width: 80,
         height: 80,
@@ -1597,14 +1582,11 @@ class ComposePostState extends State<ComposePost> {
               color: _showPollEditor ? appColors.divider : appColors.textPrimary,
             ),
             _toolbarIcon(
-              onTap: _showPollEditor ? null : _showMediaPickerSheet,
-              icon: Iconsax.picture_frame,
-              color: _showPollEditor ? appColors.divider : appColors.textPrimary,
-            ),
-            _toolbarIcon(
-              onTap: _showPollEditor ? null : _openVideoCamera,
-              icon: Iconsax.video,
-              color: _showPollEditor ? appColors.divider : appColors.textPrimary,
+              onTap: (_showPollEditor || !_canAddMoreMedia) ? null : _pickMultipleMedia,
+              icon: Iconsax.gallery,
+              color: (_showPollEditor || !_canAddMoreMedia)
+                  ? appColors.divider
+                  : appColors.textPrimary,
             ),
             _toolbarIcon(
               onTap: _mediaDrafts.isNotEmpty ? null : _togglePollEditor,
@@ -1618,21 +1600,22 @@ class ComposePostState extends State<ComposePost> {
               icon: _replyTypeIcon,
               color: appColors.textMuted,
             ),
-            _toolbarIcon(
-              onTap: _showDraftListSheet,
-              icon: Iconsax.note_text,
-              color: appColors.textMuted,
-            ),
-            _toolbarIcon(
-              onTap: _showLocationDialog,
-              icon: Iconsax.location,
-              color: _location != null ? appColors.accent : appColors.textMuted,
-            ),
-            _toolbarIcon(
-              onTap: _showSchedulePicker,
-              icon: Iconsax.clock,
-              color: _scheduledTime != null ? appColors.accent : appColors.textMuted,
-            ),
+            // TODO: 暂时隐藏草稿/定位/定时入口 — 恢复时去掉这段注释
+            // _toolbarIcon(
+            //   onTap: _showDraftListSheet,
+            //   icon: Iconsax.note_text,
+            //   color: appColors.textMuted,
+            // ),
+            // _toolbarIcon(
+            //   onTap: _showLocationDialog,
+            //   icon: Iconsax.location,
+            //   color: _location != null ? appColors.accent : appColors.textMuted,
+            // ),
+            // _toolbarIcon(
+            //   onTap: _showSchedulePicker,
+            //   icon: Iconsax.clock,
+            //   color: _scheduledTime != null ? appColors.accent : appColors.textMuted,
+            // ),
             const Spacer(),
             if (_hasContent)
               GestureDetector(
