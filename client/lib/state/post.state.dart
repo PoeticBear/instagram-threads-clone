@@ -96,6 +96,13 @@ class PostState extends AppStates {
       threadPosts: apiPost.threadPosts.map((tp) => _apiPostToModel(tp)).toList(),
       threadPostIds: apiPost.threadPostIds,
       quotesCount: apiPost.quotesCount,
+      // Edit-related fields
+      isEdited: apiPost.isEdited,
+      editCount: apiPost.editCount,
+      lastEditTime: apiPost.lastEditTime,
+      // Sensitive content fields
+      isSensitive: apiPost.isSensitive,
+      contentWarning: apiPost.contentWarning,
     );
   }
 
@@ -591,30 +598,26 @@ class PostState extends AppStates {
     }
   }
 
-  Future<PostModel?> updatePost(String postId, {String? content, String? imageUrl}) async {
+  /// 编辑帖子（PUT /post/{post_id}）
+  ///
+  /// 服务端约束：帖子发布后 15 分钟内允许编辑，最多 5 次。
+  /// 仅可编辑 [content] / [isSensitive] / [contentWarning]。
+  /// 服务端拒绝时（超 15 分钟 / 达 5 次 / 网络错误）抛 ApiException，
+  /// 返回 null，调用方应捕获并展示 message。
+  Future<PostModel?> updatePost({
+    required String postId,
+    String? content,
+    bool? isSensitive,
+    String? contentWarning,
+  }) async {
     try {
       final updated = await postService.updatePost(
         postId: postId,
         content: content,
-        imageUrl: imageUrl,
+        isSensitive: isSensitive,
+        contentWarning: contentWarning,
       );
-      final updatedModel = PostModel(
-        key: updated.id,
-        postId: updated.id,
-        bio: updated.content,
-        createdAt: updated.createdAt.toIso8601String(),
-        imagePath: updated.imageUrl,
-        mediaList: updated.mediaList
-            .map((m) => m.toMediaItemModel())
-            .toList(),
-        likesCount: updated.likesCount,
-        repliesCount: updated.repliesCount,
-        repostsCount: updated.repostsCount,
-        sharesCount: updated.sharesCount,
-        isLiked: updated.isLiked,
-        isSaved: updated.isSaved,
-        isReposted: updated.isReposted,
-      );
+      final updatedModel = _apiPostToModel(updated);
       _updatePostInList(postId, updatedModel);
       return updatedModel;
     } catch (error) {
@@ -677,6 +680,14 @@ class PostState extends AppStates {
         list[index] = list[index].copyWith(
           bio: updated.bio,
           imagePath: updated.imagePath,
+          mediaList: updated.mediaList,
+          // Edit-related fields
+          isEdited: updated.isEdited,
+          editCount: updated.editCount,
+          lastEditTime: updated.lastEditTime,
+          // Sensitive content fields
+          isSensitive: updated.isSensitive,
+          contentWarning: updated.contentWarning,
         );
       }
     }
