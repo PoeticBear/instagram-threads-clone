@@ -38,6 +38,13 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   PostModel? _fetchedQuotePost;
   bool _isFetchingQuote = false;
 
+  /// 帖子正文展开/收起状态：默认收起，超过 [kCollapsedMaxLines] 行时显示"展开全文"按钮。
+  /// 每个帖子的展开状态是独立的（一个帖子展开不会影响其他帖子）。
+  bool _isTextExpanded = false;
+
+  /// 收起时的最大行数。500 字 + 媒体时折叠到 5 行，媒体区域有空间显示。
+  static const int _kCollapsedMaxLines = 5;
+
   /// 被引用帖子的有效数据：优先用已有 quotePost，否则用兜底拉取的
   PostModel? get _effectiveQuotePost =>
       widget.postModel.quotePost ?? _fetchedQuotePost;
@@ -189,15 +196,10 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             ),
             GestureDetector(
               onTap: () => _navigateToPostDetail(context),
+              behavior: HitTestBehavior.opaque,
               child: Padding(
                 padding: EdgeInsets.only(left: 40),
-                child: Text(
-                  widget.postModel.bio ?? '',
-                  style: TextStyle(
-                      color: appColors.textPrimary,
-                      fontWeight: FontWeight.w400,
-                      fontSize: 16),
-                ),
+                child: _buildPostContent(appColors),
               ),
             ),
             // ── 引用帖子预览卡片 ──
@@ -348,6 +350,78 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           ],
         ),
       ),
+    );
+  }
+
+  // ==================== Post Content (展开/收起) ====================
+
+  /// 帖子正文渲染器：
+  /// - 文本为空时返回空 widget
+  /// - 文本字数 <= [_kCollapsedMaxLines] 行可放下时，正常显示 + 不显示"展开"按钮
+  /// - 文本超过 [_kCollapsedMaxLines] 行时：默认折叠 + 末尾追加"展开全文"
+  /// - 点击"展开全文"切换为完全展开 + 按钮变为"收起"
+  /// - 点击文本区域（非按钮位置）跳转到 PostDetailPage
+  ///
+  /// 实现要点：用 [TextPainter] 在布局阶段判断 didExceedMaxLines，
+  /// 避免短文本也显示"展开"按钮的尴尬。
+  Widget _buildPostContent(AppColors appColors) {
+    final text = widget.postModel.bio ?? '';
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    final textStyle = TextStyle(
+      color: appColors.textPrimary,
+      fontWeight: FontWeight.w400,
+      fontSize: 16,
+      height: 1.3, // 行高收敛一点，500 字长文更紧凑
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 用 TextPainter 检测在 maxLines 限制下是否溢出
+        final tp = TextPainter(
+          text: TextSpan(text: text, style: textStyle),
+          maxLines: _kCollapsedMaxLines,
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: constraints.maxWidth);
+        final isOverflowing = tp.didExceedMaxLines;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              text,
+              maxLines: _isTextExpanded ? null : _kCollapsedMaxLines,
+              overflow:
+                  _isTextExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+              style: textStyle,
+            ),
+            // 仅当文本真的被截断时才显示展开/收起按钮
+            if (isOverflowing)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isTextExpanded = !_isTextExpanded;
+                  });
+                },
+                // opaque 让按钮区域消费 tap 事件，不冒泡到外层的 _navigateToPostDetail
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    _isTextExpanded
+                        ? AppLocalizations.of(context)!.showLess
+                        : AppLocalizations.of(context)!.showMore,
+                    style: TextStyle(
+                      color: appColors.textSecondary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

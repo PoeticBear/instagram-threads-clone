@@ -626,5 +626,7 @@
   "markAsSensitive": "Mark as sensitive content",
   "contentWarningHint": "Content warning (e.g., spoiler, violence) - optional",
   "saveEdits": "Save",
-  "editedBadge": "Edited"
+  "editedBadge": "Edited",
+  "showMore": "Show more",
+  "showLess": "Show less"
 }

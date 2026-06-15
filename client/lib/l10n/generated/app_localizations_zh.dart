@@ -1478,4 +1478,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get editedBadge => '已编辑';
+
+  @override
+  String get showMore => '展开全文';
+
+  @override
+  String get showLess => '收起';
 }

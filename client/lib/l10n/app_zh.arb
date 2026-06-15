@@ -626,5 +626,7 @@
   "markAsSensitive": "标记为敏感内容",
   "contentWarningHint": "内容警告（如剧透、暴力等） - 可选",
   "saveEdits": "保存",
-  "editedBadge": "已编辑"
+  "editedBadge": "已编辑",
+  "showMore": "展开全文",
+  "showLess": "收起"
 }
