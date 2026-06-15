@@ -420,9 +420,13 @@ class _ProfilePageState extends State<ProfilePage>
                             ],
                           ),
                         ),
+                        // 之前用 height: MediaQuery.of(context).size.height 给 TabBarView
+                        // 圈了一个固定高度,导致 _buildThreadsTab 里的内层 ListView
+                        // (shrinkWrap + NeverScrollableScrollPhysics) 撑不开,长文帖子的
+                        // 媒体区域被裁掉,且内层 ListView 拦下手势导致外层 ListView 收不到滚动事件。
+                        // 改为不设高度,让内层 ListView 按内容自然展开,手势上抛给外层 ListView。
                         Container(
                             width: MediaQuery.of(context).size.width,
-                            height: MediaQuery.of(context).size.height,
                             child: TabBarView(
                                 controller: _tabController,
                                 children: [
