@@ -165,6 +165,20 @@ for d in data:
   idx=$((dev_choice-1))
   DEVICE_ID="${IOS_IDS[$idx]}"
   DEVICE_NAME="${IOS_NAMES[$idx]}"
+  DEVICE_KIND="${IOS_KINDS[$idx]}"
+fi
+
+# ============================================================================
+# 兼容性校验:profile 模式不支持 iOS 模拟器
+# ----------------------------------------------------------------------------
+# Flutter 限制:profile 模式仅在 iOS 真机上支持,模拟器会报
+# "Profile mode is not supported by <device>". 这里主动检测并自动回退到 debug。
+# ============================================================================
+if [ "$MODE" = "profile" ] && [ "${DEVICE_KIND:-}" = "模拟器" ]; then
+  warn "Profile 模式不支持 iOS 模拟器(Flutter 限制,仅真机支持)"
+  warn "自动回退到 debug 模式"
+  echo
+  MODE="debug"
 fi
 
 # ============================================================================
