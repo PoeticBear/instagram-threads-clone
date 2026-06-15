@@ -160,9 +160,25 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     ),
                   ),
                 ),
-                Text(
-                  Utility.getdob(widget.postModel.createdAt, context: context),
-                  style: TextStyle(color: appColors.textMuted),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      Utility.getdob(widget.postModel.createdAt, context: context),
+                      style: TextStyle(color: appColors.textMuted),
+                    ),
+                    if (widget.postModel.isEdited == true) ...[
+                      Text(' · ',
+                          style: TextStyle(color: appColors.textMuted)),
+                      Text(
+                        AppLocalizations.of(context)!.editedBadge,
+                        style: TextStyle(
+                          color: appColors.textMuted,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Container(width: 5),
                 GestureDetector(
@@ -1114,6 +1130,17 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     final postUserId = widget.postModel.user?.userId?.toString();
     final isOwnPost = postUserId != null && currentUserId == postUserId;
 
+    // 服务端约束：帖子发布后 15 分钟内 + 最多 5 次编辑
+    // 前端预判用于隐藏入口（决策点 A1）
+    bool canEdit = false;
+    if (isOwnPost) {
+      final createdAt = DateTime.tryParse(widget.postModel.createdAt);
+      final editCount = widget.postModel.editCount ?? 0;
+      canEdit = createdAt != null &&
+          DateTime.now().difference(createdAt) < const Duration(minutes: 15) &&
+          editCount < 5;
+    }
+
     final postState = Provider.of<PostState>(context, listen: false);
 
     showModalBottomSheet(
@@ -1128,23 +1155,29 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isOwnPost) ...[
-              _buildSheetOption(
-                label: l10n.editPost,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ComposePost(
-                        onPostSuccess: () {
-                          postState.getDataFromDatabase();
-                        },
+              if (canEdit) ...[
+                _buildSheetOption(
+                  label: l10n.editPost,
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ComposePost(
+                          editingPostId: widget.postModel.id,
+                          initialContent: widget.postModel.bio,
+                          initialIsSensitive: widget.postModel.isSensitive,
+                          initialContentWarning: widget.postModel.contentWarning,
+                          // 不需要 onPostSuccess 触发刷新：
+                          // PostState.updatePost 已通过 _updatePostInList
+                          // 完成本地列表的局部更新（决策点 A3）
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              _buildSheetDivider(),
+                    );
+                  },
+                ),
+                _buildSheetDivider(),
+              ],
               _buildSheetOption(
                 label: l10n.deletePost,
                 textColor: appColors.destructive,
