@@ -38,6 +38,19 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
     }
   }
 
+  void _scrollToTop() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.offset <= 0) return;
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOut,
+    );
+  }
+
+  // 仅在用户向下滚动超过此阈值时，点击顶部中间区域才触发「返回顶部」
+  static const double _scrollToTopThreshold = 200.0;
+
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
@@ -60,7 +73,6 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
                     onTap: () {
@@ -74,6 +86,20 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                       Icons.groups_outlined,
                       size: 28,
                       color: appColors.textPrimary,
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        // 仅当向下滚动超过阈值时，点击顶部中间区域才触发「返回顶部」
+                        if (_scrollController.hasClients &&
+                            _scrollController.offset >
+                                _scrollToTopThreshold) {
+                          _scrollToTop();
+                        }
+                      },
+                      child: const SizedBox(height: 36),
                     ),
                   ),
                   GestureDetector(
