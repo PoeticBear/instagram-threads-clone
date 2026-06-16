@@ -422,14 +422,16 @@ class PostService {
     }
   }
 
-  /// 删除回复（用户视角的"删除自己评论"）。
+  /// 删除回复。
   ///
-  /// 服务端暂未提供真删除接口，当前复用 `POST /post/reply/hide/{reply_id}`
-  /// 实现软删除：评论作者本人调用后，该回复对其他用户不可见，等同于"删除"效果。
-  /// 未来若服务端新增 `DELETE /post/reply/{reply_id}`，只需替换此方法内部实现，
-  /// 调用方（UI 层）无需改动。
+  /// OpenAPI 规范：`DELETE /post/reply/{reply_id}`。
+  /// 权限：回复作者本人可删除自己的回复；帖子作者可删除该帖子下的任意回复。
   Future<void> deleteReply(String replyId) async {
-    await hideReply(replyId);
+    try {
+      await _apiClient.delete('post/reply/$replyId');
+    } on ApiException {
+      rethrow;
+    }
   }
 
   Future<List<Post>> getScheduledPosts({int page = 1, int size = 20}) async {

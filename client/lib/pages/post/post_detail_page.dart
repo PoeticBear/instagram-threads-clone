@@ -484,10 +484,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Widget _buildReplyItem(BuildContext context, Reply reply) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final profilePic = reply.profilePic ?? '';
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final myUserId = authState.userId;
-    final isAuthor =
-        myUserId.isNotEmpty && myUserId == reply.userId.toString();
+    final canDelete = _canDeleteReply(reply);
     // 一级回复(parentId == null)才能触发 onTap,二级回复硬约束不可再回复。
     final canTapToReply = reply.parentId == null;
     return GestureDetector(
@@ -556,7 +553,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     ],
                   ),
                 ),
-                if (isAuthor)
+                if (canDelete)
                   PopupMenuButton<String>(
                     tooltip: AppLocalizations.of(context)!.deleteReply,
                     icon: Icon(Icons.more_horiz,
@@ -770,10 +767,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Widget _buildChildReplyItem(BuildContext context, Reply child) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final profilePic = child.profilePic ?? '';
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final myUserId = authState.userId;
-    final isAuthor =
-        myUserId.isNotEmpty && myUserId == child.userId.toString();
+    final canDelete = _canDeleteReply(child);
     return Padding(
       padding: const EdgeInsets.only(left: 58, right: 16, top: 6, bottom: 6),
       child: Row(
@@ -837,7 +831,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
               ],
             ),
           ),
-          if (isAuthor)
+          if (canDelete)
             GestureDetector(
               onTap: () => _confirmDeleteReply(child),
               child: Icon(
@@ -851,13 +845,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
     );
   }
 
-  /// 长按回复弹出操作菜单。当前仅评论作者本人可见"删除"项。
+  /// 长按回复弹出操作菜单。当前仅评论作者本人与帖子作者可见"删除"项。
   void _showReplyOptions(Reply reply) {
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final myUserId = authState.userId;
-    final isAuthor =
-        myUserId.isNotEmpty && myUserId == reply.userId.toString();
-    if (!isAuthor) return;
+    if (!_canDeleteReply(reply)) return;
 
     final l10n = AppLocalizations.of(context)!;
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
@@ -999,6 +989,25 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (diff.inHours < 24) return l10n.hoursAgo(diff.inHours);
     if (diff.inDays < 7) return l10n.daysAgo(diff.inDays);
     return '${dt.month}/${dt.day}';
+  }
+
+  /// 当前用户是否有权删除这条回复。
+  /// - 是回复作者本人；或
+  /// - 是帖子作者（帖子作者对其帖子下所有回复拥有删除权限，符合 API 规范）。
+  bool _canDeleteReply(Reply reply) {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final myUserId = authState.userId;
+    if (myUserId.isEmpty) return false;
+
+    // 1. 回复作者本人
+    if (myUserId == reply.userId.toString()) return true;
+
+    // 2. 帖子作者（post 已加载完毕的前提下）
+    final postAuthorId = _post?.user?.userId;
+    if (postAuthorId != null && postAuthorId.toString() == myUserId) {
+      return true;
+    }
+    return false;
   }
 
   Widget _buildReplyInputBar(BuildContext context) {
