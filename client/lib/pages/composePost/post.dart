@@ -357,7 +357,12 @@ class ComposePostState extends State<ComposePost> {
     // 5) 反馈：成功条数 + 失败原因（最多展示 1 条避免刷屏）
     if (mounted) {
       if (accepted.isNotEmpty) {
-        _showSnack(AppLocalizations.of(context)!.mediaPicked(accepted.length));
+        final appColors =
+            Theme.of(context).extension<AppColorsExtension>()!.colors;
+        _showSnack(
+          AppLocalizations.of(context)!.mediaPicked(accepted.length),
+          backgroundColor: appColors.repost,
+        );
       }
       if (rejected.isNotEmpty) {
         _showSnack(rejected.first);
@@ -457,12 +462,12 @@ class ComposePostState extends State<ComposePost> {
     );
   }
 
-  void _showSnack(String message) {
+  void _showSnack(String message, {Color? backgroundColor}) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: appColors.destructive,
+        backgroundColor: backgroundColor ?? appColors.destructive,
         duration: const Duration(seconds: 2),
       ),
     );

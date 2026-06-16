@@ -277,6 +277,9 @@ class PostService {
     required String postId,
     required String content,
     String? imageUrl,
+    /// 嵌套回复的父回复 ID（OpenAPI 字段 parent_id）。
+    /// 为 null 时表示创建帖子的一级回复,非 null 时表示创建某条回复的子回复。
+    int? parentId,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -284,6 +287,7 @@ class PostService {
         'content': content,
       };
       if (imageUrl != null) body['image_url'] = imageUrl;
+      if (parentId != null) body['parent_id'] = parentId;
 
       print('📤 createReply 请求体: ${json.encode(body)}');
       final response = await _apiClient.post('post/reply', body: body);
@@ -300,14 +304,26 @@ class PostService {
     }
   }
 
-  Future<List<Reply>> getReplies(String postId, {int page = 1, int pageSize = 20}) async {
+  Future<List<Reply>> getReplies(
+    String postId, {
+    int page = 1,
+    int pageSize = 20,
+    /// 嵌套回复的父回复 ID（OpenAPI 字段 parent_id,GET 端点 schema 标的是 string）。
+    /// 为 null 时获取帖子的一级回复列表,非 null 时获取该回复的子回复列表。
+    int? parentId,
+  }) async {
     try {
+      final queryParameters = <String, String>{
+        'page': page.toString(),
+        'size': pageSize.toString(),
+      };
+      if (parentId != null) {
+        // 服务端 schema 在 GET 端点上是 string,统一转字符串传值。
+        queryParameters['parent_id'] = parentId.toString();
+      }
       final response = await _apiClient.get(
         'post/reply/list/$postId',
-        queryParameters: {
-          'page': page.toString(),
-          'size': pageSize.toString(),
-        },
+        queryParameters: queryParameters,
       );
       print('[REPLY_DEBUG] getReplies raw response type: ${response.runtimeType}');
       print('[REPLY_DEBUG] getReplies raw response keys: ${response is Map ? response.keys.toList() : "N/A"}');
@@ -404,6 +420,16 @@ class PostService {
     } on ApiException {
       rethrow;
     }
+  }
+
+  /// 删除回复（用户视角的"删除自己评论"）。
+  ///
+  /// 服务端暂未提供真删除接口，当前复用 `POST /post/reply/hide/{reply_id}`
+  /// 实现软删除：评论作者本人调用后，该回复对其他用户不可见，等同于"删除"效果。
+  /// 未来若服务端新增 `DELETE /post/reply/{reply_id}`，只需替换此方法内部实现，
+  /// 调用方（UI 层）无需改动。
+  Future<void> deleteReply(String replyId) async {
+    await hideReply(replyId);
   }
 
   Future<List<Post>> getScheduledPosts({int page = 1, int size = 20}) async {
@@ -1052,6 +1078,11 @@ class Reply {
   final bool isLiked;
   final bool isPinned;
   final bool isHidden;
+  // 嵌套回复相关字段
+  /// 父回复 ID;为 null 表示该回复是帖子的直接（一级）回复，非 null 表示这是某个回复的子（二级）回复。
+  final String? parentId;
+  /// 子回复总数（仅一级回复使用，二级回复此字段恒为 0）。
+  final int repliesCount;
 
   Reply({
     required this.id,
@@ -1067,7 +1098,48 @@ class Reply {
     this.isLiked = false,
     this.isPinned = false,
     this.isHidden = false,
+    this.parentId,
+    this.repliesCount = 0,
   });
+
+  /// 局部更新 Reply 字段;未传入的参数保持原值。
+  /// 用于乐观更新(点赞/置顶/计数),避免在 13+ 字段下逐一重写。
+  Reply copyWith({
+    String? id,
+    String? postId,
+    int? userId,
+    String? username,
+    String? displayName,
+    String? profilePic,
+    String? content,
+    String? imageUrl,
+    DateTime? createdAt,
+    int? likesCount,
+    bool? isLiked,
+    bool? isPinned,
+    bool? isHidden,
+    String? parentId,
+    bool clearParentId = false,
+    int? repliesCount,
+  }) {
+    return Reply(
+      id: id ?? this.id,
+      postId: postId ?? this.postId,
+      userId: userId ?? this.userId,
+      username: username ?? this.username,
+      displayName: displayName ?? this.displayName,
+      profilePic: profilePic ?? this.profilePic,
+      content: content ?? this.content,
+      imageUrl: imageUrl ?? this.imageUrl,
+      createdAt: createdAt ?? this.createdAt,
+      likesCount: likesCount ?? this.likesCount,
+      isLiked: isLiked ?? this.isLiked,
+      isPinned: isPinned ?? this.isPinned,
+      isHidden: isHidden ?? this.isHidden,
+      parentId: clearParentId ? null : (parentId ?? this.parentId),
+      repliesCount: repliesCount ?? this.repliesCount,
+    );
+  }
 
   factory Reply.fromJson(Map<String, dynamic> json) {
     // Parse user info from nested "user" object (API spec) or flat fields (legacy)
@@ -1103,6 +1175,10 @@ class Reply {
     final createdAtStr = json['create_time'] ?? json['created_at'] ?? json['createdAt'] ?? json['createTime'];
     final createdAt = createdAtStr != null ? _parseUtc(createdAtStr.toString()) : DateTime.now();
 
+    // Parse parent_id (支持 snake_case / camelCase;post.json 中 schema 是 int?,此处统一转 String)
+    final parentIdRaw = json['parent_id'] ?? json['parentId'];
+    final String? parentId = parentIdRaw != null ? parentIdRaw.toString() : null;
+
     return Reply(
       id: json['id']?.toString() ?? json['reply_id']?.toString() ?? '',
       postId: json['post_id']?.toString() ?? '',
@@ -1117,6 +1193,8 @@ class Reply {
       isLiked: json['is_liked'] ?? json['isLiked'] ?? false,
       isPinned: json['is_pinned'] ?? json['isPinned'] ?? false,
       isHidden: json['is_hidden'] ?? json['isHidden'] ?? false,
+      parentId: parentId,
+      repliesCount: json['replies_count'] ?? json['repliesCount'] ?? 0,
     );
   }
 }

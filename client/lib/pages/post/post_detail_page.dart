@@ -10,8 +10,10 @@ import 'package:threads/services/post_service.dart';
 import 'package:threads/common/locator.dart';
 import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/theme/app_colors.dart';
+import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/widget/poll_widget.dart';
+import 'package:threads/widget/reply_bottom_sheet.dart';
 
 class PostDetailPage extends StatefulWidget {
   final String postId;
@@ -209,7 +211,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     ),
                                   );
                                 }
-                                return _buildReplyItem(context, _replies[index]);
+                                return _buildReplyWithChildren(context, _replies[index]);
                               },
                               childCount: _replies.length + (_hasMore ? 1 : 0),
                             ),
@@ -482,74 +484,492 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Widget _buildReplyItem(BuildContext context, Reply reply) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final profilePic = reply.profilePic ?? '';
-    return Column(
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAvatar(context, profilePic, 32),
-              SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          reply.displayName,
-                          style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          _formatTime(reply.createdAt),
-                          style: TextStyle(color: appColors.textHint, fontSize: 12),
-                        ),
-                        if (reply.isPinned) ...[
-                          SizedBox(width: 8),
-                          Icon(Icons.push_pin, size: 12, color: appColors.textSecondary),
-                        ],
-                      ],
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      reply.content,
-                      style: TextStyle(color: appColors.textPrimary, fontSize: 14),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () async {
-                            try {
-                              if (reply.isLiked) {
-                                await postService.unlikeReply(reply.id);
-                              } else {
-                                await postService.likeReply(reply.id);
-                              }
-                              if (mounted) setState(() {});
-                            } catch (_) {}
-                          },
-                          child: Icon(
-                            reply.isLiked ? Icons.favorite : Icons.favorite_border,
-                            size: 16,
-                            color: reply.isLiked ? appColors.like : appColors.textMuted,
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final myUserId = authState.userId;
+    final isAuthor =
+        myUserId.isNotEmpty && myUserId == reply.userId.toString();
+    // 一级回复(parentId == null)才能触发 onTap,二级回复硬约束不可再回复。
+    final canTapToReply = reply.parentId == null;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: () => _showReplyOptions(reply),
+      onTap: canTapToReply ? () => _openReplySheet(reply) : null,
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildAvatar(context, profilePic, 32),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            reply.displayName,
+                            style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
                           ),
+                          SizedBox(width: 8),
+                          Text(
+                            _formatTime(reply.createdAt),
+                            style: TextStyle(color: appColors.textHint, fontSize: 12),
+                          ),
+                          if (reply.isPinned) ...[
+                            SizedBox(width: 8),
+                            Icon(Icons.push_pin, size: 12, color: appColors.textSecondary),
+                          ],
+                        ],
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        reply.content,
+                        style: TextStyle(color: appColors.textPrimary, fontSize: 14),
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () async {
+                              try {
+                                if (reply.isLiked) {
+                                  await postService.unlikeReply(reply.id);
+                                } else {
+                                  await postService.likeReply(reply.id);
+                                }
+                                if (mounted) setState(() {});
+                              } catch (_) {}
+                            },
+                            child: Icon(
+                              reply.isLiked ? Icons.favorite : Icons.favorite_border,
+                              size: 16,
+                              color: reply.isLiked ? appColors.like : appColors.textMuted,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Text('${reply.likesCount}', style: TextStyle(color: appColors.textMuted, fontSize: 12)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (isAuthor)
+                  PopupMenuButton<String>(
+                    tooltip: AppLocalizations.of(context)!.deleteReply,
+                    icon: Icon(Icons.more_horiz,
+                        color: appColors.textMuted, size: 20),
+                    padding: EdgeInsets.zero,
+                    splashRadius: 18,
+                    color: appColors.surface,
+                    position: PopupMenuPosition.under,
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        _confirmDeleteReply(reply);
+                      }
+                    },
+                    itemBuilder: (menuContext) => [
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(CupertinoIcons.delete,
+                                color: appColors.like, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              AppLocalizations.of(menuContext)!.deleteReply,
+                              style: TextStyle(
+                                color: appColors.like,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 4),
-                        Text('${reply.likesCount}', style: TextStyle(color: appColors.textMuted, fontSize: 12)),
-                      ],
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+          // 「查看 N 条回复 / 收起回复」按钮(仅一级回复且有子回复时显示)
+          if (canTapToReply && reply.repliesCount > 0)
+            _buildViewRepliesButton(context, reply),
+          Divider(color: appColors.divider, height: 0.5, indent: 54),
+        ],
+      ),
+    );
+  }
+
+  /// 「查看 N 条回复 / 收起回复」按钮。
+  /// 视觉:左侧一根细线 + 向下回旋图标 + 文本,
+  /// 与父回复 content 起始位置对齐(左缩进 58),与子回复缩进一致。
+  Widget _buildViewRepliesButton(BuildContext context, Reply parent) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+    // 通过 watch 拿到 PostState 来切换文案(避免 listen:false 后无法 rebuild)。
+    final postState = context.watch<PostState>();
+    final isExpanded = postState.isParentExpanded(parent.id);
+    return Padding(
+      padding: const EdgeInsets.only(left: 58, bottom: 4, top: 2),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _toggleChildReplies(parent),
+        child: Row(
+          children: [
+            Container(width: 24, height: 1, color: appColors.divider),
+            const SizedBox(width: 8),
+            Icon(
+              CupertinoIcons.arrow_turn_down_left,
+              size: 12,
+              color: appColors.textSecondary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isExpanded
+                  ? l10n.hideReplies
+                  : l10n.viewReplies(parent.repliesCount),
+              style: TextStyle(
+                color: appColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 切换某父回复的子回复展开/收起状态。
+  void _toggleChildReplies(Reply parent) {
+    final postState = Provider.of<PostState>(context, listen: false);
+    if (postState.isParentExpanded(parent.id)) {
+      postState.collapseChildReplies(parent.id);
+    } else {
+      // 触发异步加载,UI 状态由 PostState 通过 Consumer 自动刷新。
+      postState
+          .loadChildReplies(
+            postId: widget.postId,
+            parentReplyId: parent.id,
+          )
+          .catchError((e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.failedToPostReply),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      });
+    }
+  }
+
+  /// 打开回复弹层。
+  /// 等待弹层关闭后,根据返回结果(嵌套回复提交成功)同步父级 repliesCount 到本地 _replies。
+  Future<void> _openReplySheet(Reply parent) async {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: appColors.background,
+      builder: (ctx) => ReplyBottomSheet(
+        postId: widget.postId,
+        parentReply: parent,
+      ),
+    );
+    // result == true 表示成功创建了嵌套回复,本地把父级 repliesCount +1
+    if (result == true && mounted) {
+      setState(() {
+        final idx = _replies.indexWhere((r) => r.id == parent.id);
+        if (idx != -1) {
+          _replies[idx] = _replies[idx].copyWith(
+            repliesCount: _replies[idx].repliesCount + 1,
+          );
+        }
+      });
+    }
+  }
+
+  /// 把一级回复和其(已展开的)子回复组合成一个 widget,
+  /// 作为 SliverList 的子项。
+  Widget _buildReplyWithChildren(BuildContext context, Reply parent) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    // 嵌套回复视图:子列表来自 PostState (跨 widget 共享)。
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildReplyItem(context, parent),
+        // 通过 Consumer 订阅 PostState,展开/收起/数据变化时自动 rebuild
+        Consumer<PostState>(
+          builder: (context, postState, _) {
+            if (!postState.isParentExpanded(parent.id)) {
+              return const SizedBox.shrink();
+            }
+            final children = postState.childRepliesFor(parent.id);
+            final isLoading = postState.isChildLoading(parent.id);
+            final hasMore = postState.childHasMore(parent.id);
+            if (isLoading && children.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 54),
+                child: Center(
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: appColors.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            }
+            if (children.isEmpty) {
+              // 已展开但暂无子回复(可能全部被删)
+              return const SizedBox.shrink();
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final child in children)
+                  _buildChildReplyItem(context, child),
+                if (hasMore)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => postState.loadMoreChildReplies(
+                      postId: widget.postId,
+                      parentReplyId: parent.id,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 58, top: 4, bottom: 12),
+                      child: Text(
+                        AppLocalizations.of(context)!.loadMoreReplies,
+                        style: TextStyle(
+                          color: appColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  /// 渲染子(二级)回复。
+  /// 视觉:头像 26(比一级小),左缩进 58(=父 padding 16 + 父 avatar 32 + 父 gap 10),
+  /// 与父回复 content 起始位置对齐,形成「父→缩进的子」树状嵌套;
+  /// 不绑 onTap(硬约束:二级不允许再被回复),不支持展开。
+  Widget _buildChildReplyItem(BuildContext context, Reply child) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final profilePic = child.profilePic ?? '';
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final myUserId = authState.userId;
+    final isAuthor =
+        myUserId.isNotEmpty && myUserId == child.userId.toString();
+    return Padding(
+      padding: const EdgeInsets.only(left: 58, right: 16, top: 6, bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAvatar(context, profilePic, 26),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      child.displayName,
+                      style: TextStyle(
+                        color: appColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _formatTime(child.createdAt),
+                      style: TextStyle(color: appColors.textHint, fontSize: 11),
                     ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 3),
+                Text(
+                  child.content,
+                  style: TextStyle(color: appColors.textPrimary, fontSize: 13),
+                ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () async {
+                    try {
+                      if (child.isLiked) {
+                        await postService.unlikeReply(child.id);
+                      } else {
+                        await postService.likeReply(child.id);
+                      }
+                      if (mounted) setState(() {});
+                    } catch (_) {}
+                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        child.isLiked ? Icons.favorite : Icons.favorite_border,
+                        size: 14,
+                        color: child.isLiked ? appColors.like : appColors.textMuted,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${child.likesCount}',
+                        style: TextStyle(color: appColors.textMuted, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Divider(color: appColors.divider, height: 0.5, indent: 54),
-      ],
+          if (isAuthor)
+            GestureDetector(
+              onTap: () => _confirmDeleteReply(child),
+              child: Icon(
+                Icons.more_horiz,
+                color: appColors.textMuted,
+                size: 18,
+              ),
+            ),
+        ],
+      ),
     );
+  }
+
+  /// 长按回复弹出操作菜单。当前仅评论作者本人可见"删除"项。
+  void _showReplyOptions(Reply reply) {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final myUserId = authState.userId;
+    final isAuthor =
+        myUserId.isNotEmpty && myUserId == reply.userId.toString();
+    if (!isAuthor) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: appColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: appColors.textSecondary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: Icon(
+                CupertinoIcons.delete,
+                color: appColors.like,
+                size: 22,
+              ),
+              title: Text(
+                l10n.deleteReply,
+                style: TextStyle(
+                  color: appColors.like,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _confirmDeleteReply(reply);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 删除前二次确认。
+  Future<void> _confirmDeleteReply(Reply reply) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.deleteReply),
+        content: Text(l10n.deleteReplyConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              l10n.deleteReply,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _deleteReply(reply);
+    }
+  }
+
+  /// 调用接口删除回复，成功后从本地列表移除并同步帖子回复计数。
+  /// 还会清理 PostState 中的嵌套回复缓存(子回复列表、展开态等)。
+  Future<void> _deleteReply(Reply reply) async {
+    final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final postState = Provider.of<PostState>(context, listen: false);
+    final wasParent = reply.parentId == null;
+    try {
+      await postService.deleteReply(reply.id);
+      if (!mounted) return;
+      setState(() {
+        _replies.removeWhere((r) => r.id == reply.id);
+      });
+      // 清理 PostState 嵌套回复缓存
+      postState.removeReply(reply.id);
+      // 只有一级回复删除才计入帖子总回复数 -1
+      if (wasParent) {
+        postState.decrementReplyCount(widget.postId);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.replyDeleted),
+          backgroundColor: appColors.surface,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.failedToDeleteReply),
+          backgroundColor: appColors.surface,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Widget _buildAvatar(BuildContext context, String url, double size) {

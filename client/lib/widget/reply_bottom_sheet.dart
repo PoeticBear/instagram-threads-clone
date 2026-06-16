@@ -7,12 +7,22 @@ import 'package:threads/helper/utility.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/post_service.dart';
+import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 
 class ReplyBottomSheet extends StatefulWidget {
   final String postId;
+  /// 嵌套回复时传入被回复的那条一级 reply。
+  /// - 为 null（默认）:当前行为不变，提交一级回复到帖子，弹层继续显示回复列表。
+  /// - 非 null:弹层顶部显示「回复 @xxx」预览卡，输入框 hint 切换为「回复 @xxx...」，
+  ///   提交时携带 parentId,成功提交后直接关闭弹层（子回复在 PostDetailPage 内联展示）。
+  final Reply? parentReply;
 
-  const ReplyBottomSheet({required this.postId, super.key});
+  const ReplyBottomSheet({
+    required this.postId,
+    this.parentReply,
+    super.key,
+  });
 
   @override
   State<ReplyBottomSheet> createState() => _ReplyBottomSheetState();
@@ -66,18 +76,52 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
       _isPosting = true;
     });
 
+    final postState = Provider.of<PostState>(context, listen: false);
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+
+    // ===== 嵌套回复（对回复进行回复）路径 =====
+    if (widget.parentReply != null) {
+      try {
+        print('🔵 _postReply(nested) 开始: postId=${widget.postId}, parentReplyId=${widget.parentReply!.id}');
+        await postState.createChildReply(
+          postId: widget.postId,
+          parentReply: widget.parentReply!,
+          content: content,
+        );
+        print('🔵 _postReply(nested) 成功');
+        if (mounted) {
+          // 嵌套回复后直接关闭弹层,子回复在 PostDetailPage 内的子列表中展示。
+          // pop(true) 通知调用方同步父级 repliesCount。
+          Navigator.of(context).pop(true);
+        }
+      } catch (e) {
+        print('🔵 _postReply(nested) 失败: $e');
+        if (mounted) {
+          setState(() {
+            _isPosting = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.failedToPostReply),
+              backgroundColor: appColors.surface,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+      return;
+    }
+
+    // ===== 一级回复（原始路径） =====
     try {
       print('🔵 _postReply 开始: postId=${widget.postId}, content=$content');
-      final postService =
-          Provider.of<PostState>(context, listen: false).postService;
-      final newReply = await postService.createReply(
+      final newReply = await postState.postService.createReply(
         postId: widget.postId,
         content: content,
       );
       print('🔵 _postReply 成功: replyId=${newReply.id}');
       if (mounted) {
-        Provider.of<PostState>(context, listen: false)
-            .incrementReplyCount(widget.postId);
+        postState.incrementReplyCount(widget.postId);
         setState(() {
           _replies.insert(0, newReply);
           _replyController.clear();
@@ -87,7 +131,6 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
     } catch (e) {
       print('🔵 _postReply 失败: $e');
       if (mounted) {
-        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         setState(() {
           _isPosting = false;
         });
@@ -95,7 +138,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
           SnackBar(
             content: Text(AppLocalizations.of(context)!.failedToPostReply),
             backgroundColor: appColors.surface,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -144,6 +187,10 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
   void _showReplyOptions(Reply reply, int index) {
     final l10n = AppLocalizations.of(context)!;
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final myUserId = authState.userId;
+    final isAuthor =
+        myUserId.isNotEmpty && myUserId == reply.userId.toString();
 
     showModalBottomSheet(
       context: context,
@@ -183,10 +230,100 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                 _togglePinReply(reply, index);
               },
             ),
+            if (isAuthor)
+              ListTile(
+                leading: Icon(
+                  CupertinoIcons.delete,
+                  color: appColors.like,
+                  size: 22,
+                ),
+                title: Text(
+                  l10n.deleteReply,
+                  style: TextStyle(
+                    color: appColors.like,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDeleteReply(reply, index);
+                },
+              ),
           ],
         ),
       ),
     );
+  }
+
+  /// 删除前二次确认。
+  Future<void> _confirmDeleteReply(Reply reply, int index) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.deleteReply),
+        content: Text(l10n.deleteReplyConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              l10n.deleteReply,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _deleteReply(reply, index);
+    }
+  }
+
+  /// 调用接口删除回复，乐观更新本地列表，失败回滚并提示。
+  Future<void> _deleteReply(Reply reply, int index) async {
+    final l10n = AppLocalizations.of(context)!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final postState = Provider.of<PostState>(context, listen: false);
+
+    // 备份当前位置，便于失败回滚（其它项可能因排序变化，按 id 移除更稳）。
+    final backup = reply;
+    final backupIndex = index;
+    setState(() {
+      _replies.removeWhere((r) => r.id == reply.id);
+    });
+
+    try {
+      await postState.postService.deleteReply(reply.id);
+      if (!mounted) return;
+      postState.decrementReplyCount(widget.postId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.replyDeleted),
+          backgroundColor: appColors.surface,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      // Rollback：把删掉的项放回原位置（越界时追加到末尾）。
+      setState(() {
+        final insertAt =
+            backupIndex.clamp(0, _replies.length);
+        _replies.insert(insertAt, backup);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.failedToDeleteReply),
+          backgroundColor: appColors.surface,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _togglePinReply(Reply reply, int index) async {
@@ -273,8 +410,44 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
     );
   }
 
+  /// 嵌套回复场景下的「回复 @xxx」预览卡片。
+  /// 显示在拖动条与 Title 之间,样式偏次要(灰底,无边框)。
+  Widget _buildParentPreview() {
+    final parent = widget.parentReply!;
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+    final name = parent.displayName.isNotEmpty ? parent.displayName : parent.username;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: appColors.surface,
+      child: Row(
+        children: [
+          Icon(Iconsax.message, size: 16, color: appColors.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n.replyToUser(name),
+              style: TextStyle(
+                color: appColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReplyItem(Reply reply, int index) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final myUserId = authState.userId;
+    final isAuthor =
+        myUserId.isNotEmpty && myUserId == reply.userId.toString();
     return GestureDetector(
       onLongPress: () => _showReplyOptions(reply, index),
       child: Padding(
@@ -348,6 +521,42 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                 ],
               ),
             ),
+            if (isAuthor)
+              PopupMenuButton<String>(
+                tooltip: AppLocalizations.of(context)!.deleteReply,
+                icon: Icon(Icons.more_horiz,
+                    color: appColors.textMuted, size: 20),
+                padding: EdgeInsets.zero,
+                splashRadius: 18,
+                color: appColors.surface,
+                position: PopupMenuPosition.under,
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    _confirmDeleteReply(reply, index);
+                  }
+                },
+                itemBuilder: (menuContext) => [
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(CupertinoIcons.delete,
+                            color: appColors.like, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          AppLocalizations.of(menuContext)!.deleteReply,
+                          style: TextStyle(
+                            color: appColors.like,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
@@ -358,6 +567,8 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+    final isNested = widget.parentReply != null;
 
     return Container(
       height: screenHeight * 0.9,
@@ -381,7 +592,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Text(
-              AppLocalizations.of(context)!.replies,
+              l10n.replies,
               style: TextStyle(
                 color: appColors.textPrimary,
                 fontSize: 16,
@@ -389,6 +600,8 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
               ),
             ),
           ),
+          // 嵌套回复时,在 Title 与 Divider 之间插入「回复 @xxx」预览卡
+          if (isNested) _buildParentPreview(),
           Divider(
             color: appColors.divider,
             height: 0.5,
@@ -446,7 +659,12 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
                     controller: _replyController,
                     style: TextStyle(color: appColors.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.writeAReply,
+                      hintText: isNested
+                          ? l10n.writeAReplyTo(
+                              widget.parentReply!.displayName.isNotEmpty
+                                  ? widget.parentReply!.displayName
+                                  : widget.parentReply!.username)
+                          : l10n.writeAReply,
                       hintStyle: TextStyle(color: appColors.textSecondary),
                       filled: true,
                       fillColor: appColors.surface,

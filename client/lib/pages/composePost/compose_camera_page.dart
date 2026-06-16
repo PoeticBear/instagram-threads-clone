@@ -40,6 +40,10 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   late CameraMode _mode;
   bool _isRecording = false;
   DateTime? _recordingStartAt;
+  // 切换拍照/视频模式时为 true，期间预览区显示 loading。
+  // 防止在旧 CameraController dispose 之后，框架仍持有它的 ValueListenable<CameraValue>，
+  // 进而抛出 "buildPreview() was called on a disposed CameraController"。
+  bool _isSwitchingMode = false;
 
   // 视频时长上限（与后端 / VideoProcessor 保持一致：60s）
   static const int _maxVideoDurationSec = 60;
@@ -128,13 +132,23 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
 
   Future<void> _switchMode(CameraMode newMode) async {
     if (_mode == newMode || _isRecording) return;
-    setState(() => _mode = newMode);
+    setState(() {
+      _mode = newMode;
+      _isSwitchingMode = true; // 预览区立即进入 loading 态
+    });
     HapticFeedback.selectionClick();
+
+    // 让当前帧的 setState 先 commit（loading 态渲染出来后再 dispose 旧 controller），
+    // 否则 ValueListenableBuilder<CameraValue> 在重建时会拿到已 dispose 的 controller。
+    await Future.delayed(Duration.zero);
+    if (!mounted) return;
 
     // 重建 controller 以切换 enableAudio
     await _controller?.dispose();
     _controller = null;
     await _startCamera();
+
+    if (mounted) setState(() => _isSwitchingMode = false);
   }
 
   // ─── Photo actions ─────────────────────────────────────
@@ -180,8 +194,9 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     } catch (e) {
       debugPrint('Start recording failed: $e');
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('开始录制失败，请检查麦克风权限')),
+          SnackBar(content: Text(l10n.cameraStartRecordingFailed)),
         );
       }
     }
@@ -222,8 +237,9 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     } catch (e) {
       debugPrint('Stop recording failed: $e');
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('停止录制失败: $e')),
+          SnackBar(content: Text(l10n.cameraStopRecordingFailed(e.toString()))),
         );
       }
     }
@@ -299,19 +315,25 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
         fit: StackFit.expand,
         children: [
           _buildPreview(),
-          if (!_hasError) ...[
-            _buildTopControls(appColors),
-            _buildModeSwitch(appColors),
-            _buildBottomControls(appColors),
-          ],
-          if (_hasError) _buildError(appColors),
+          if (_hasError)
+            _buildError(appColors)
+          else
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(appColors),
+                  const Spacer(),
+                  _buildBottomControls(appColors),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildPreview() {
-    if (_controller == null || !_controller!.value.isInitialized) {
+    if (_controller == null || !_controller!.value.isInitialized || _isSwitchingMode) {
       return Container(
         color: Colors.black,
         child: const Center(
@@ -335,35 +357,26 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     );
   }
 
-  Widget _buildTopControls(AppColors appColors) {
-    final isBackCamera =
-        cameras.isNotEmpty && cameras[_cameraIndex].lensDirection == CameraLensDirection.back;
+  /// 头部单行：左 [✕] ｜ 中 [拍照|视频] pill ｜ 右 [⚡/●REC]
+  /// - pill 几何居中（用 Expanded + Center 包裹）
+  /// - 录制中 pill 隐藏，让 [●REC] 计时器在右位显示
+  /// - 行高固定 44px，与左右圆形按钮同高，视觉对齐
+  Widget _buildHeader(AppColors appColors) {
+    final isBackCamera = cameras.isNotEmpty &&
+        cameras[_cameraIndex].lensDirection == CameraLensDirection.back;
+    final l10n = AppLocalizations.of(context)!;
 
     return SafeArea(
+      bottom: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.close, color: Colors.white, size: 24),
-              ),
-            ),
-            if (_isRecording)
-              _buildRecordingIndicator()
-            else
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: SizedBox(
+          height: 44,
+          child: Row(
+            children: [
+              // 左：关闭按钮
               GestureDetector(
-                onTap: isBackCamera && _mode == CameraMode.photo
-                    ? _toggleFlash
-                    : null,
+                onTap: () => Navigator.of(context).pop(),
                 child: Container(
                   width: 44,
                   height: 44,
@@ -371,19 +384,72 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                     color: Colors.black.withValues(alpha: 0.4),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    _flashMode == FlashMode.torch
-                        ? Iconsax.flash_15
-                        : Iconsax.flash_slash5,
-                    color: (isBackCamera && _mode == CameraMode.photo)
-                        ? Colors.white
-                        : Colors.white24,
-                    size: 22,
-                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
                 ),
               ),
-          ],
+              // 中：模式 pill（录制中隐藏）
+              Expanded(
+                child: Center(
+                  child: _isRecording
+                      ? const SizedBox.shrink()
+                      : _buildModePill(l10n),
+                ),
+              ),
+              // 右：闪光灯 / 录制指示器
+              if (_isRecording)
+                _buildRecordingIndicator()
+              else
+                GestureDetector(
+                  onTap: isBackCamera && _mode == CameraMode.photo
+                      ? _toggleFlash
+                      : null,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _flashMode == FlashMode.torch
+                          ? Iconsax.flash_15
+                          : Iconsax.flash_slash5,
+                      color: (isBackCamera && _mode == CameraMode.photo)
+                          ? Colors.white
+                          : Colors.white24,
+                      size: 22,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// 拍照 / 视频 模式切换 pill
+  Widget _buildModePill(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildModeChip(
+            label: l10n.cameraModePhoto,
+            active: _mode == CameraMode.photo,
+            onTap: () => _switchMode(CameraMode.photo),
+          ),
+          _buildModeChip(
+            label: l10n.cameraModeVideo,
+            active: _mode == CameraMode.video,
+            onTap: () => _switchMode(CameraMode.video),
+          ),
+        ],
       ),
     );
   }
@@ -430,41 +496,6 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     );
   }
 
-  /// 拍照 / 视频 模式切换
-  Widget _buildModeSwitch(AppColors appColors) {
-    if (_isRecording) return const SizedBox.shrink();
-    final l10n = AppLocalizations.of(context)!;
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 60,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildModeChip(
-                label: l10n.cameraModePhoto,
-                active: _mode == CameraMode.photo,
-                onTap: () => _switchMode(CameraMode.photo),
-              ),
-              _buildModeChip(
-                label: l10n.cameraModeVideo,
-                active: _mode == CameraMode.video,
-                onTap: () => _switchMode(CameraMode.video),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildModeChip({
     required String label,
     required bool active,
@@ -491,33 +522,39 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   }
 
   Widget _buildBottomControls(AppColors appColors) {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 40, top: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 24, top: 20),
+        child: SizedBox(
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              const SizedBox(width: 60),
               _buildShutter(),
-              GestureDetector(
-                onTap: _isRecording ? null : _switchCamera,
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Iconsax.refresh, color: Colors.white, size: 28),
-                ),
+              Positioned(
+                right: 0,
+                child: _buildFlipButton(),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 翻转前后摄像头按钮（60×60 圆形 + Iconsax.refresh）
+  Widget _buildFlipButton() {
+    return GestureDetector(
+      onTap: _isRecording ? null : _switchCamera,
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.4),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(Iconsax.refresh, color: Colors.white, size: 28),
       ),
     );
   }

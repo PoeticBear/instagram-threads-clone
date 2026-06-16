@@ -28,7 +28,30 @@ import 'package:video_player/video_player.dart';
 // ignore: must_be_immutable
 class FeedPostWidget extends StatefulWidget {
   PostModel postModel;
-  FeedPostWidget({required this.postModel, super.key});
+
+  /// 帖子删除成功后由父组件提供的回调。
+  /// 用于让父级本地列表（如 ProfilePage._userPosts）同步移除该项，
+  /// 解决 Threads Tab 中删除帖子后列表不刷新的问题。
+  /// 不传时仅依赖 PostState 的全局列表，行为与之前一致。
+  VoidCallback? onPostDeleted;
+
+  /// 是否是列表中的第一项。
+  ///
+  /// true 时跳过组件顶部的 0.2px 分割线 + 10px 间距。
+  /// 这两个元素在首页 Feed 里是必要的——用来跟「快捷发帖」区分；
+  /// 但在 Threads Tab（[ProfilePage._buildThreadsTab]）里 TabBar 下面直接
+  /// 接第一个帖子，没有前置内容，这 10px 会变成 TabBar 和帖子之间的明显空白。
+  /// 传 true 让第一项紧贴 TabBar，从第二项开始保持原样以维持帖子之间的视觉分隔。
+  /// 默认 false：所有现有调用点（首页 Feed / 主题详情 / 社区详情 / 收藏 / 定时）
+  /// 行为完全不变。
+  bool isFirst;
+
+  FeedPostWidget({
+    required this.postModel,
+    this.onPostDeleted,
+    this.isFirst = false,
+    super.key,
+  });
 
   @override
   State<FeedPostWidget> createState() => _FeedPostWidgetState();
@@ -138,14 +161,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Container(
-              height: 0.2,
-              width: double.infinity,
-              color: appColors.divider,
-            ),
-            Container(
-              height: 10,
-            ),
+            // 顶部 0.2px 分割线 + 10px 间距:首页 Feed 用来跟「快捷发帖」区
+            // 分隔;Threads Tab 第一个帖子 isFirst=true 时跳过,避免 TabBar
+            // 下面出现明显空白。
+            if (!widget.isFirst) ...[
+              Container(
+                height: 0.2,
+                width: double.infinity,
+                color: appColors.divider,
+              ),
+              Container(
+                height: 10,
+              ),
+            ],
             Row(
               children: [
                 GestureDetector(
@@ -215,50 +243,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 ),
               ),
             ],
-            GestureDetector(
-              onTap: () => _navigateToPostDetail(context),
-              child: hasPoll
-                ? PollWidget(
-                    postId: widget.postModel.id,
-                    pollData: widget.postModel.pollData!,
-                    padding: EdgeInsets.only(left: 40, right: 10, top: 8),
-                  )
-                // ── [临时隐藏] 线程连接线设计 (后期需恢复) ──
-                // 原始布局: Row 包含左侧竖线(2x300) + 迷你头像(15px) + 右侧图片(300x280)
-                // 恢复时删除下方 Padding，取消注释下方 Row 代码块即可
-                // : Row(
-                //     mainAxisAlignment: MainAxisAlignment.end,
-                //     children: [
-                //       Container(width: 10),
-                //       Column(children: [
-                //         Container(width: 2, height: 300, color: appColors.divider),
-                //         Container(height: 5),
-                //         avatar(profilePic, 15),
-                //       ]),
-                //       Flexible(
-                //         child: Padding(
-                //           padding: EdgeInsets.only(left: 48, right: 10),
-                //           child: ClipRRect(
-                //             borderRadius: BorderRadius.circular(20),
-                //             child: CachedNetworkImage(
-                //               height: 300, width: 280, fit: BoxFit.cover,
-                //               imageUrl: widget.postModel.imagePath!,
-                //               placeholder: (context, url) => Container(
-                //                 height: 300, width: 280, color: appColors.surface,
-                //                 child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: appColors.textSecondary)),
-                //               ),
-                //               errorWidget: (context, url, error) => Container(
-                //                 height: 300, width: 280, color: appColors.surface,
-                //                 child: Icon(Icons.broken_image, color: appColors.textSecondary),
-                //               ),
-                //             ),
-                //           ),
-                //         ),
-                //       ),
-                //     ],
-                //   ),
-                : SizedBox.shrink(),
-            ),
+            if (hasPoll)
+              // 投票卡片自身处理选项 tap（投票 / 跳详情），不再用外层 GestureDetector 拦截
+              PollWidget(
+                postId: widget.postModel.id,
+                pollData: widget.postModel.pollData!,
+                onCardTap: () => _navigateToPostDetail(context),
+                padding: EdgeInsets.only(left: 40, right: 10, top: 8),
+              )
+            else
+              // ── [临时隐藏] 线程连接线设计 (后期需恢复) ──
+              // 原始布局: Row 包含左侧竖线(2x300) + 迷你头像(15px) + 右侧图片(300x280)
+              // 恢复时删除下方 Padding，取消注释下方 Row 代码块即可
+              SizedBox.shrink(),
             // ── 帖子图片/视频/多图 ── 点击进入大图预览（不跳转详情页）
             if (!hasPoll && hasMedia)
               Padding(
@@ -1285,6 +1282,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                           duration: Duration(seconds: 1),
                         ),
                       );
+                    }
+                    if (success) {
+                      // 通知父组件（如 ProfilePage._userPosts）从本地列表移除该项，
+                      // 解决 Threads Tab 中删除后列表不刷新的问题。
+                      widget.onPostDeleted?.call();
                     }
                   }
                 },

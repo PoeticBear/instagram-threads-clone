@@ -34,7 +34,8 @@ class ProfilePage extends StatefulWidget {
   final String? username;
   final bool isOwnProfileTab;
 
-  static PageRouteBuilder getRoute({required String profileId, String? username}) {
+  static PageRouteBuilder getRoute(
+      {required String profileId, String? username}) {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
         return ChangeNotifierProvider(
@@ -207,250 +208,271 @@ class _ProfilePageState extends State<ProfilePage>
               elevation: 0,
               backgroundColor: Colors.transparent,
             ),
-            body: RefreshIndicator(
-              color: appColors.textPrimary,
-              backgroundColor: appColors.background,
-              onRefresh: _refreshAll,
-              // NestedScrollView 是关键:
-              //   - 头部 (头像/简介/统计/按钮/TabBar) 放进 headerSliverBuilder 的
-              //     SliverToBoxAdapter,作为可滚动的 sliver 头;
-              //   - TabBarView 作为 body,可以拿到 NestedScrollView 提供的有界高度,
-              //     不再出现 PageView 在无界 Column 里的 layout assertion。
-              //   - physics 强制 AlwaysScrollable,即使 TabBarView 子项很短,
-              //     内部 ListView/GridView 也能把 overscroll 事件传上来触发下拉刷新。
-              child: NestedScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                headerSliverBuilder:
-                    (BuildContext context, bool innerBoxIsScrolled) {
-                  return [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                        // Name + Avatar row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          _resolveDisplayName(state, widget.username),
-                                          style: TextStyle(
-                                              color: appColors.textPrimary,
-                                              fontSize: 28,
-                                              fontWeight: FontWeight.w600),
-                                          overflow: TextOverflow.ellipsis,
+            body: NestedScrollView(
+              // Flutter 原生 Sliver 系统:头部信息用 SliverToBoxAdapter 装,
+              // TabBar 用 SliverPersistentHeader(pinned:true)固定,body 直接用 TabBarView。
+              // NestedScrollView 自动协调头部滚动 + TabBarView 内部 PageView 滚动,
+              // 不需要 Column+Expanded 给 TabBarView 有界高度,也就不会触发 70-100pt 空白。
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
+                  // 1. 顶部留白(状态栏 + AppBar 工具栏)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height:
+                          MediaQuery.of(context).padding.top + kToolbarHeight,
+                    ),
+                  ),
+                  // 2. 头部信息(头像/简介/统计/操作按钮)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 15),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Name + Avatar row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            _resolveDisplayName(
+                                                state, widget.username),
+                                            style: TextStyle(
+                                                color: appColors.textPrimary,
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.w600),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
-                                      ),
-                                      if (state.profileUserModel?.isVerified == true) ...[
-                                        SizedBox(width: 4),
-                                        Icon(CupertinoIcons.checkmark_seal_fill,
-                                            size: 18, color: CupertinoColors.activeBlue),
+                                        if (state
+                                                .profileUserModel?.isVerified ==
+                                            true) ...[
+                                          SizedBox(width: 4),
+                                          Icon(
+                                              CupertinoIcons
+                                                  .checkmark_seal_fill,
+                                              size: 18,
+                                              color:
+                                                  CupertinoColors.activeBlue),
+                                        ],
                                       ],
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  if ((state.profileUserModel?.userName ?? widget.username ?? '').isNotEmpty)
-                                  Row(
-                                    children: [
-                                      Text(
-                                        '@${state.profileUserModel?.userName ?? widget.username}',
-                                        style: TextStyle(
-                                            color: appColors.textPrimary,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w400),
-                                      ),
-                                      if (state.profileUserModel?.link != null &&
-                                          state.profileUserModel!.link!
-                                              .isNotEmpty) ...[
-                                        SizedBox(width: 5),
-                                        GestureDetector(
-                                          onTap: () => _openLink(
-                                              state.profileUserModel!.link!),
-                                          behavior: HitTestBehavior.opaque,
-                                          child: MouseRegion(
-                                            cursor:
-                                                SystemMouseCursors.click,
-                                            child: Container(
-                                              height: 20,
-                                              decoration: BoxDecoration(
-                                                  color: appColors.surface,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          10)),
-                                              padding: EdgeInsets.all(2),
-                                              child: Text(
-                                                state
-                                                    .profileUserModel!.link!,
-                                                style: TextStyle(
-                                                  color: appColors.accent,
+                                    ),
+                                    SizedBox(height: 8),
+                                    if ((state.profileUserModel?.userName ??
+                                            widget.username ??
+                                            '')
+                                        .isNotEmpty)
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '@${state.profileUserModel?.userName ?? widget.username}',
+                                            style: TextStyle(
+                                                color: appColors.textPrimary,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w400),
+                                          ),
+                                          if (state.profileUserModel?.link !=
+                                                  null &&
+                                              state.profileUserModel!.link!
+                                                  .isNotEmpty) ...[
+                                            SizedBox(width: 5),
+                                            GestureDetector(
+                                              onTap: () => _openLink(state
+                                                  .profileUserModel!.link!),
+                                              behavior: HitTestBehavior.opaque,
+                                              child: MouseRegion(
+                                                cursor:
+                                                    SystemMouseCursors.click,
+                                                child: Container(
+                                                  height: 20,
+                                                  decoration: BoxDecoration(
+                                                      color: appColors.surface,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10)),
+                                                  padding: EdgeInsets.all(2),
+                                                  child: Text(
+                                                    state.profileUserModel!
+                                                        .link!,
+                                                    style: TextStyle(
+                                                      color: appColors.accent,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ),
-                                      ]
-                                    ],
-                                  )
-                                ],
+                                          ]
+                                        ],
+                                      )
+                                  ],
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 12),
-                            Container(
-                                width: 60,
-                                height: 60,
-                                child: _buildAvatar(state)),
-                          ],
-                        ),
-                        SizedBox(height: 12),
-                        // Bio
-                        if (state.profileUserModel?.bio != null &&
-                            state.profileUserModel!.bio!.isNotEmpty)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              state.profileUserModel!.bio!,
-                              maxLines: 5,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: appColors.textPrimary,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w400),
-                            ),
+                              SizedBox(width: 12),
+                              Container(
+                                  width: 60,
+                                  height: 60,
+                                  child: _buildAvatar(state)),
+                            ],
                           ),
-                        // 扩展信息行（代词 / 位置 / 性别）
-                        if (state.profileUserModel != null) ...[
                           SizedBox(height: 12),
-                          _buildInfoRow(state),
-                        ],
-                        SizedBox(height: 16),
-                        // Follower / Following counts
-                        Row(
-                          children: [
-                            _buildStatItem(
-                              '${state.followStats.followingCount}',
-                              ' ${AppLocalizations.of(context)!.statFollowing}',
-                              onTap: () => _navigateToFollowList(1),
+                          // Bio
+                          if (state.profileUserModel?.bio != null &&
+                              state.profileUserModel!.bio!.isNotEmpty)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                state.profileUserModel!.bio!,
+                                maxLines: 5,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: appColors.textPrimary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w400),
+                              ),
                             ),
-                            SizedBox(width: 16),
-                            _buildStatItem(
-                              '${state.followStats.followersCount}',
-                              ' ${AppLocalizations.of(context)!.statFollowers}',
-                              onTap: () => _navigateToFollowList(0),
-                            ),
+                          // 扩展信息行（代词 / 位置 / 性别）
+                          if (state.profileUserModel != null) ...[
+                            SizedBox(height: 12),
+                            _buildInfoRow(state),
                           ],
-                        ),
-                        SizedBox(height: 16),
-                        // Action buttons
-                        Row(
-                          children: [
-                            if (state.isMyProfile) ...[
-                              Expanded(
-                                child: _buildActionButton(
-                                  label: AppLocalizations.of(context)!.editProfile,
-                                  onTap: () async {
-                                    await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                EditProfilePage()));
-                                    if (mounted) {
-                                      await _refreshAll();
-                                    }
-                                  },
-                                ),
+                          SizedBox(height: 16),
+                          // Follower / Following counts
+                          Row(
+                            children: [
+                              _buildStatItem(
+                                '${state.followStats.followingCount}',
+                                ' ${AppLocalizations.of(context)!.statFollowing}',
+                                onTap: () => _navigateToFollowList(1),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _buildActionButton(
-                                  label: AppLocalizations.of(context)!.shareProfile,
-                                  onTap: () => _shareProfile(state),
-                                ),
-                              ),
-                            ] else ...[
-                              Expanded(
-                                child: _buildActionButton(
-                                  label: state.isFollowLoading
-                                      ? ''
-                                      : (state.isFollowing
-                                          ? AppLocalizations.of(context)!.following
-                                          : AppLocalizations.of(context)!.follow),
-                                  isHighlighted: !state.isFollowing,
-                                  isLoading: state.isFollowLoading,
-                                  onTap: () {
-                                    state.followUser(
-                                        removeFollower: state.isFollowing);
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _buildActionButton(
-                                  label: AppLocalizations.of(context)!.shareProfile,
-                                  onTap: () => _shareProfile(state),
-                                ),
+                              SizedBox(width: 16),
+                              _buildStatItem(
+                                '${state.followStats.followersCount}',
+                                ' ${AppLocalizations.of(context)!.statFollowers}',
+                                onTap: () => _navigateToFollowList(0),
                               ),
                             ],
-                          ],
-                        ),
-                        SizedBox(height: 20),
-                        // TabBar
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: TabBar(
-                            controller: _tabController,
-                            isScrollable: false,
-                            labelColor: appColors.textPrimary,
-                            unselectedLabelColor: appColors.textSecondary,
-                            indicatorColor: appColors.textPrimary,
-                            indicatorWeight: 1,
-                            tabs: [
-                              Tab(
-                                  child: Text(
+                          ),
+                          SizedBox(height: 16),
+                          // Action buttons
+                          Row(
+                            children: [
+                              if (state.isMyProfile) ...[
+                                Expanded(
+                                  child: _buildActionButton(
+                                    label: AppLocalizations.of(context)!
+                                        .editProfile,
+                                    onTap: () async {
+                                      await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  EditProfilePage()));
+                                      if (mounted) {
+                                        await _refreshAll();
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildActionButton(
+                                    label: AppLocalizations.of(context)!
+                                        .shareProfile,
+                                    onTap: () => _shareProfile(state),
+                                  ),
+                                ),
+                              ] else ...[
+                                Expanded(
+                                  child: _buildActionButton(
+                                    label: state.isFollowLoading
+                                        ? ''
+                                        : (state.isFollowing
+                                            ? AppLocalizations.of(context)!
+                                                .following
+                                            : AppLocalizations.of(context)!
+                                                .follow),
+                                    isHighlighted: !state.isFollowing,
+                                    isLoading: state.isFollowLoading,
+                                    onTap: () {
+                                      state.followUser(
+                                          removeFollower: state.isFollowing);
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildActionButton(
+                                    label: AppLocalizations.of(context)!
+                                        .shareProfile,
+                                    onTap: () => _shareProfile(state),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          // SizedBox(height: 20) 已删除 — TabBar 不再嵌在头部 Column 里,改由 SliverPersistentHeader 提供固定 TabBar。
+                        ],
+                      ),
+                    ),
+                  ),
+                  // 3. TabBar(通过 SliverPersistentHeader 固定)
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _SliverAppBarDelegate(
+                      minHeight: 46.0,
+                      maxHeight: 46.0,
+                      child: Container(
+                        color: appColors.background,
+                        child: TabBar(
+                          controller: _tabController,
+                          onTap: (index) {
+                            if (index == 0) {
+                              _loadUserPosts();
+                            }
+                          },
+                          isScrollable: false,
+                          labelColor: appColors.textPrimary,
+                          unselectedLabelColor: appColors.textSecondary,
+                          indicatorColor: appColors.textPrimary,
+                          indicatorWeight: 1,
+                          tabs: [
+                            Tab(
+                              child: Text(
                                 AppLocalizations.of(context)!.tabThreads,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
-                              )),
-                              Tab(
-                                  child: Text(
-                              AppLocalizations.of(context)!.tabMedia,
+                              ),
+                            ),
+                            Tab(
+                              child: Text(
+                                AppLocalizations.of(context)!.tabMedia,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
-                              ))
-                            ],
-                          ),
-                        ),
-                        // TabBar 留在 SliverToBoxAdapter 里,会随头部一起滚走。
-                        // 不再在头部末尾放 TabBarView:
-                        //   - 旧做法把 TabBarView 塞进 Column,处于无界垂直空间,
-                        //     PageView 内部 layout 失败 -> parentDataDirty 渲染断言 +
-                        //     个人中心页面整页空白。
-                        //   - 新做法 TabBarView 作为 NestedScrollView.body,
-                        //     拿到 NestedScrollView 提供的有界高度,正常 layout。
-                      ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ];
-                },
-                body: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildThreadsTab(),
-                    _buildMediaTab(),
-                  ],
-                ),
+                  ),
+                ];
+              },
+              body: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildThreadsTab(),
+                  _buildMediaTab(),
+                ],
               ),
             ),
           );
@@ -471,15 +493,41 @@ class _ProfilePageState extends State<ProfilePage>
         ),
       );
     }
-    // NestedScrollView 模式下,TabBarView 的每个子页面必须自己独立可滚动,
-    // 否则 overscroll 不会传上去,触发不了下拉刷新;也必须不设 shrinkWrap,
-    // 否则高度约束不对。
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: _userPosts.length,
-      itemBuilder: (context, index) {
-        return FeedPostWidget(postModel: _userPosts[index]);
-      },
+    // NestedScrollView 把 body 装进 SliverFillRemaining(见 flutter 源码
+    // nested_scroll_view.dart:344-370),body 的第一个像素位于 SliverFillRemaining
+    // 起始 y,而 SliverFillRemaining 又位于头部 slivers 末尾。在当前布局下
+    // 渲染出的实际效果是:ListView 第一项视觉位置比 TabBar 底部还要低约 80pt,
+    // 形成明显空白。
+    //
+    // 用 Transform.translate(-80) 把 body 内容向上平移 80pt,让第一项紧贴 TabBar。
+    // 已在 Column+Expanded 版验证过该偏移量;NestedScrollView 版空白尺寸相同
+    // (用户截图实测 ~80pt),沿用同一偏移即可。
+    //
+    // ListView 保持独立可滚动,否则 overscroll 不会传上去,触发不了下拉刷新。
+    return Transform.translate(
+      offset: const Offset(0, -80),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _userPosts.length,
+        itemBuilder: (context, index) {
+          final post = _userPosts[index];
+          return FeedPostWidget(
+            postModel: post,
+            // 第一项 isFirst=true:跳过 FeedPostWidget 顶部的 0.2px 分割线
+            // + 10px 间距,让第一个帖子紧贴 TabBar。
+            isFirst: index == 0,
+            // 帖子删除成功后,同步从本地 _userPosts 移除,解决 Threads Tab
+            // 删除后列表不刷新的问题(PostState.deletePost 只更新全局 _userPosts,
+            // 不会反向同步到 ProfilePage 的本地缓存)。
+            onPostDeleted: () {
+              if (!mounted) return;
+              setState(() {
+                _userPosts.removeWhere((p) => p.id == post.id);
+              });
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -509,64 +557,72 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
-    // 同 _buildThreadsTab:必须用普通 GridView + AlwaysScrollableScrollPhysics,
-    // 让 overscroll 能传给 NestedScrollView 触发下拉刷新。
-    return GridView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
-      itemCount: allMedia.length,
-      itemBuilder: (context, index) {
-        final item = allMedia[index];
-        final thumbnailUrl = item.thumbUrl ?? item.url ?? '';
+    // 同 _buildThreadsTab:
+    // 1) GridView 必须独立可滚动,让 overscroll 能传给 NestedScrollView
+    //    触发下拉刷新。
+    // 2) 同样需要 Transform.translate(-80) 把 body 上移,消除 TabBar 下方
+    //    80pt 空白(NestedScrollView + SliverFillRemaining 的位置偏移,
+    //    见 _buildThreadsTab 的详细注释)。
+    return Transform.translate(
+      offset: const Offset(0, -80),
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 2,
+          mainAxisSpacing: 2,
+        ),
+        itemCount: allMedia.length,
+        itemBuilder: (context, index) {
+          final item = allMedia[index];
+          final thumbnailUrl = item.thumbUrl ?? item.url ?? '';
 
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MediaViewerPage(
-                  mediaItems: allMedia,
-                  initialIndex: index,
-                ),
-              ),
-            );
-          },
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              CachedNetworkImage(
-                fit: BoxFit.cover,
-                imageUrl: thumbnailUrl,
-                placeholder: (_, __) => Container(color: appColors.surface),
-                errorWidget: (_, __, ___) => Container(
-                  color: appColors.surface,
-                  child: Icon(Icons.broken_image, color: appColors.textSecondary),
-                ),
-              ),
-              // 视频播放图标叠加层
-              if (item.isVideo)
-                Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.all(6),
-                    child: const Icon(
-                      Icons.play_arrow,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MediaViewerPage(
+                    mediaItems: allMedia,
+                    initialIndex: index,
                   ),
                 ),
-            ],
-          ),
-        );
-      },
+              );
+            },
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  fit: BoxFit.cover,
+                  imageUrl: thumbnailUrl,
+                  placeholder: (_, __) => Container(color: appColors.surface),
+                  errorWidget: (_, __, ___) => Container(
+                    color: appColors.surface,
+                    child: Icon(Icons.broken_image,
+                        color: appColors.textSecondary),
+                  ),
+                ),
+                // 视频播放图标叠加层
+                if (item.isVideo)
+                  Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -584,18 +640,21 @@ class _ProfilePageState extends State<ProfilePage>
         child: pic.isEmpty
             ? Container(
                 color: appColors.surface,
-                child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
+                child: Icon(Icons.person,
+                    size: 36, color: appColors.textSecondary),
               )
             : CachedNetworkImage(
                 fit: BoxFit.cover,
                 imageUrl: pic,
                 placeholder: (_, __) => Container(
                   color: appColors.surface,
-                  child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
+                  child: Icon(Icons.person,
+                      size: 36, color: appColors.textSecondary),
                 ),
                 errorWidget: (_, __, ___) => Container(
                   color: appColors.surface,
-                  child: Icon(Icons.person, size: 36, color: appColors.textSecondary),
+                  child: Icon(Icons.person,
+                      size: 36, color: appColors.textSecondary),
                 ),
               ),
       ),
@@ -610,7 +669,9 @@ class _ProfilePageState extends State<ProfilePage>
           TextSpan(
             text: count,
             style: TextStyle(
-                color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                color: appColors.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14),
           ),
           TextSpan(
             text: label,
@@ -662,10 +723,17 @@ class _ProfilePageState extends State<ProfilePage>
     if (gender != null && gender != 1) {
       String genderText;
       switch (gender) {
-        case 2: genderText = l10n.male; break;
-        case 3: genderText = l10n.female; break;
-        case 4: genderText = l10n.otherGender; break;
-        default: genderText = '';
+        case 2:
+          genderText = l10n.male;
+          break;
+        case 3:
+          genderText = l10n.female;
+          break;
+        case 4:
+          genderText = l10n.otherGender;
+          break;
+        default:
+          genderText = '';
       }
       if (genderText.isNotEmpty) {
         items.add(_buildInfoItem(
@@ -776,7 +844,10 @@ class _ProfilePageState extends State<ProfilePage>
               onTap: () {
                 Navigator.pop(sheetContext);
                 _handleProfileRelationControl(
-                  context, targetUserId, 1, l10n.userMuted,
+                  context,
+                  targetUserId,
+                  1,
+                  l10n.userMuted,
                 );
               },
             ),
@@ -786,7 +857,10 @@ class _ProfilePageState extends State<ProfilePage>
               onTap: () {
                 Navigator.pop(sheetContext);
                 _handleProfileRelationControl(
-                  context, targetUserId, 2, l10n.userRestricted,
+                  context,
+                  targetUserId,
+                  2,
+                  l10n.userRestricted,
                 );
               },
             ),
@@ -800,23 +874,30 @@ class _ProfilePageState extends State<ProfilePage>
                   context: context,
                   builder: (ctx) => AlertDialog(
                     backgroundColor: appColors.surface,
-                    title: Text(l10n.blockConfirmTitle, style: TextStyle(color: appColors.textPrimary)),
-                    content: Text(l10n.blockConfirmDesc, style: TextStyle(color: appColors.textSecondary)),
+                    title: Text(l10n.blockConfirmTitle,
+                        style: TextStyle(color: appColors.textPrimary)),
+                    content: Text(l10n.blockConfirmDesc,
+                        style: TextStyle(color: appColors.textSecondary)),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
-                        child: Text(l10n.cancel, style: TextStyle(color: appColors.textSecondary)),
+                        child: Text(l10n.cancel,
+                            style: TextStyle(color: appColors.textSecondary)),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, true),
-                        child: Text(l10n.block, style: TextStyle(color: appColors.destructive)),
+                        child: Text(l10n.block,
+                            style: TextStyle(color: appColors.destructive)),
                       ),
                     ],
                   ),
                 );
                 if (confirmed == true) {
                   await _handleProfileRelationControl(
-                    context, targetUserId, 3, l10n.userBlocked,
+                    context,
+                    targetUserId,
+                    3,
+                    l10n.userBlocked,
                   );
                 }
               },
@@ -827,14 +908,17 @@ class _ProfilePageState extends State<ProfilePage>
               textColor: appColors.destructive,
               onTap: () {
                 Navigator.pop(sheetContext);
-                final postState = Provider.of<PostState>(context, listen: false);
+                final postState =
+                    Provider.of<PostState>(context, listen: false);
                 postState.reportContent(
                   targetType: 3, // User
                   targetId: targetUserId,
                   reportType: 9, // Other
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.reportSuccess), duration: Duration(seconds: 2)),
+                  SnackBar(
+                      content: Text(l10n.reportSuccess),
+                      duration: Duration(seconds: 2)),
                 );
               },
             ),
@@ -845,7 +929,10 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _handleProfileRelationControl(
-    BuildContext context, int targetUserId, int controlType, String successMsg,
+    BuildContext context,
+    int targetUserId,
+    int controlType,
+    String successMsg,
   ) async {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
@@ -883,10 +970,12 @@ class _ProfilePageState extends State<ProfilePage>
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-        child: Text(label, style: TextStyle(
-          color: textColor ?? appColors.textPrimary,
-          fontSize: 16, fontWeight: FontWeight.w400,
-        )),
+        child: Text(label,
+            style: TextStyle(
+              color: textColor ?? appColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            )),
       ),
     );
   }
@@ -908,7 +997,8 @@ class _ProfilePageState extends State<ProfilePage>
         child: Container(
             height: 40,
             decoration: BoxDecoration(
-              color: isHighlighted ? appColors.textPrimary : appColors.background,
+              color:
+                  isHighlighted ? appColors.textPrimary : appColors.background,
               borderRadius: BorderRadius.circular(8),
               border: isHighlighted
                   ? null
@@ -923,15 +1013,60 @@ class _ProfilePageState extends State<ProfilePage>
                     width: 18,
                     height: 18,
                     child: CupertinoActivityIndicator(
-                      color: isHighlighted ? appColors.background : appColors.textPrimary,
+                      color: isHighlighted
+                          ? appColors.background
+                          : appColors.textPrimary,
                     ),
                   )
                 : Text(
-              label,
-              style: TextStyle(
-                color: isHighlighted ? appColors.background : appColors.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
-            )));
+                    label,
+                    style: TextStyle(
+                      color: isHighlighted
+                          ? appColors.background
+                          : appColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )));
+  }
+}
+
+/// SliverPersistentHeader 的通用 delegate:
+/// 把任意固定高度的 child(本场景是 TabBar)交给 Sliver 系统托管,
+/// 让 NestedScrollView 自动处理「头部收起 → TabBar 钉住 → TabBarView 接管」三段式过渡。
+///
+/// 关键点:
+/// - minExtent / maxExtent 必须返回相同值(46.0),否则 header 会随滚动伸缩,
+///   TabBar 上的 indicator 会跳动。
+/// - shouldRebuild 必须严格比较新旧 child 状态,本场景里 child 来自同一个 TabBar
+///   + _tabController,只要外部 ProfileState 重建 ProfilePage,就会创建新 delegate
+///   实例,默认 shouldRebuild 返回 true 也无副作用。
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate({
+    required this.minHeight,
+    required this.maxHeight,
+    required this.child,
+  });
+
+  final double minHeight;
+  final double maxHeight;
+  final Widget child;
+
+  @override
+  double get minExtent => minHeight;
+
+  @override
+  double get maxExtent => maxHeight;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return minHeight != oldDelegate.minHeight ||
+        maxHeight != oldDelegate.maxHeight ||
+        child != oldDelegate.child;
   }
 }

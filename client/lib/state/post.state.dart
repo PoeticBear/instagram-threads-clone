@@ -11,7 +11,6 @@ import '../model/post.module.dart';
 
 class PostState extends AppStates {
   bool isBusy = false;
-  Map<String, List<PostModel>?> postReplyMap = {};
   PostModel? _postToReplyModel;
   PostModel? get postToReplyModel => _postToReplyModel;
   set setPostToReply(PostModel model) {
@@ -26,6 +25,22 @@ class PostState extends AppStates {
   bool _isLoadingMore = false;
   bool _isLoadingUserPosts = false;
 
+  // ==================== 嵌套回复（Nested Replies）状态 ====================
+  // 缓存策略:
+  //   _topRepliesByPostId: postId -> 该帖子的一级回复列表(由 PostDetailPage 自己维护,
+  //                          本字段暂作可选缓存,本任务暂不迁移 detail 页的一级状态)。
+  //   _childRepliesByParent: parentReplyId -> 该回复的子回复列表(主缓存,跨 widget 共享)。
+  //   _childPageByParent: parentReplyId -> 子回复当前分页(从 1 开始)。
+  //   _childHasMoreByParent: parentReplyId -> 是否还有更多子回复。
+  //   _childLoadingByParent: parentReplyId -> 是否正在加载(防止并发请求)。
+  //   _expandedParentIds: 已展开的父回复 ID 集合(持久化展开态,避免重复网络请求)。
+  final Map<String, List<Reply>> _topRepliesByPostId = {};
+  final Map<String, List<Reply>> _childRepliesByParent = {};
+  final Map<String, int> _childPageByParent = {};
+  final Map<String, bool> _childHasMoreByParent = {};
+  final Map<String, bool> _childLoadingByParent = {};
+  final Set<String> _expandedParentIds = {};
+
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
   bool get isLoadingUserPosts => _isLoadingUserPosts;
@@ -33,6 +48,24 @@ class PostState extends AppStates {
   List<PostModel>? get userPosts => _userPosts;
 
   List<PostModel>? get postDetailModel => _postDetailModelList;
+
+  // ==================== 嵌套回复 Getters ====================
+
+  /// 获取某父回复的子回复列表(只读快照,避免外部修改内部状态)。
+  List<Reply> childRepliesFor(String parentReplyId) =>
+      List.unmodifiable(_childRepliesByParent[parentReplyId] ?? const []);
+
+  /// 该父回复是否已展开(用于"收起/展开"按钮文案切换)。
+  bool isParentExpanded(String parentReplyId) =>
+      _expandedParentIds.contains(parentReplyId);
+
+  /// 该父回复是否正在加载子回复(用于 spinner 显示)。
+  bool isChildLoading(String parentReplyId) =>
+      _childLoadingByParent[parentReplyId] ?? false;
+
+  /// 该父回复是否还有更多子回复(用于"加载更多"按钮显隐)。
+  bool childHasMore(String parentReplyId) =>
+      _childHasMoreByParent[parentReplyId] ?? true;
 
   List<PostModel>? get feedlist {
     if (_feedlist == null) {
@@ -325,36 +358,65 @@ class PostState extends AppStates {
     notifyListeners();
   }
 
-  Future<void> voteOnPoll(String postId, int optionId) async {
+  Future<bool> voteOnPoll(String postId, int optionId) async {
+    // 提前解析 postId，非数字直接放弃（不抛、不发起网络请求）
+    final pid = int.tryParse(postId);
+    if (pid == null) {
+      developer.log('>>> voteOnPoll: invalid postId=$postId', name: 'PostState');
+      return false;
+    }
+
     final postIndex = _feedlist?.indexWhere((p) => p.postId == postId || p.key == postId) ?? -1;
-    if (postIndex == -1) return;
+    if (postIndex == -1) return false;
 
     final post = _feedlist![postIndex];
     final oldPollData = post.pollData;
+    if (oldPollData == null) return false;
 
-    // Optimistic update
-    final updatedOptions = oldPollData!.options.map((o) {
-      if (o.id == optionId) {
-        return PollOption(id: o.id, optionText: o.optionText, votesCount: o.votesCount + 1);
-      }
-      return o;
-    }).toList();
-
-    _feedlist![postIndex] = post.copyWith(
-      pollData: oldPollData.copyWith(
+    // 1) 构造新的 PollData（局部辅助，避免重复写两次）
+    PollData buildUpdated({required int? votedOptionId, required int? deltaVotes}) {
+      final updatedOptions = oldPollData.options.map((o) {
+        if (o.id == optionId) {
+          return PollOption(id: o.id, optionText: o.optionText, votesCount: o.votesCount + (deltaVotes ?? 0));
+        }
+        return o;
+      }).toList();
+      return oldPollData.copyWith(
         options: updatedOptions,
-        totalVotes: oldPollData.totalVotes + 1,
-        userVotedOptionId: optionId,
-      ),
+        totalVotes: oldPollData.totalVotes + (deltaVotes ?? 0),
+        userVotedOptionId: votedOptionId,
+      );
+    }
+
+    // 2) 乐观更新 _feedlist
+    _feedlist![postIndex] = post.copyWith(
+      pollData: buildUpdated(votedOptionId: optionId, deltaVotes: 1),
     );
+
+    // 3) 乐观同步 _userPosts（仅 poll，不扩展到其他写操作）
+    final userPostIndex = _userPosts?.indexWhere(
+      (p) => p.postId == postId || p.key == postId,
+    ) ?? -1;
+    if (userPostIndex != -1) {
+      final userPost = _userPosts![userPostIndex];
+      _userPosts![userPostIndex] = userPost.copyWith(
+        pollData: buildUpdated(votedOptionId: optionId, deltaVotes: 1),
+      );
+    }
     notifyListeners();
 
+    // 4) 调 API；失败回滚
     try {
-      await postService.votePoll(int.parse(postId), optionId);
-    } catch (_) {
-      // Rollback on failure
+      await postService.votePoll(pid, optionId);
+      return true;
+    } catch (error) {
+      developer.log('>>> voteOnPoll FAILED: $error', name: 'PostState');
       _feedlist![postIndex] = post.copyWith(pollData: oldPollData);
+      if (userPostIndex != -1) {
+        _userPosts![userPostIndex] = _userPosts![userPostIndex].copyWith(pollData: oldPollData);
+      }
       notifyListeners();
+      return false;
     }
   }
 
@@ -672,6 +734,23 @@ class PostState extends AppStates {
     notifyListeners();
   }
 
+  /// Decrement repliesCount for a post (called after a reply is deleted).
+  /// 计数不会减到负数。
+  void decrementReplyCount(String postId) {
+    for (final list in [_feedlist, _userPosts]) {
+      if (list == null) continue;
+      final index = list.indexWhere((p) => p.id == postId || p.key == postId || p.postId == postId);
+      if (index != -1) {
+        final post = list[index];
+        final current = post.repliesCount ?? 0;
+        list[index] = post.copyWith(
+          repliesCount: current > 0 ? current - 1 : 0,
+        );
+      }
+    }
+    notifyListeners();
+  }
+
   void _updatePostInList(String postId, PostModel updated) {
     for (final list in [_feedlist, _userPosts]) {
       if (list == null) continue;
@@ -769,6 +848,187 @@ class PostState extends AppStates {
       developer.log('unpinReply failed: $error', name: 'PostState');
       rethrow;
     }
+    notifyListeners();
+  }
+
+  // ==================== 嵌套回复（Nested Replies）方法 ====================
+
+  /// 首次加载某父回复的子回复列表。
+  /// 若该父级已经展开过,会从缓存返回(避免重复请求);
+  /// 若父级未展开或被收起过,则强制重新拉取。
+  Future<void> loadChildReplies({
+    required String postId,
+    required String parentReplyId,
+    int pageSize = 20,
+    bool forceReload = false,
+  }) async {
+    // 防并发
+    if (_childLoadingByParent[parentReplyId] == true) return;
+    // 已展开且非强制刷新,直接展开即可
+    if (!forceReload && _expandedParentIds.contains(parentReplyId)) {
+      return;
+    }
+
+    _childLoadingByParent[parentReplyId] = true;
+    notifyListeners();
+
+    try {
+      final parentIdInt = int.tryParse(parentReplyId);
+      if (parentIdInt == null) {
+        developer.log('loadChildReplies: invalid parentReplyId=$parentReplyId', name: 'PostState');
+        return;
+      }
+      final list = await postService.getReplies(
+        postId,
+        page: 1,
+        pageSize: pageSize,
+        parentId: parentIdInt,
+      );
+      _childRepliesByParent[parentReplyId] = List<Reply>.from(list);
+      _childPageByParent[parentReplyId] = 1;
+      _childHasMoreByParent[parentReplyId] = list.length >= pageSize;
+      _expandedParentIds.add(parentReplyId);
+    } catch (error) {
+      developer.log('loadChildReplies failed for parent=$parentReplyId: $error', name: 'PostState');
+      rethrow;
+    } finally {
+      _childLoadingByParent[parentReplyId] = false;
+      notifyListeners();
+    }
+  }
+
+  /// 加载某父回复的子回复的下一页(分页)。
+  Future<void> loadMoreChildReplies({
+    required String postId,
+    required String parentReplyId,
+    int pageSize = 20,
+  }) async {
+    if (_childLoadingByParent[parentReplyId] == true) return;
+    if (_childHasMoreByParent[parentReplyId] == false) return;
+    // 未展开时不允许加载更多
+    if (!_expandedParentIds.contains(parentReplyId)) return;
+
+    _childLoadingByParent[parentReplyId] = true;
+    notifyListeners();
+
+    try {
+      final next = (_childPageByParent[parentReplyId] ?? 1) + 1;
+      final parentIdInt = int.tryParse(parentReplyId);
+      if (parentIdInt == null) return;
+      final list = await postService.getReplies(
+        postId,
+        page: next,
+        pageSize: pageSize,
+        parentId: parentIdInt,
+      );
+      final existing = _childRepliesByParent[parentReplyId] ?? <Reply>[];
+      _childRepliesByParent[parentReplyId] = [...existing, ...list];
+      _childPageByParent[parentReplyId] = next;
+      _childHasMoreByParent[parentReplyId] = list.length >= pageSize;
+    } catch (error) {
+      developer.log('loadMoreChildReplies failed for parent=$parentReplyId: $error', name: 'PostState');
+    } finally {
+      _childLoadingByParent[parentReplyId] = false;
+      notifyListeners();
+    }
+  }
+
+  /// 收起某父回复(仅关闭展开态,不清缓存,便于再次展开时快速恢复)。
+  void collapseChildReplies(String parentReplyId) {
+    if (!_expandedParentIds.remove(parentReplyId)) return;
+    notifyListeners();
+  }
+
+  /// 创建一条嵌套(子)回复。
+  /// 成功后将新回复乐观插入到对应父级的子回复列表,
+  /// 同时父级 repliesCount +1,帖子总回复数 +1。
+  /// 失败时返回 null,UI 层应捕获异常并提示用户。
+  Future<Reply?> createChildReply({
+    required String postId,
+    required Reply parentReply,
+    required String content,
+  }) async {
+    try {
+      final parentIdInt = int.tryParse(parentReply.id);
+      final newReply = await postService.createReply(
+        postId: postId,
+        content: content,
+        parentId: parentIdInt,
+      );
+      // 1. 插入子回复列表(若父级未展开,先建立列表并展开)
+      final children = _childRepliesByParent.putIfAbsent(
+        parentReply.id,
+        () => <Reply>[],
+      );
+      children.insert(0, newReply);
+      _expandedParentIds.add(parentReply.id);
+      _childPageByParent[parentReply.id] = 1;
+
+      // 2. 父级 repliesCount +1
+      _incrementParentRepliesCount(parentReply.id);
+
+      // 3. 帖子总回复数 +1
+      incrementReplyCount(postId);
+
+      notifyListeners();
+      return newReply;
+    } catch (error) {
+      developer.log('createChildReply failed: $error', name: 'PostState');
+      rethrow;
+    }
+  }
+
+  /// 在所有一级回复 map 中找到指定 parentReplyId 的父级并将其 repliesCount +1。
+  /// 父级既可能在 _topRepliesByPostId 的某个列表里,也可能不在(由 PostDetailPage 持有)。
+  /// 此处仅在 _topRepliesByPostId 命中时更新,detail 页持有的副本由其自身 setState 同步。
+  void _incrementParentRepliesCount(String parentReplyId) {
+    _topRepliesByPostId.forEach((_, replies) {
+      final idx = replies.indexWhere((r) => r.id == parentReplyId);
+      if (idx != -1) {
+        final old = replies[idx];
+        replies[idx] = old.copyWith(repliesCount: old.repliesCount + 1);
+      }
+    });
+  }
+
+  /// 局部更新 Reply(用于 like/pin 等只改 Reply 自身字段的操作)。
+  /// 同时在 _topRepliesByPostId 和 _childRepliesByParent 两个 map 中按 id 替换。
+  /// 不修改 _topRepliesByPostId 中未命中的列表(即 detail 页持有的副本由其自身同步)。
+  void updateReplyInLists(Reply updated) {
+    _replaceIn(_topRepliesByPostId, updated);
+    _replaceIn(_childRepliesByParent, updated);
+    notifyListeners();
+  }
+
+  void _replaceIn(Map<String, List<Reply>> map, Reply updated) {
+    map.forEach((_, list) {
+      final idx = list.indexWhere((r) => r.id == updated.id);
+      if (idx != -1) list[idx] = updated;
+    });
+  }
+
+  /// 清理某 reply 在所有嵌套回复缓存中的痕迹(删除时调用)。
+  /// - 移除该 reply 的子回复缓存(包括分页 / 加载态 / 展开态)
+  /// - 移除子回复列表中对该 reply 的引用(防止悬挂)
+  /// - 移除一级缓存列表中的引用(若命中)
+  void removeReply(String replyId) {
+    // 1. 清理该 reply 自己的子回复缓存
+    _childRepliesByParent.remove(replyId);
+    _childPageByParent.remove(replyId);
+    _childHasMoreByParent.remove(replyId);
+    _childLoadingByParent.remove(replyId);
+    _expandedParentIds.remove(replyId);
+
+    // 2. 从子回复列表中移除(可能该 reply 自己是某父级的子)
+    _childRepliesByParent.forEach((_, list) {
+      list.removeWhere((r) => r.id == replyId);
+    });
+
+    // 3. 从一级回复列表中移除
+    _topRepliesByPostId.forEach((_, list) {
+      list.removeWhere((r) => r.id == replyId);
+    });
+
     notifyListeners();
   }
 }
