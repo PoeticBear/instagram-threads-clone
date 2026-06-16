@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'Threads';
+  String get appTitle => 'Tweet';
 
   @override
   String get search => '搜索';
@@ -66,6 +66,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String optionLabel(int number) {
     return '选项 $number';
   }
+
+  @override
+  String get pollEnded => '投票已结束';
+
+  @override
+  String pollRemainingHours(int hours) {
+    return '剩余 $hours 小时';
+  }
+
+  @override
+  String pollRemainingMinutes(int minutes) {
+    return '剩余 $minutes 分钟';
+  }
+
+  @override
+  String pollVotesCount(int count) {
+    return '$count 票';
+  }
+
+  @override
+  String get pollYouVoted => '你已投票';
+
+  @override
+  String get voteFailed => '投票失败，请重试';
 
   @override
   String get searchTop => '热门';
@@ -1484,4 +1508,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get showLess => '收起';
+
+  @override
+  String get appIcon => '应用图标';
+
+  @override
+  String get appIconChangeHint => '下次将应用切到后台时图标会自动更新。';
+
+  @override
+  String get appIconNotSupportedAndroid => '更换桌面图标仅在 iOS 上可用。';
 }

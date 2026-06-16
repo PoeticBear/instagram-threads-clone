@@ -1,6 +1,6 @@
 {
   "@@locale": "zh",
-  "appTitle": "Threads",
+  "appTitle": "Tweet",
   "search": "搜索",
   "cancel": "取消",
   "post": "发布",
@@ -24,6 +24,30 @@
       "number": {"type": "int"}
     }
   },
+  "pollEnded": "投票已结束",
+  "@pollEnded": {},
+  "pollRemainingHours": "剩余 {hours} 小时",
+  "@pollRemainingHours": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "pollRemainingMinutes": "剩余 {minutes} 分钟",
+  "@pollRemainingMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "pollVotesCount": "{count} 票",
+  "@pollVotesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "pollYouVoted": "你已投票",
+  "@pollYouVoted": {},
+  "voteFailed": "投票失败，请重试",
+  "@voteFailed": {},
   "searchTop": "热门",
   "searchUsers": "用户",
   "searchTopics": "话题",
@@ -628,5 +652,8 @@
   "saveEdits": "保存",
   "editedBadge": "已编辑",
   "showMore": "展开全文",
-  "showLess": "收起"
+  "showLess": "收起",
+  "appIcon": "应用图标",
+  "appIconChangeHint": "下次将应用切到后台时图标会自动更新。",
+  "appIconNotSupportedAndroid": "更换桌面图标仅在 iOS 上可用。"
 }

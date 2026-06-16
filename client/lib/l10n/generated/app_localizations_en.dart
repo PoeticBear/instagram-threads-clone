@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Threads';
+  String get appTitle => 'Tweet';
 
   @override
   String get search => 'Search';
@@ -66,6 +66,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String optionLabel(int number) {
     return 'Option $number';
   }
+
+  @override
+  String get pollEnded => 'Poll ended';
+
+  @override
+  String pollRemainingHours(int hours) {
+    return '${hours}h left';
+  }
+
+  @override
+  String pollRemainingMinutes(int minutes) {
+    return '${minutes}m left';
+  }
+
+  @override
+  String pollVotesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes',
+      one: '1 vote',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pollYouVoted => 'You voted';
+
+  @override
+  String get voteFailed => 'Vote failed, please try again';
 
   @override
   String get searchTop => 'Top';
@@ -1500,4 +1530,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showLess => 'Show less';
+
+  @override
+  String get appIcon => 'App Icon';
+
+  @override
+  String get appIconChangeHint =>
+      'The icon will change the next time you leave the app.';
+
+  @override
+  String get appIconNotSupportedAndroid =>
+      'Changing the app icon is only supported on iOS.';
 }

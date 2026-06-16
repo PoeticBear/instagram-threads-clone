@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Threads'**
+  /// **'Tweet'**
   String get appTitle;
 
   /// No description provided for @search.
@@ -211,6 +211,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Option {number}'**
   String optionLabel(int number);
+
+  /// No description provided for @pollEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Poll ended'**
+  String get pollEnded;
+
+  /// No description provided for @pollRemainingHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h left'**
+  String pollRemainingHours(int hours);
+
+  /// No description provided for @pollRemainingMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m left'**
+  String pollRemainingMinutes(int minutes);
+
+  /// No description provided for @pollVotesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 vote} other{{count} votes}}'**
+  String pollVotesCount(int count);
+
+  /// No description provided for @pollYouVoted.
+  ///
+  /// In en, this message translates to:
+  /// **'You voted'**
+  String get pollYouVoted;
+
+  /// No description provided for @voteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote failed, please try again'**
+  String get voteFailed;
 
   /// No description provided for @searchTop.
   ///
@@ -2935,6 +2971,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show less'**
   String get showLess;
+
+  /// No description provided for @appIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'App Icon'**
+  String get appIcon;
+
+  /// No description provided for @appIconChangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The icon will change the next time you leave the app.'**
+  String get appIconChangeHint;
+
+  /// No description provided for @appIconNotSupportedAndroid.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the app icon is only supported on iOS.'**
+  String get appIconNotSupportedAndroid;
 }
 
 class _AppLocalizationsDelegate

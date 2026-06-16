@@ -24,6 +24,7 @@ import 'package:threads/state/follow_request.state.dart';
 import 'package:threads/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:threads/state/media_preferences.state.dart';
+import 'package:threads/state/app_icon_state.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -93,6 +94,11 @@ class _MyAppState extends State<MyApp> {
           create: (_) => MediaPreferences(widget.sharedPreferences),
           lazy: false, // 关键：启动即构造，跑 _load() 把开关写入 VideoPlayerPool
         ),
+        // ===== app icon (iOS 25 pre-bundled, Android no-op) =====
+        ChangeNotifierProvider<AppIconState>(
+          create: (_) => AppIconState(widget.sharedPreferences)..load(),
+          lazy: false,
+        ),
         // ======================================
         ChangeNotifierProvider<DraftState>(create: (_) => DraftState()),
         ChangeNotifierProvider<MessageState>(create: (_) => MessageState()),
@@ -114,7 +120,7 @@ class _MyAppState extends State<MyApp> {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-            title: 'Threads',
+            title: 'Tweet',
             debugShowCheckedModeBanner: false,
             home: SplashPage(),
           );

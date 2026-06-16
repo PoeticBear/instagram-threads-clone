@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Threads",
+  "appTitle": "Tweet",
   "search": "Search",
   "cancel": "Cancel",
   "post": "Post",
@@ -24,6 +24,30 @@
       "number": {"type": "int"}
     }
   },
+  "pollEnded": "Poll ended",
+  "@pollEnded": {},
+  "pollRemainingHours": "{hours}h left",
+  "@pollRemainingHours": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "pollRemainingMinutes": "{minutes}m left",
+  "@pollRemainingMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "pollVotesCount": "{count, plural, =1{1 vote} other{{count} votes}}",
+  "@pollVotesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "pollYouVoted": "You voted",
+  "@pollYouVoted": {},
+  "voteFailed": "Vote failed, please try again",
+  "@voteFailed": {},
   "searchTop": "Top",
   "searchUsers": "Users",
   "searchTopics": "Topics",
@@ -628,5 +652,8 @@
   "saveEdits": "Save",
   "editedBadge": "Edited",
   "showMore": "Show more",
-  "showLess": "Show less"
+  "showLess": "Show less",
+  "appIcon": "App Icon",
+  "appIconChangeHint": "The icon will change the next time you leave the app.",
+  "appIconNotSupportedAndroid": "Changing the app icon is only supported on iOS."
 }

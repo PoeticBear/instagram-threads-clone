@@ -17,6 +17,7 @@ import 'package:threads/pages/community/community_list_page.dart';
 import 'package:threads/pages/post/saved_posts_page.dart';
 import 'package:threads/pages/post/scheduled_posts_page.dart';
 import 'package:threads/pages/settings/follow_requests_page.dart';
+import 'package:threads/pages/settings/app_icon_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -290,6 +291,21 @@ class _SettingsPageState extends State<SettingsPage> {
               showArrow: true,
               onTap: () {
                 // Placeholder
+              },
+            ),
+
+            // App Icon (iOS 25 pre-bundled alternates)
+            _buildMenuRow(
+              icon: CupertinoIcons.app_badge,
+              title: l10n.appIcon,
+              showArrow: true,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (_) => const AppIconPage(),
+                  ),
+                );
               },
             ),
 
