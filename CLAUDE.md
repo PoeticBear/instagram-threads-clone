@@ -11,6 +11,19 @@ Instagram Threads Clone — Flutter 客户端，使用 Provider 状态管理。
 - Iconsax + CupertinoIcons（图标）
 - 服务端 API 文档位于 `openapi_docs/`
 
+## 平台策略：仅维护 iOS
+
+**本项目只维护 iOS 端，Android 不再是目标平台。**
+
+从现在起，所有改动（功能开发、Bug 修复、重构、依赖升级、UI 调整、文档）**都忽略 Android**：
+
+- 平台判断时**不**为 Android 写兼容代码、**不**保留 Android 入口、**不**写 Android 降级 UI。
+- 新功能直接以 iOS 为目标实现。
+- Android 原生层（`MainActivity.kt`、`AndroidManifest.xml`、`android/app/src/main/`）和 Android 资源**不要修改**。
+- Flutter 端如需为 Android 写 `try/catch MissingPluginException` 之类的降级路径——**不需要**，直接假设 iOS 一定已实现。
+- 已存在的 Android 代码可以原样保留，但不作为新功能的目标平台。
+- 计划、文档、汇报、测试范围：除非显式要求，否则**不**讨论 Android 适配。
+
 ## 项目结构
 
 ```
@@ -25,7 +38,21 @@ client/
     l10n/           # 国际化
     network/        # API Client
   ios/              # iOS 原生配置
+docs/
+  code-locations/   # 各核心页面 / 模块的代码定位清单
 ```
+
+### 代码定位规范
+
+当用户提出「定位某页面 / 某模块代码」类任务时：
+
+1. **优先检索** `docs/code-locations/` 目录下是否已有对应清单（命名规则 `<feature>.md`，例如 `publish-post.md`）。
+2. 若已存在对应文档，**直接返回文档内容**，并附上文件路径与最后更新时间，无需重新跑 `Glob` / `Grep`。
+3. 若不存在，**再执行代码定位**（`Glob` / `Grep` / `Read`），并按现有文档的章节结构补一份新的清单写入 `docs/code-locations/<feature>.md`，再向用户回报路径。
+
+> 现有清单：
+> - [`docs/code-locations/publish-post.md`](docs/code-locations/publish-post.md) — 发布帖子（ComposePost / ComposeCameraPage）相关代码位置。
+> - [`docs/code-locations/select-media.md`](docs/code-locations/select-media.md) — 选择媒体（相册 / 相机 / 上传 / 预览）相关代码位置 + 简要设计分析。
 
 ## 架构约定
 
@@ -143,6 +170,16 @@ client/
 ### 撤销策略
 
 若用户在 push 之后要求撤销，使用 `git revert <commit>` 生成反向 commit，**不要**用 `git reset --hard` 改写远程历史。
+
+## API 环境切换
+
+通过编译期 `--dart-define=APP_ENV=...` 控制 `client/lib/network/api_config.dart` 中的 `baseUrl`：
+
+- **默认（Release / TestFlight）**：`baseUrl` = `https://api.tweetcaht.com/`
+- **开发调试**：`flutter run --dart-define=APP_ENV=dev`（指向 `http://192.168.1.27:8005/`）
+- **打 dev 包**：`flutter build ipa --dart-define=APP_ENV=dev`
+
+> 任何非 `dev` 的值（含 `prod`、`staging`、空串）一律走 prod。任何 release / TestFlight 构建都不要带 `--dart-define=APP_ENV=dev`。
 
 ## TestFlight 发布流程
 

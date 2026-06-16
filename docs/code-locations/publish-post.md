@@ -1,0 +1,203 @@
+# 发布帖子（Compose Post）— 代码定位
+
+> 本文档汇总 iOS 客户端「发布帖子」页面涉及的所有源代码位置，包括 UI 层、状态层、服务层、模型、工具方法以及入口集成点。
+> 后续若收到「定位发布帖子页面」类需求，先查阅本文档；未覆盖到的细节再执行 `Glob` / `Grep` 检索。
+
+---
+
+## 1. 核心页面（UI 层）
+
+### 1.1 主发布页 `ComposePost`
+
+- **路径**：`client/lib/pages/composePost/post.dart`
+- **行数**：1667
+- **核心组件**：
+  - `class ComposePost`（`post.dart:23`）— StatefulWidget
+  - `class ComposePostState extends State<ComposePost>`（`post.dart:48`）— 主状态类
+- **支持的模式**：
+  - 新建帖子（默认）
+  - 编辑帖子（`editingPostId != null` 时进入）
+- **关键能力模块**：
+  | 模块 | 方法 / 字段 | 行号 |
+  | --- | --- | --- |
+  | 状态字段 | `_textEditingController` / `_mediaDrafts` / `_showPollEditor` / `_pollControllers` / `_replyType` / `_isSubmitting` / `_location` / `_scheduledTime` / `_isSensitive` / `_contentWarningController` | `post.dart:49-66` |
+  | 常量限制 | `_maxMediaCount` / `_maxPollOptions` / `_minPollOptions` / `_maxContentLength` / `_maxVideoDurationMs` / `_maxVideoSizeBytes` / `_maxGifSizeBytes` | `post.dart:67-76` |
+  | 内容可发判断 | `_hasContent` / `_canPost` / `_canAddMoreMedia` | `post.dart:107-120` |
+  | 返回 / 草稿对话框 | `_handleBack` / `handleTabSwitch` / `_showSaveDraftDialog` / `_clearContent` / `_doBack` | `post.dart:122-234` |
+  | 媒体增删 | `_addMedia` / `_removeMedia` / `_replaceMedia` | `post.dart:239-264` |
+  | 投票编辑器 | `_togglePollEditor` / `_addPollOption` / `_removePollOption` / `_getValidPollOptions` | `post.dart:266-301` |
+  | 相册选择 | `_pickImage` / `_pickGif` / `_pickVideo` / `_enrichVideoDuration` | `post.dart:305-403` |
+  | 媒体选择底部弹层 | `_showMediaPickerSheet` / `_sheetItem` | `post.dart:406-467` |
+  | Toast 提示 | `_showSnack` | `post.dart:469-478` |
+  | 相机入口 | `_openCamera`（push `ComposeCameraPage`） | `post.dart:482-505` |
+  | 草稿加载 / 保存 | `_showDraftListSheet` / `_onDraftSelected` / `_buildDraftsFromMediaList` / `_resolveDraftMedia` / `_saveCurrentDraft` | `post.dart:510-684` |
+  | 提交发布 | `_createPostModel` / `_submit`（区分新建 / 编辑） | `post.dart:688-798` |
+  | 位置选择 | `_showLocationDialog` | `post.dart:802-851` |
+  | 定时发布 | `_showSchedulePicker` | `post.dart:855-930` |
+  | 回复权限 | `_showReplyTypeSheet` / `_replyTypeOption` / `_replyTypeIcon` | `post.dart:934-998` |
+  | Build | `build`（AppBar + 媒体预览 + 投票编辑器 + 位置 / 定时 chip） | `post.dart:1003-1255` |
+  | 子组件构建 | `_buildAvatar` / `_buildMediaPreview` / `_buildMediaThumb` / `_buildAddMediaTile` / `_buildPollEditor` / `_buildBottomToolbar` / `_toolbarIcon` | `post.dart:1259-1666` |
+
+### 1.2 相机页 `ComposeCameraPage`
+
+- **路径**：`client/lib/pages/composePost/compose_camera_page.dart`
+- **行数**：669
+- **核心组件**：
+  - `class ComposeCameraPage`（`compose_camera_page.dart:15`）— 拍照 + 录视频
+  - `enum CameraMode { photo, video }`（`compose_camera_page.dart:25`）
+  - `class _ComposeCameraPageState`（`compose_camera_page.dart:27`）
+- **关键能力模块**：
+  | 模块 | 方法 / 字段 | 行号 |
+  | --- | --- | --- |
+  | 状态字段 | `_controller` / `_cameraIndex` / `_isSwitchingCamera` / `_isTakingPicture` / `_flashMode` / `_currentZoom` / `_minZoom` / `_maxZoom` / `_hasError` / `_mode` / `_isRecording` / `_recordingStartAt` / `_isSwitchingMode` | `compose_camera_page.dart:29-46` |
+  | 视频时长限制 | `_maxVideoDurationSec` = 60s / `_recordingTickInterval` = 200ms | `compose_camera_page.dart:49-51` |
+  | 生命周期 | `initState` / `dispose` / `didChangeAppLifecycleState` | `compose_camera_page.dart:53-79` |
+  | 相机初始化 | `_initCamera` / `_startCamera` | `compose_camera_page.dart:83-129` |
+  | 模式切换 | `_switchMode` | `compose_camera_page.dart:133-152` |
+  | 拍照 | `_takePicture` | `compose_camera_page.dart:156-172` |
+  | 视频录制 | `_toggleRecording` / `_startRecording` / `_stopRecording` / `_scheduleAutoStop` | `compose_camera_page.dart:176-263` |
+  | 公共操作 | `_switchCamera` / `_toggleFlash` / `_handleZoom` | `compose_camera_page.dart:267-304` |
+  | Build | `build` + `_buildPreview` / `_buildHeader` / `_buildModePill` / `_buildRecordingIndicator` / `_buildModeChip` / `_buildBottomControls` / `_buildFlipButton` / `_buildShutter` / `_buildError` | `compose_camera_page.dart:308-668` |
+
+---
+
+## 2. 入口集成点（页面路由）
+
+### 2.1 底部导航栏第 3 个 Tab（首页常驻）
+
+- **路径**：`client/lib/pages/home.dart`
+- **关键行**：
+  - 持有 `_composePostKey = GlobalKey<ComposePostState>()`（`home.dart:25`）
+  - `_pages[2] = ComposePost(...)`（`home.dart:35-39`）
+  - `_switchTab` 拦截离开发帖 Tab 时调用 `_composePostKey.currentState?.handleTabSwitch(...)`（`home.dart:71-81`）
+  - 底部 Tab Bar：`_tabBarItem(tabIndex: 2, icon: Iconsax.edit, ...)`（`home.dart:127`）
+
+### 2.2 Feed 页「发帖」悬浮按钮
+
+- **路径**：`client/lib/pages/feed/feed.dart`
+- **关键行**：`Navigator.push(... builder: (_) => ComposePost(...))`（`feed.dart:215-227`）
+
+### 2.3 FeedPostWidget「编辑」入口
+
+- **路径**：`client/lib/widget/feedpost.dart`
+- **关键行**：`Navigator.push(... builder: (_) => ComposePost(editingPostId: ..., initialContent: ...))`（`feedpost.dart:1164-1175`）
+
+---
+
+## 3. 状态层（Provider）
+
+### 3.1 `PostState`（全局单例）
+
+- **路径**：`client/lib/state/post.state.dart`
+- **职责**：管理帖子列表缓存，并对外提供创建 / 编辑帖子的网络入口。
+- **关键方法**：
+  - `Future<String?> createPost(PostModel model, {List<MediaDraftItem>? mediaDrafts, ...})`（`post.state.dart:142-`）
+  - `Future<PostModel?> updatePost({required String postId, String? content, bool? isSensitive, String? contentWarning})`（`post.state.dart:640-660`）
+  - `void _updatePostInList(String postId, PostModel updated)`（`post.state.dart:725-`）— 编辑后本地列表同步
+
+### 3.2 `DraftState`（全局单例）
+
+- **路径**：`client/lib/state/draft.state.dart`
+- **职责**：草稿列表加载、详情拉取、保存草稿。
+- **关键方法**：
+  - `loadDrafts()`（列表）
+  - `loadDraftForEditing(draftId)`（拉取详情补全 mediaList / location）
+  - `saveDraft({content, mediaUrls, mediaTypes, pollOptions, replyType, location})`（上传媒体后保存）
+
+### 3.3 `ComposePostState`（独立的旧 State）
+
+- **路径**：`client/lib/state/compose.state.dart`
+- **职责**：@mention 自动补全（基于 `SearchState` 搜索用户名），与新版 `ComposePost` 页面解耦。
+- **关键字段**：`showUserList` / `enableSubmitButton` / `description` / `usernameRegex` / `displayUserList` / `getDescription(username)` / `onUserSelected` / `onDescriptionChanged(text, searchState)`
+
+---
+
+## 4. 服务层（API / 上传）
+
+### 4.1 `PostService`
+
+- **路径**：`client/lib/services/post_service.dart`
+- **职责**：与 `openapi_docs/` 中帖子相关接口对齐的网络层。
+- **关键方法**：
+  - `createPost({content, mediaUrls, mediaTypes, pollOptions, replyType, scheduledTime, isSensitive, contentWarning})` — 新建帖子
+  - `updatePost({postId, content, isSensitive, contentWarning})` — 编辑帖子
+
+### 4.2 `UploadService`
+
+- **路径**：`client/lib/services/upload_service.dart`
+- **关键方法**：
+  - `uploadMedia(File file, {required int mediaType, int? durationMs})` — 上传图片 / 视频 / GIF，返回远端 URL
+- **调用方**：`ComposePostState._resolveDraftMedia()`（`post.dart:602-633`）
+
+### 4.3 视频处理工具
+
+- **路径**：`client/lib/utils/video_processor.dart`
+- **关键方法**：
+  - `getMediaInfo(path)` — 读取时长、宽高（用于相册选择视频的 60s 校验）
+  - `getThumbnail(path)` — 生成首帧缩略图（`compose_camera_page.dart:223` 录制完成后调用）
+
+---
+
+## 5. 数据模型
+
+| 模型 | 路径 | 关键字段 |
+| --- | --- | --- |
+| `PostModel` | `client/lib/model/post.module.dart` | `user` / `bio` / `createdAt` / `key` / `mediaUrls` / `mediaTypes` / `pollOptions` / `replyType` / `location` / `scheduledTime` / `isSensitive` / `contentWarning` / `isEdited` |
+| `MediaDraftItem` | `client/lib/model/media_draft_item.dart` | `localFile` / `remoteUrl` / `thumbPath` / `remoteThumbUrl` / `type` / `durationMs` / `fileSizeBytes` / `isVideo` / `isImage` / `isGif` / `needsUpload` / `durationLabel` |
+| `DraftMediaType` | `client/lib/model/media_draft_item.dart` | `enum { image, video, gif }` + `mediaTypeInt` ↔ `fromMediaTypeInt` |
+| `DraftInfo` / `DraftDetail` | `client/lib/model/draft.module.dart` | `id` / `content` / `pollOptions` / `replyType` / `mediaUrls` / `mediaTypes` / `location` |
+| `CameraCaptureResult` | `client/lib/model/camera_capture_result.dart` | `path` / `durationMs` / `thumbnail` / `isVideo` + 工厂 `photo(path)` / `video({path, durationMs, thumbnail})` |
+| `UserModel` | `client/lib/model/user.module.dart` | `userId` / `userName` / `displayName` / `profilePic` / `email` |
+
+---
+
+## 6. 国际化文案
+
+- **主语言文件**：`client/lib/l10n/app_en.arb`、`client/lib/l10n/app_zh.arb`
+- **生成代码**：`client/lib/l10n/generated/app_localizations*.dart`
+- **常用 key**（以发布页为例）：
+  - `newPost` / `editPost` / `back` / `saySomething`
+  - `saveDraft` / `saveDraftHint` / `save` / `discard` / `cancel` / `draft` / `draftSaved` / `draftSaveFailed` / `draftLoaded` / `nothingToSaveDraft`
+  - `addLocation` / `enterLocation` / `clearLocation`
+  - `schedulePost` / `clearSchedule` / `confirmButton` / `scheduleTimeTooEarly` / `schedulePublishSuccess`
+  - `whoCanReply` / `everyoneCanReply` / `followersCanReply` / `followingCanReply` / `mentionedCanReply`
+  - `post` / `saveEdits` / `postUpdated` / `publishSuccess` / `publishFailed`
+  - `markAsSensitive` / `contentWarningHint`
+  - `optionLabel(n)` / `addOption` / `removePoll`
+  - `cameraModePhoto` / `cameraModeVideo` / `cameraAccessRequired` / `cameraAccessHint` / `cameraGoBack` / `cameraStartRecordingFailed` / `cameraStopRecordingFailed(e)`
+
+---
+
+## 7. 主题 / 颜色
+
+- 颜色统一通过 `Theme.of(context).extension<AppColorsExtension>()!.colors` 读取。
+- 入口：`client/lib/theme/app_colors.dart`（`AppColorsExtension` + `AppColors`）。
+
+---
+
+## 8. 相关 / 间接依赖
+
+- 头像 / 网络图：`client/lib/widget/feedpost.dart` 中封装的 `CachedNetworkImage` 工具（亦在 `post.dart` 复用）。
+- 草稿列表弹层：`client/lib/widget/draft_list_sheet.dart`（`ComposePostState._showDraftListSheet` 调用）。
+- 国际化上下文：`AppLocalizations.of(context)!`（来自 `client/lib/l10n/generated/app_localizations.dart`）。
+- 系统反馈：`ScaffoldMessenger.of(context).showSnackBar(...)`（成功 / 失败提示）。
+- 触觉反馈：`HapticFeedback.heavyImpact()`（提交）、`mediumImpact`（拍照 / 录制）、`lightImpact`（切换摄像头）、`selectionClick`（模式切换）。
+
+---
+
+## 9. 快速检索指引
+
+| 需求 | 检索关键词 | 关键文件 |
+| --- | --- | --- |
+| 修改发布页 UI | `ComposePost` / `_buildBottomToolbar` | `client/lib/pages/composePost/post.dart` |
+| 修改相机页 | `ComposeCameraPage` / `CameraMode` | `client/lib/pages/composePost/compose_camera_page.dart` |
+| 修改新建 / 编辑帖子接口 | `createPost` / `updatePost` | `client/lib/services/post_service.dart` + `client/lib/state/post.state.dart` |
+| 修改草稿逻辑 | `DraftState` / `_saveCurrentDraft` | `client/lib/state/draft.state.dart` + `client/lib/pages/composePost/post.dart` |
+| 修改媒体上传 | `UploadService` / `_resolveDraftMedia` | `client/lib/services/upload_service.dart` + `post.dart:602-633` |
+| 修改视频时长 / 缩略图 | `VideoProcessor` / `_maxVideoDurationSec` | `client/lib/utils/video_processor.dart` + `compose_camera_page.dart` |
+| 修改发布页入口（FAB / Tab / 编辑） | `ComposePost(` | `client/lib/pages/home.dart:35` / `client/lib/pages/feed/feed.dart:217` / `client/lib/widget/feedpost.dart:1166` |
+| 添加 / 修改文案 | `l10n.xxx` | `client/lib/l10n/app_zh.arb` + `app_en.arb` |
+
+---
+
+_最后更新：2026-06-15 — 由 Claude 自动化梳理（基于代码静态分析）。_
