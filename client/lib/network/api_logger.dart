@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -34,8 +35,7 @@ class ApiLogger {
       _cleanOldLogs(logDir);
     } catch (e) {
       _initFailed = true;
-      // ignore: avoid_print
-      print('[ApiLogger] 初始化文件日志失败: $e');
+      developer.log('[ApiLogger] 初始化文件日志失败: $e', name: 'ApiLogger');
     }
   }
 
@@ -171,10 +171,15 @@ class ApiLogger {
   /// [fileContent] 如果不为 null，则文件写入 fileContent（完整），
   /// 控制台输出 message（截断）；否则两者使用相同内容。
   static void _output(String message, {String? fileContent}) {
-    // 控制台
-    print(message);
+    // 控制台：在每条日志第一行加上 [API LOGS]: 前缀，便于在大量日志中识别
+    // 使用 developer.log 而不是 print，避免 Flutter 自动添加 "flutter: " 前缀
+    final firstLineEnd = message.indexOf('\n');
+    final consoleMessage = firstLineEnd >= 0
+        ? '[API LOGS]: ${message.substring(0, firstLineEnd)}${message.substring(firstLineEnd)}'
+        : '[API LOGS]: $message';
+    developer.log(consoleMessage, name: 'ApiLogger');
 
-    // 文件（完整内容）
+    // 文件（完整内容，不加前缀，便于后续解析/分享）
     _writeToFile(fileContent ?? message);
   }
 
