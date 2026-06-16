@@ -69,6 +69,20 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin {
+  // 与 home.dart bottomNavBar 的 Container height 一致（含 20pt home indicator 内边距）。
+  // 当 ProfilePage 作为底部 Tab 4 显示时，HomePage 用了 extendBody: true，
+  // 底部导航栏会浮在 body 之上，ListView/GridView 底部必须预留这个高度，
+  // 否则最后一项被导航栏遮挡。
+  static const double _kBottomNavBarHeight = 90.0;
+
+  /// ListView / GridView 底部应预留的高度。
+  /// - isOwnProfileTab=true（底部 Tab 入口）：被 90pt bottomNavigationBar 浮在上方，
+  ///   预留导航栏高度 + 16pt 视觉余量。
+  /// - isOwnProfileTab=false（push 进入的独立 route）：无导航栏覆盖，
+  ///   仅留 16pt 视觉余量（home indicator 由 Scaffold 默认 SafeArea 处理）。
+  double get _listBottomPadding =>
+      (widget.isOwnProfileTab ? _kBottomNavBarHeight : 0) + 16;
+
   late TabController _tabController;
   List<PostModel> _userPosts = [];
   bool _isLoadingPosts = false;
@@ -165,317 +179,269 @@ class _ProfilePageState extends State<ProfilePage>
   Widget build(BuildContext context) {
     var state = Provider.of<ProfileState>(context);
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    return state.isbusy
-        ? Scaffold(
-            backgroundColor: appColors.background,
-            body: Center(child: CupertinoActivityIndicator()),
-          )
-        : Scaffold(
-            extendBodyBehindAppBar: true,
-            backgroundColor: appColors.background,
-            appBar: AppBar(
-              actions: [
-                if (state.isMyProfile)
-                  GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SettingsPage()));
-                      },
-                      child: Container(
-                          width: 50,
-                          height: 50,
-                          child: Icon(CupertinoIcons.list_bullet_indent,
-                              color: appColors.textPrimary)))
-                else
-                  GestureDetector(
-                      onTap: () => _showProfileMenu(context, state),
-                      child: Container(
-                          width: 50,
-                          height: 50,
-                          child: Icon(CupertinoIcons.ellipsis,
-                              color: appColors.textPrimary)))
-              ],
-              leading: widget.isOwnProfileTab
-                  ? SizedBox.shrink()
-                  : GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Icon(CupertinoIcons.back,
-                          color: appColors.textPrimary)),
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-            ),
-            body: NestedScrollView(
-              // Flutter 原生 Sliver 系统:头部信息用 SliverToBoxAdapter 装,
-              // TabBar 用 SliverPersistentHeader(pinned:true)固定,body 直接用 TabBarView。
-              // NestedScrollView 自动协调头部滚动 + TabBarView 内部 PageView 滚动,
-              // 不需要 Column+Expanded 给 TabBarView 有界高度,也就不会触发 70-100pt 空白。
-              headerSliverBuilder: (context, innerBoxIsScrolled) {
-                return [
-                  // 1. 顶部留白(状态栏 + AppBar 工具栏)
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height:
-                          MediaQuery.of(context).padding.top + kToolbarHeight,
-                    ),
-                  ),
-                  // 2. 头部信息(头像/简介/统计/操作按钮)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Name + Avatar row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            _resolveDisplayName(
-                                                state, widget.username),
-                                            style: TextStyle(
-                                                color: appColors.textPrimary,
-                                                fontSize: 28,
-                                                fontWeight: FontWeight.w600),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        if (state
-                                                .profileUserModel?.isVerified ==
-                                            true) ...[
-                                          SizedBox(width: 4),
-                                          Icon(
-                                              CupertinoIcons
-                                                  .checkmark_seal_fill,
-                                              size: 18,
-                                              color:
-                                                  CupertinoColors.activeBlue),
-                                        ],
-                                      ],
-                                    ),
-                                    SizedBox(height: 8),
-                                    if ((state.profileUserModel?.userName ??
-                                            widget.username ??
-                                            '')
-                                        .isNotEmpty)
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '@${state.profileUserModel?.userName ?? widget.username}',
-                                            style: TextStyle(
-                                                color: appColors.textPrimary,
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w400),
-                                          ),
-                                          if (state.profileUserModel?.link !=
-                                                  null &&
-                                              state.profileUserModel!.link!
-                                                  .isNotEmpty) ...[
-                                            SizedBox(width: 5),
-                                            GestureDetector(
-                                              onTap: () => _openLink(state
-                                                  .profileUserModel!.link!),
-                                              behavior: HitTestBehavior.opaque,
-                                              child: MouseRegion(
-                                                cursor:
-                                                    SystemMouseCursors.click,
-                                                child: Container(
-                                                  height: 20,
-                                                  decoration: BoxDecoration(
-                                                      color: appColors.surface,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10)),
-                                                  padding: EdgeInsets.all(2),
-                                                  child: Text(
-                                                    state.profileUserModel!
-                                                        .link!,
-                                                    style: TextStyle(
-                                                      color: appColors.accent,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ]
-                                        ],
-                                      )
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Container(
-                                  width: 60,
-                                  height: 60,
-                                  child: _buildAvatar(state)),
-                            ],
-                          ),
-                          SizedBox(height: 12),
-                          // Bio
-                          if (state.profileUserModel?.bio != null &&
-                              state.profileUserModel!.bio!.isNotEmpty)
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                state.profileUserModel!.bio!,
-                                maxLines: 5,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    color: appColors.textPrimary,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w400),
-                              ),
-                            ),
-                          // 扩展信息行（代词 / 位置 / 性别）
-                          if (state.profileUserModel != null) ...[
-                            SizedBox(height: 12),
-                            _buildInfoRow(state),
-                          ],
-                          SizedBox(height: 16),
-                          // Follower / Following counts
-                          Row(
-                            children: [
-                              _buildStatItem(
-                                '${state.followStats.followingCount}',
-                                ' ${AppLocalizations.of(context)!.statFollowing}',
-                                onTap: () => _navigateToFollowList(1),
-                              ),
-                              SizedBox(width: 16),
-                              _buildStatItem(
-                                '${state.followStats.followersCount}',
-                                ' ${AppLocalizations.of(context)!.statFollowers}',
-                                onTap: () => _navigateToFollowList(0),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 16),
-                          // Action buttons
-                          Row(
-                            children: [
-                              if (state.isMyProfile) ...[
-                                Expanded(
-                                  child: _buildActionButton(
-                                    label: AppLocalizations.of(context)!
-                                        .editProfile,
-                                    onTap: () async {
-                                      await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  EditProfilePage()));
-                                      if (mounted) {
-                                        await _refreshAll();
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _buildActionButton(
-                                    label: AppLocalizations.of(context)!
-                                        .shareProfile,
-                                    onTap: () => _shareProfile(state),
-                                  ),
-                                ),
-                              ] else ...[
-                                Expanded(
-                                  child: _buildActionButton(
-                                    label: state.isFollowLoading
-                                        ? ''
-                                        : (state.isFollowing
-                                            ? AppLocalizations.of(context)!
-                                                .following
-                                            : AppLocalizations.of(context)!
-                                                .follow),
-                                    isHighlighted: !state.isFollowing,
-                                    isLoading: state.isFollowLoading,
-                                    onTap: () {
-                                      state.followUser(
-                                          removeFollower: state.isFollowing);
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _buildActionButton(
-                                    label: AppLocalizations.of(context)!
-                                        .shareProfile,
-                                    onTap: () => _shareProfile(state),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          // SizedBox(height: 20) 已删除 — TabBar 不再嵌在头部 Column 里,改由 SliverPersistentHeader 提供固定 TabBar。
-                        ],
-                      ),
-                    ),
-                  ),
-                  // 3. TabBar(通过 SliverPersistentHeader 固定)
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _SliverAppBarDelegate(
-                      minHeight: 46.0,
-                      maxHeight: 46.0,
-                      child: Container(
-                        color: appColors.background,
-                        child: TabBar(
-                          controller: _tabController,
-                          onTap: (index) {
-                            if (index == 0) {
-                              _loadUserPosts();
-                            }
-                          },
-                          isScrollable: false,
-                          labelColor: appColors.textPrimary,
-                          unselectedLabelColor: appColors.textSecondary,
-                          indicatorColor: appColors.textPrimary,
-                          indicatorWeight: 1,
-                          tabs: [
-                            Tab(
-                              child: Text(
-                                AppLocalizations.of(context)!.tabThreads,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            Tab(
-                              child: Text(
-                                AppLocalizations.of(context)!.tabMedia,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ];
-              },
-              body: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildThreadsTab(),
-                  _buildMediaTab(),
-                ],
+    // 始终使用同一个 Scaffold：loading 时仅替换 body 内容，避免 AppBar 突然出现/消失的跳变。
+    return Scaffold(
+      backgroundColor: appColors.background,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: appColors.background,
+        leading: widget.isOwnProfileTab
+            ? const SizedBox.shrink()
+            : Padding(
+                padding: const EdgeInsets.all(8),
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: Icon(CupertinoIcons.back,
+                      color: appColors.textPrimary, size: 24),
+                ),
+              ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: GestureDetector(
+              onTap: state.isMyProfile
+                  ? () => Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => SettingsPage()))
+                  : () => _showProfileMenu(context, state),
+              behavior: HitTestBehavior.opaque,
+              child: Icon(
+                state.isMyProfile
+                    ? CupertinoIcons.list_bullet_indent
+                    : CupertinoIcons.ellipsis,
+                color: appColors.textPrimary,
+                size: 24,
               ),
             ),
-          );
+          ),
+        ],
+      ),
+      body: state.isbusy
+          ? const Center(child: CupertinoActivityIndicator())
+          : Column(
+              children: [
+                // 1. 头部信息：按内容高度自适应。Bio 受 maxLines:5 约束，
+                //    极端小屏下剩余空间不足时 SingleChildScrollView 兜底防止 overflow。
+                SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: _buildHeaderChildren(state, appColors),
+                  ),
+                ),
+                // 2. TabBar（底部带分割线）
+                Container(
+                  decoration: BoxDecoration(
+                    color: appColors.background,
+                    border: Border(
+                      bottom: BorderSide(
+                          color: appColors.divider, width: 0.5),
+                    ),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    onTap: (index) {
+                      if (index == 0) {
+                        _loadUserPosts();
+                      }
+                    },
+                    isScrollable: false,
+                    labelColor: appColors.textPrimary,
+                    unselectedLabelColor: appColors.textSecondary,
+                    indicatorColor: appColors.textPrimary,
+                    indicatorWeight: 1,
+                    tabs: [
+                      Tab(
+                        child: Text(
+                          AppLocalizations.of(context)!.tabThreads,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Tab(
+                        child: Text(
+                          AppLocalizations.of(context)!.tabMedia,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 3. TabBarView 占剩余高度
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildThreadsTab(),
+                      _buildMediaTab(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  /// 头部信息所有子组件（头像/简介/统计/操作按钮）。
+  /// 抽出来便于 build 内的 SingleChildScrollView 引用。
+  List<Widget> _buildHeaderChildren(ProfileState state, AppColors appColors) {
+    return [
+      // Name + Avatar row
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _resolveDisplayName(state, widget.username),
+                        style: TextStyle(
+                            color: appColors.textPrimary,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w600),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (state.profileUserModel?.isVerified == true) ...[
+                      SizedBox(width: 4),
+                      Icon(CupertinoIcons.checkmark_seal_fill,
+                          size: 18, color: CupertinoColors.activeBlue),
+                    ],
+                  ],
+                ),
+                SizedBox(height: 8),
+                if ((state.profileUserModel?.userName ??
+                        widget.username ??
+                        '')
+                    .isNotEmpty)
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '@${state.profileUserModel?.userName ?? widget.username}',
+                          style: TextStyle(
+                              color: appColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w400),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (state.profileUserModel?.link != null &&
+                          state.profileUserModel!.link!.isNotEmpty) ...[
+                        SizedBox(width: 5),
+                        GestureDetector(
+                          onTap: () =>
+                              _openLink(state.profileUserModel!.link!),
+                          behavior: HitTestBehavior.opaque,
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: Container(
+                              height: 20,
+                              decoration: BoxDecoration(
+                                  color: appColors.surface,
+                                  borderRadius: BorderRadius.circular(10)),
+                              padding: EdgeInsets.all(2),
+                              child: Text(
+                                state.profileUserModel!.link!,
+                                style: TextStyle(color: appColors.accent),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ]
+                    ],
+                  )
+              ],
+            ),
+          ),
+          SizedBox(width: 12),
+          Container(width: 60, height: 60, child: _buildAvatar(state)),
+        ],
+      ),
+      // 简介与扩展信息行（简介 / 位置 / 代词 / 性别）— 始终显示，未填写项以占位符呈现
+      if (state.profileUserModel != null) ...[
+        SizedBox(height: 12),
+        _buildInfoRow(state),
+      ],
+      SizedBox(height: 16),
+      // Follower / Following counts
+      Row(
+        children: [
+          _buildStatItem(
+            '${state.followStats.followingCount}',
+            ' ${AppLocalizations.of(context)!.statFollowing}',
+            onTap: () => _navigateToFollowList(1),
+          ),
+          SizedBox(width: 16),
+          _buildStatItem(
+            '${state.followStats.followersCount}',
+            ' ${AppLocalizations.of(context)!.statFollowers}',
+            onTap: () => _navigateToFollowList(0),
+          ),
+        ],
+      ),
+      SizedBox(height: 16),
+      // Action buttons
+      Row(
+        children: [
+          if (state.isMyProfile) ...[
+            Expanded(
+              child: _buildActionButton(
+                label: AppLocalizations.of(context)!.editProfile,
+                onTap: () async {
+                  await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => EditProfilePage()));
+                  if (mounted) {
+                    await _refreshAll();
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildActionButton(
+                label: AppLocalizations.of(context)!.shareProfile,
+                onTap: () => _shareProfile(state),
+              ),
+            ),
+          ] else ...[
+            Expanded(
+              child: _buildActionButton(
+                label: state.isFollowLoading
+                    ? ''
+                    : (state.isFollowing
+                        ? AppLocalizations.of(context)!.following
+                        : AppLocalizations.of(context)!.follow),
+                isHighlighted: !state.isFollowing,
+                isLoading: state.isFollowLoading,
+                onTap: () {
+                  state.followUser(removeFollower: state.isFollowing);
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildActionButton(
+                label: AppLocalizations.of(context)!.shareProfile,
+                onTap: () => _shareProfile(state),
+              ),
+            ),
+          ],
+        ],
+      ),
+      SizedBox(height: 12),
+    ];
   }
 
   Widget _buildThreadsTab() {
@@ -493,41 +459,33 @@ class _ProfilePageState extends State<ProfilePage>
         ),
       );
     }
-    // NestedScrollView 把 body 装进 SliverFillRemaining(见 flutter 源码
-    // nested_scroll_view.dart:344-370),body 的第一个像素位于 SliverFillRemaining
-    // 起始 y,而 SliverFillRemaining 又位于头部 slivers 末尾。在当前布局下
-    // 渲染出的实际效果是:ListView 第一项视觉位置比 TabBar 底部还要低约 80pt,
-    // 形成明显空白。
-    //
-    // 用 Transform.translate(-80) 把 body 内容向上平移 80pt,让第一项紧贴 TabBar。
-    // 已在 Column+Expanded 版验证过该偏移量;NestedScrollView 版空白尺寸相同
-    // (用户截图实测 ~80pt),沿用同一偏移即可。
-    //
-    // ListView 保持独立可滚动,否则 overscroll 不会传上去,触发不了下拉刷新。
-    return Transform.translate(
-      offset: const Offset(0, -80),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: _userPosts.length,
-        itemBuilder: (context, index) {
-          final post = _userPosts[index];
-          return FeedPostWidget(
-            postModel: post,
-            // 第一项 isFirst=true:跳过 FeedPostWidget 顶部的 0.2px 分割线
-            // + 10px 间距,让第一个帖子紧贴 TabBar。
-            isFirst: index == 0,
-            // 帖子删除成功后,同步从本地 _userPosts 移除,解决 Threads Tab
-            // 删除后列表不刷新的问题(PostState.deletePost 只更新全局 _userPosts,
-            // 不会反向同步到 ProfilePage 的本地缓存)。
-            onPostDeleted: () {
-              if (!mounted) return;
-              setState(() {
-                _userPosts.removeWhere((p) => p.id == post.id);
-              });
-            },
-          );
-        },
-      ),
+    // padding: EdgeInsets.zero 避免 ListView 默认消费 MediaQuery.padding，
+    // 导致第一项与 TabBar 之间出现额外间距（原 80pt 空白 hack 的根因）。
+    // bottom: _listBottomPadding — 当 Profile 作为底部 Tab 显示时，
+    // HomePage 用了 extendBody: true，90pt bottomNavigationBar 浮在 body 之上，
+    // 列表底部必须预留对应高度，否则最后一项被导航栏遮挡。
+    return ListView.builder(
+      padding: EdgeInsets.only(bottom: _listBottomPadding),
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: _userPosts.length,
+      itemBuilder: (context, index) {
+        final post = _userPosts[index];
+        return FeedPostWidget(
+          postModel: post,
+          // 第一项 isFirst=true:跳过 FeedPostWidget 顶部的 0.2px 分割线
+          // + 10px 间距,让第一个帖子紧贴 TabBar。
+          isFirst: index == 0,
+          // 帖子删除成功后,同步从本地 _userPosts 移除,解决 Threads Tab
+          // 删除后列表不刷新的问题(PostState.deletePost 只更新全局 _userPosts,
+          // 不会反向同步到 ProfilePage 的本地缓存)。
+          onPostDeleted: () {
+            if (!mounted) return;
+            setState(() {
+              _userPosts.removeWhere((p) => p.id == post.id);
+            });
+          },
+        );
+      },
     );
   }
 
@@ -557,21 +515,16 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
-    // 同 _buildThreadsTab:
-    // 1) GridView 必须独立可滚动,让 overscroll 能传给 NestedScrollView
-    //    触发下拉刷新。
-    // 2) 同样需要 Transform.translate(-80) 把 body 上移,消除 TabBar 下方
-    //    80pt 空白(NestedScrollView + SliverFillRemaining 的位置偏移,
-    //    见 _buildThreadsTab 的详细注释)。
-    return Transform.translate(
-      offset: const Offset(0, -80),
-      child: GridView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 2,
-          mainAxisSpacing: 2,
-        ),
+    // 同 _buildThreadsTab：padding 显式设置以避免默认消费 MediaQuery.padding，
+    // bottom: _listBottomPadding 预留底部导航栏遮挡高度。
+    return GridView.builder(
+      padding: EdgeInsets.only(bottom: _listBottomPadding),
+      physics: const AlwaysScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 2,
+        mainAxisSpacing: 2,
+      ),
         itemCount: allMedia.length,
         itemBuilder: (context, index) {
           final item = allMedia[index];
@@ -622,8 +575,7 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           );
         },
-      ),
-    );
+      );
   }
 
   Widget _buildAvatar(ProfileState state) {
@@ -688,40 +640,20 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  // 渲染代词 / 位置 / 性别三个扩展字段的紧凑信息行。
-  // 任一字段为空或未设置时跳过该项；全部为空时返回 SizedBox.shrink()。
+  // 渲染简介 / 位置 / 代词 / 性别四个字段的紧凑信息行。
+  // 所有字段始终渲染；未填写时图标依旧显示，文本位置以淡色占位符呈现。
   Widget _buildInfoRow(ProfileState state) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final l10n = AppLocalizations.of(context)!;
     final user = state.profileUserModel;
     if (user == null) return const SizedBox.shrink();
 
-    final items = <Widget>[];
+    final placeholder = l10n.notSet;
 
-    // 位置
-    final location = user.location;
-    if (location != null && location.isNotEmpty) {
-      items.add(_buildInfoItem(
-        icon: Iconsax.location,
-        text: location,
-        appColors: appColors,
-      ));
-    }
-
-    // 代词
-    final pronouns = user.pronouns;
-    if (pronouns != null && pronouns.isNotEmpty) {
-      items.add(_buildInfoItem(
-        icon: Iconsax.tag,
-        text: pronouns,
-        appColors: appColors,
-      ));
-    }
-
-    // 性别（1=未设置，不展示）
+    // 性别文案（1=未设置 → 空，走占位符）
+    String genderText = '';
     final gender = user.gender;
     if (gender != null && gender != 1) {
-      String genderText;
       switch (gender) {
         case 2:
           genderText = l10n.male;
@@ -732,36 +664,52 @@ class _ProfilePageState extends State<ProfilePage>
         case 4:
           genderText = l10n.otherGender;
           break;
-        default:
-          genderText = '';
-      }
-      if (genderText.isNotEmpty) {
-        items.add(_buildInfoItem(
-          icon: Iconsax.user,
-          text: genderText,
-          appColors: appColors,
-        ));
       }
     }
-
-    if (items.isEmpty) return const SizedBox.shrink();
 
     return Align(
       alignment: Alignment.centerLeft,
       child: Wrap(
         spacing: 12,
         runSpacing: 8,
-        children: items,
+        children: [
+          _buildInfoItem(
+            icon: Iconsax.note,
+            text: user.bio ?? '',
+            placeholder: placeholder,
+            appColors: appColors,
+          ),
+          _buildInfoItem(
+            icon: Iconsax.location,
+            text: user.location ?? '',
+            placeholder: placeholder,
+            appColors: appColors,
+          ),
+          _buildInfoItem(
+            icon: Iconsax.tag,
+            text: user.pronouns ?? '',
+            placeholder: placeholder,
+            appColors: appColors,
+          ),
+          _buildInfoItem(
+            icon: Iconsax.user,
+            text: genderText,
+            placeholder: placeholder,
+            appColors: appColors,
+          ),
+        ],
       ),
     );
   }
 
-  // 单个信息项：图标 + 文本
+  // 单个信息项：图标 + 文本；text 为空时显示淡色占位符，图标始终保持可见。
   Widget _buildInfoItem({
     required IconData icon,
     required String text,
+    required String placeholder,
     required AppColors appColors,
   }) {
+    final isEmpty = text.isEmpty;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -769,9 +717,9 @@ class _ProfilePageState extends State<ProfilePage>
         const SizedBox(width: 6),
         Flexible(
           child: Text(
-            text,
+            isEmpty ? placeholder : text,
             style: TextStyle(
-              color: appColors.textPrimary,
+              color: isEmpty ? appColors.textHint : appColors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w400,
             ),
@@ -1027,46 +975,5 @@ class _ProfilePageState extends State<ProfilePage>
                       fontWeight: FontWeight.w500,
                     ),
                   )));
-  }
-}
-
-/// SliverPersistentHeader 的通用 delegate:
-/// 把任意固定高度的 child(本场景是 TabBar)交给 Sliver 系统托管,
-/// 让 NestedScrollView 自动处理「头部收起 → TabBar 钉住 → TabBarView 接管」三段式过渡。
-///
-/// 关键点:
-/// - minExtent / maxExtent 必须返回相同值(46.0),否则 header 会随滚动伸缩,
-///   TabBar 上的 indicator 会跳动。
-/// - shouldRebuild 必须严格比较新旧 child 状态,本场景里 child 来自同一个 TabBar
-///   + _tabController,只要外部 ProfileState 重建 ProfilePage,就会创建新 delegate
-///   实例,默认 shouldRebuild 返回 true 也无副作用。
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate({
-    required this.minHeight,
-    required this.maxHeight,
-    required this.child,
-  });
-
-  final double minHeight;
-  final double maxHeight;
-  final Widget child;
-
-  @override
-  double get minExtent => minHeight;
-
-  @override
-  double get maxExtent => maxHeight;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return SizedBox.expand(child: child);
-  }
-
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return minHeight != oldDelegate.minHeight ||
-        maxHeight != oldDelegate.maxHeight ||
-        child != oldDelegate.child;
   }
 }
