@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/state/app_icon_state.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/locale.state.dart';
 import 'package:threads/state/theme.state.dart';
@@ -17,7 +19,7 @@ import 'package:threads/pages/community/community_list_page.dart';
 import 'package:threads/pages/post/saved_posts_page.dart';
 import 'package:threads/pages/post/scheduled_posts_page.dart';
 import 'package:threads/pages/settings/follow_requests_page.dart';
-import 'package:threads/pages/settings/app_icon_page.dart';
+import 'package:threads/widget/app_icon_tile.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -42,28 +44,7 @@ class _SettingsPageState extends State<SettingsPage> {
             Column(
               children: [
                 Container(height: 50),
-                Row(
-                  children: [
-                    Stack(
-                      children: [
-                        BackButton(color: appColors.textPrimary),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 35, top: 12),
-                            child: Text(
-                              l10n.back,
-                              style: TextStyle(
-                                color: appColors.textPrimary,
-                                fontSize: 20,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                BackButton(color: appColors.textPrimary),
               ],
             ),
           ],
@@ -94,6 +75,92 @@ class _SettingsPageState extends State<SettingsPage> {
               width: MediaQuery.of(context).size.width,
             ),
             const SizedBox(height: 20),
+
+            // ===== 应用图标水平选择条 =====
+            Consumer<AppIconState>(
+              builder: (context, state, _) {
+                if (!state.platformSupported) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      l10n.appIconNotSupportedAndroid,
+                      style: TextStyle(
+                        color: appColors.textSecondary,
+                        fontSize: 12,
+                        height: 1.3,
+                      ),
+                    ),
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        l10n.appIcon,
+                        style: TextStyle(
+                          color: appColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 88,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: AppIconState.totalAlternates,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: 10),
+                        itemBuilder: (context, i) {
+                          final id = i + 1;
+                          return AppIconTile(
+                            id: id,
+                            selected: state.selectedId == id,
+                            onTap: () {
+                              if (state.selectedId == id) return;
+                              HapticFeedback.selectionClick();
+                              state.setIcon(id);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        l10n.appIconChangeHint,
+                        style: TextStyle(
+                          color: appColors.textSecondary,
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                    if (state.selectedId == 0) ...[
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          l10n.appIconPrimaryHint,
+                          style: TextStyle(
+                            color: appColors.textSecondary,
+                            fontSize: 12,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                  ],
+                );
+              },
+            ),
 
             // Follow & Invite Friends
             _buildMenuRow(
@@ -294,22 +361,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
 
-            // App Icon (iOS 25 pre-bundled alternates)
-            _buildMenuRow(
-              icon: CupertinoIcons.app_badge,
-              title: l10n.appIcon,
-              showArrow: true,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  CupertinoPageRoute(
-                    builder: (_) => const AppIconPage(),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 15),
+            const SizedBox(height: 20),
 
             // Divider before appearance
             Container(

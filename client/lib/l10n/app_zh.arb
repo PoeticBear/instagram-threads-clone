@@ -671,5 +671,6 @@
   "showLess": "收起",
   "appIcon": "应用图标",
   "appIconChangeHint": "下次将应用切到后台时图标会自动更新。",
-  "appIconNotSupportedAndroid": "更换桌面图标仅在 iOS 上可用。"
+  "appIconNotSupportedAndroid": "更换桌面图标仅在 iOS 上可用。",
+  "appIconPrimaryHint": "当前为主图标。"
 }

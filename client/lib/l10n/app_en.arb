@@ -671,5 +671,6 @@
   "showLess": "Show less",
   "appIcon": "App Icon",
   "appIconChangeHint": "The icon will change the next time you leave the app.",
-  "appIconNotSupportedAndroid": "Changing the app icon is only supported on iOS."
+  "appIconNotSupportedAndroid": "Changing the app icon is only supported on iOS.",
+  "appIconPrimaryHint": "Currently using the primary app icon."
 }

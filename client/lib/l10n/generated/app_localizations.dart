@@ -3055,6 +3055,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Changing the app icon is only supported on iOS.'**
   String get appIconNotSupportedAndroid;
+
+  /// No description provided for @appIconPrimaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently using the primary app icon.'**
+  String get appIconPrimaryHint;
 }
 
 class _AppLocalizationsDelegate

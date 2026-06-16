@@ -1579,4 +1579,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get appIconNotSupportedAndroid =>
       'Changing the app icon is only supported on iOS.';
+
+  @override
+  String get appIconPrimaryHint => 'Currently using the primary app icon.';
 }

@@ -1554,4 +1554,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get appIconNotSupportedAndroid => '更换桌面图标仅在 iOS 上可用。';
+
+  @override
+  String get appIconPrimaryHint => '当前为主图标。';
 }
