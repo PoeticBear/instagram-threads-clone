@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Post failed, please retry'**
   String get publishFailed;
 
+  /// No description provided for @publishFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Post failed: {reason}'**
+  String publishFailedWithReason(String reason);
+
   /// No description provided for @noPostsYet.
   ///
   /// In en, this message translates to:
@@ -848,6 +854,12 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get save;
 
+  /// No description provided for @saveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saveAction;
+
   /// No description provided for @unsave.
   ///
   /// In en, this message translates to:
@@ -907,6 +919,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Following'**
   String get following;
+
+  /// No description provided for @followUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow {username}'**
+  String followUser(Object username);
 
   /// No description provided for @posts.
   ///
@@ -1699,6 +1717,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get clearLocation;
+
+  /// No description provided for @selectLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Location'**
+  String get selectLocation;
+
+  /// No description provided for @confirmLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmLocation;
+
+  /// No description provided for @locatingAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Locating address...'**
+  String get locatingAddress;
+
+  /// No description provided for @unknownLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown location'**
+  String get unknownLocation;
 
   /// No description provided for @scheduledPosts.
   ///
@@ -2879,13 +2921,13 @@ abstract class AppLocalizations {
   /// No description provided for @imageTooLarge.
   ///
   /// In en, this message translates to:
-  /// **'Image exceeds 20MB limit (current {size}MB)'**
+  /// **'Image exceeds 10MB limit (current {size}MB)'**
   String imageTooLarge(String size);
 
   /// No description provided for @gifTooLarge.
   ///
   /// In en, this message translates to:
-  /// **'GIF exceeds 20MB limit (current {size}MB)'**
+  /// **'GIF exceeds 10MB limit (current {size}MB)'**
   String gifTooLarge(String size);
 
   /// No description provided for @notGifFormat.
@@ -2935,6 +2977,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Videos will play muted and loop while scrolling'**
   String get feedVideoAutoPlayDesc;
+
+  /// No description provided for @feedMediaLayoutMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Media layout'**
+  String get feedMediaLayoutMode;
+
+  /// No description provided for @feedMediaLayoutModeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how images and videos appear in posts.'**
+  String get feedMediaLayoutModeDesc;
+
+  /// No description provided for @feedMediaLayoutGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid'**
+  String get feedMediaLayoutGrid;
+
+  /// No description provided for @feedMediaLayoutHorizontal.
+  ///
+  /// In en, this message translates to:
+  /// **'Horizontal'**
+  String get feedMediaLayoutHorizontal;
 
   /// No description provided for @markAsSensitive.
   ///

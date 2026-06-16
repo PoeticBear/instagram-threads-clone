@@ -14,6 +14,12 @@
       "endpoints": 4,
       "schemas": 2
     },
+    "auth": {
+      "name": "auth",
+      "file": "auth.json",
+      "endpoints": 5,
+      "schemas": 2
+    },
     "community": {
       "name": "Community 社区",
       "file": "community.json",
@@ -25,6 +31,12 @@
       "file": "follow.json",
       "endpoints": 7,
       "schemas": 8
+    },
+    "health": {
+      "name": "health",
+      "file": "health.json",
+      "endpoints": 1,
+      "schemas": 0
     },
     "message": {
       "name": "Message 消息",
@@ -41,8 +53,8 @@
     "post": {
       "name": "Post 帖子",
       "file": "post.json",
-      "endpoints": 42,
-      "schemas": 14
+      "endpoints": 44,
+      "schemas": 15
     },
     "search": {
       "name": "Search 搜索",
@@ -59,8 +71,8 @@
     "user": {
       "name": "User 用户",
       "file": "user.json",
-      "endpoints": 28,
-      "schemas": 7
+      "endpoints": 24,
+      "schemas": 5
     }
   }
 }

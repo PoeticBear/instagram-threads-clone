@@ -6,6 +6,12 @@
   "post": "Post",
   "publishSuccess": "Post successful",
   "publishFailed": "Post failed, please retry",
+  "publishFailedWithReason": "Post failed: {reason}",
+  "@publishFailedWithReason": {
+    "placeholders": {
+      "reason": { "type": "String" }
+    }
+  },
   "noPostsYet": "No posts yet",
   "anonymousUser": "Anonymous user",
   "whatsNew": "What's new?",
@@ -148,6 +154,7 @@
   "undoRepost": "Undo repost",
   "quote": "Quote",
   "save": "Save",
+  "saveAction": "Save",
   "unsave": "Unsave",
   "share": "Share",
   "copyLink": "Copy link",
@@ -158,6 +165,7 @@
   "unfollow": "Unfollow",
   "followers": "Followers",
   "following": "Following",
+  "followUser": "Follow {username}",
   "posts": "Posts",
   "linkCopiedToClipboard": "Link copied to clipboard",
   "copied": "Copied",
@@ -290,6 +298,10 @@
   "addLocation": "Add Location",
   "enterLocation": "Enter location name",
   "clearLocation": "Clear",
+  "selectLocation": "Select Location",
+  "confirmLocation": "Confirm",
+  "locatingAddress": "Locating address...",
+  "unknownLocation": "Unknown location",
   "scheduledPosts": "Scheduled posts",
   "noScheduledPosts": "No scheduled posts",
   "cancelSchedule": "Cancel schedule",
@@ -617,13 +629,13 @@
       "max": { "type": "int" }
     }
   },
-  "imageTooLarge": "Image exceeds 20MB limit (current {size}MB)",
+  "imageTooLarge": "Image exceeds 10MB limit (current {size}MB)",
   "@imageTooLarge": {
     "placeholders": {
       "size": { "type": "String" }
     }
   },
-  "gifTooLarge": "GIF exceeds 20MB limit (current {size}MB)",
+  "gifTooLarge": "GIF exceeds 10MB limit (current {size}MB)",
   "@gifTooLarge": {
     "placeholders": {
       "size": { "type": "String" }
@@ -647,6 +659,10 @@
   "mediaSettings": "Media",
   "feedVideoAutoPlay": "Auto-play videos in feed",
   "feedVideoAutoPlayDesc": "Videos will play muted and loop while scrolling",
+  "feedMediaLayoutMode": "Media layout",
+  "feedMediaLayoutModeDesc": "Choose how images and videos appear in posts.",
+  "feedMediaLayoutGrid": "Grid",
+  "feedMediaLayoutHorizontal": "Horizontal",
   "markAsSensitive": "Mark as sensitive content",
   "contentWarningHint": "Content warning (e.g., spoiler, violence) - optional",
   "saveEdits": "Save",

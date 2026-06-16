@@ -122,7 +122,7 @@ class _GroupChatDetailPageState extends State<GroupChatDetailPage> {
                     ),
                   ),
                   child: Text(
-                    AppLocalizations.of(context)!.save,
+                    AppLocalizations.of(context)!.saveAction,
                     style: TextStyle(
                       color: appColors.textPrimary,
                       fontSize: 16,

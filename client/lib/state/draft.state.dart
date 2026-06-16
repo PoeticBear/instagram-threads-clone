@@ -36,6 +36,8 @@ class DraftState extends ChangeNotifier {
     int? topicId,
     int? replyType,
     String? location,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final draft = await postService.saveDraft(
@@ -46,6 +48,8 @@ class DraftState extends ChangeNotifier {
         topicId: topicId,
         replyType: replyType,
         location: location,
+        latitude: latitude,
+        longitude: longitude,
       );
       _drafts.insert(0, draft);
       notifyListeners();

@@ -45,8 +45,8 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   // 进而抛出 "buildPreview() was called on a disposed CameraController"。
   bool _isSwitchingMode = false;
 
-  // 视频时长上限（与后端 / VideoProcessor 保持一致：60s）
-  static const int _maxVideoDurationSec = 60;
+  // 视频时长上限（与服务端 openapi_docs/_misc.json 保持一致：300s / 5 分钟）
+  static const int _maxVideoDurationSec = 300;
   // 自动停止容差（每 200ms 检查一次）
   static const Duration _recordingTickInterval = Duration(milliseconds: 200);
 

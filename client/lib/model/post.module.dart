@@ -36,9 +36,11 @@ class MediaItemModel {
   bool get isVideo => mediaType == MediaType.video;
   bool get isGif => mediaType == MediaType.gif;
   // 兼容旧渲染分支：gif 仍按 image 渲染走 CachedNetworkImage
-  bool get isImage => mediaType == MediaType.image || mediaType == MediaType.gif;
+  bool get isImage =>
+      mediaType == MediaType.image || mediaType == MediaType.gif;
   // 可播放媒体（视频 / GIF），自动播放池用
-  bool get isPlayable => mediaType == MediaType.video || mediaType == MediaType.gif;
+  bool get isPlayable =>
+      mediaType == MediaType.video || mediaType == MediaType.gif;
 
   /// 时长格式化为 "m:ss" / "h:mm:ss"。无 duration 返回空串。
   String get durationLabel {
@@ -100,7 +102,11 @@ class PostModel {
   bool? isLiked;
   bool? isSaved;
   bool? isReposted;
-  String? postId;  // API uses post_id
+  // 当前登录用户与作者的关注关系。
+  // 注：API /post/feed 当前未返回 is_following 字段，此处为本地字段，
+  // 默认 null 视为「未关注」。关注成功后通过 PostState._setFollowing 乐观更新。
+  bool? isFollowing;
+  String? postId; // API uses post_id
   String? replyToPostId;
   String? replyToUserId;
   PollData? pollData;
@@ -114,6 +120,9 @@ class PostModel {
   bool? isPinned;
   String? scheduledTime;
   bool? isAi;
+  // 位置经纬度（与 location 配套；地图选址时由服务端可选使用）
+  double? latitude;
+  double? longitude;
   // Quote / Repost / Thread fields
   String? quoteContent;
   PostModel? quotePost;
@@ -146,11 +155,14 @@ class PostModel {
     this.isLiked,
     this.isSaved,
     this.isReposted,
+    this.isFollowing,
     this.postId,
     this.replyToPostId,
     this.replyToUserId,
     this.pollData,
     this.location,
+    this.latitude,
+    this.longitude,
     this.topicIds,
     this.isGhost,
     this.communityId,
@@ -201,7 +213,9 @@ class PostModel {
     List<int>? threadPostIds;
     final threadPostIdsRaw = map['thread_post_ids'] ?? map['threadPostIds'];
     if (threadPostIdsRaw is List) {
-      threadPostIds = threadPostIdsRaw.map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList();
+      threadPostIds = threadPostIdsRaw
+          .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+          .toList();
     }
 
     // Parse media_list
@@ -215,29 +229,50 @@ class PostModel {
     }
 
     return PostModel(
-      key: map['key']?.toString() ?? map['id']?.toString() ?? map['post_id']?.toString(),
+      key: map['key']?.toString() ??
+          map['id']?.toString() ??
+          map['post_id']?.toString(),
       postId: map['post_id']?.toString() ?? map['id']?.toString(),
       bio: map['bio'] ?? map['content'],
-      createdAt: map['createdAt'] ?? map['created_at'] ?? DateTime.now().toIso8601String(),
+      createdAt: map['createdAt'] ??
+          map['created_at'] ??
+          DateTime.now().toIso8601String(),
       imagePath: map['imagePath'] ?? map['image_url'] ?? map['imageUrl'],
       user: map['user'] != null ? UserModel.fromJson(map['user']) : null,
-      comment: map['comment'] != null ? List<String?>.from(map['comment']) : null,
+      comment:
+          map['comment'] != null ? List<String?>.from(map['comment']) : null,
       likesCount: map['likesCount'] ?? map['likes_count'],
       repliesCount: map['repliesCount'] ?? map['replies_count'],
       repostsCount: map['repostsCount'] ?? map['reposts_count'],
       isLiked: _parseBool(map['isLiked'] ?? map['is_liked']),
       isSaved: _parseBool(map['isSaved'] ?? map['is_saved']),
       isReposted: _parseBool(map['isReposted'] ?? map['is_reposted']),
+      isFollowing: _parseBool(map['isFollowing'] ?? map['is_following']),
       replyToPostId: map['reply_to_post_id']?.toString(),
       replyToUserId: map['reply_to_user_id']?.toString(),
       location: map['location'],
+      latitude: (map['latitude'] is num)
+          ? (map['latitude'] as num).toDouble()
+          : (map['latitude'] is String
+              ? double.tryParse(map['latitude'] as String)
+              : null),
+      longitude: (map['longitude'] is num)
+          ? (map['longitude'] as num).toDouble()
+          : (map['longitude'] is String
+              ? double.tryParse(map['longitude'] as String)
+              : null),
       topicIds: map['topic_ids'] is List
-          ? (map['topic_ids'] as List).map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList()
+          ? (map['topic_ids'] as List)
+              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+              .toList()
           : null,
       isGhost: _parseBool(map['is_ghost'] ?? map['isGhost']),
       communityId: map['community_id'] ?? map['communityId'],
       replySettings: map['reply_settings'] ?? map['replySettings'],
-      quoteRepostId: map['quote_repost_id'] ?? map['quoteRepostId'] ?? map['quote_post_id'] ?? map['quotePostId'],
+      quoteRepostId: map['quote_repost_id'] ??
+          map['quoteRepostId'] ??
+          map['quote_post_id'] ??
+          map['quotePostId'],
       isPinned: _parseBool(map['is_pinned'] ?? map['isPinned']),
       scheduledTime: map['scheduled_time'] ?? map['scheduledTime'],
       isAi: _parseBool(map['is_ai'] ?? map['isAi']),
@@ -253,11 +288,13 @@ class PostModel {
       isEdited: _parseBool(map['is_edited'] ?? map['isEdited']),
       editCount: map['edit_count'] ?? map['editCount'],
       lastEditTime: (map['last_edit_time'] ?? map['lastEditTime']) != null
-          ? PostModel.parseTimestamp(map['last_edit_time'] ?? map['lastEditTime'])
+          ? PostModel.parseTimestamp(
+              map['last_edit_time'] ?? map['lastEditTime'])
           : null,
       // Sensitive content fields
       isSensitive: _parseBool(map['is_sensitive'] ?? map['isSensitive']),
-      contentWarning: map['content_warning']?.toString() ?? map['contentWarning']?.toString(),
+      contentWarning: map['content_warning']?.toString() ??
+          map['contentWarning']?.toString(),
     );
   }
 
@@ -279,9 +316,12 @@ class PostModel {
       'is_liked': isLiked,
       'is_saved': isSaved,
       'is_reposted': isReposted,
+      'is_following': isFollowing,
       'reply_to_post_id': replyToPostId,
       'reply_to_user_id': replyToUserId,
       'location': location,
+      'latitude': latitude,
+      'longitude': longitude,
       'topic_ids': topicIds,
       'is_ghost': isGhost,
       'community_id': communityId,
@@ -322,6 +362,7 @@ class PostModel {
     bool? isLiked,
     bool? isSaved,
     bool? isReposted,
+    bool? isFollowing,
     String? postId,
     String? replyToPostId,
     String? replyToUserId,
@@ -335,6 +376,8 @@ class PostModel {
     bool? isPinned,
     String? scheduledTime,
     bool? isAi,
+    double? latitude,
+    double? longitude,
     String? quoteContent,
     PostModel? quotePost,
     bool? isRepost,
@@ -363,11 +406,14 @@ class PostModel {
       isLiked: isLiked ?? this.isLiked,
       isSaved: isSaved ?? this.isSaved,
       isReposted: isReposted ?? this.isReposted,
+      isFollowing: isFollowing ?? this.isFollowing,
       postId: postId ?? this.postId,
       replyToPostId: replyToPostId ?? this.replyToPostId,
       replyToUserId: replyToUserId ?? this.replyToUserId,
       pollData: pollData ?? this.pollData,
       location: location ?? this.location,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       topicIds: topicIds ?? this.topicIds,
       isGhost: isGhost ?? this.isGhost,
       communityId: communityId ?? this.communityId,

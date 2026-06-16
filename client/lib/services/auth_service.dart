@@ -12,6 +12,10 @@ class AuthService {
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userIdKey = 'user_id';
 
+  /// 记录上次启动时的 APP_ENV。dev / prod 切换时，旧环境的 token 在新环境
+  /// 无法使用，必须清掉，否则 ApiClient 会带着失效 token 一直 401。
+  static const String _lastEnvKey = 'last_app_env';
+
   AuthService({
     required ApiClient apiClient,
     required SharedPreferences prefs,
@@ -19,6 +23,14 @@ class AuthService {
         _prefs = prefs;
 
   Future<void> init() async {
+    // 环境变化时清掉旧 token（只在已有记录的环境下比对，避免首次启动误清）
+    final lastEnv = _prefs.getString(_lastEnvKey);
+    final currentEnv = ApiConfig.environment;
+    if (lastEnv != null && lastEnv != currentEnv) {
+      await _clearTokens();
+    }
+    await _prefs.setString(_lastEnvKey, currentEnv);
+
     final accessToken = _prefs.getString(_accessTokenKey);
     final refreshToken = _prefs.getString(_refreshTokenKey);
     if (accessToken != null && refreshToken != null) {

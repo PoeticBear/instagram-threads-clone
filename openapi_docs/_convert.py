@@ -12,7 +12,7 @@ import re
 import sys
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SOURCE = os.path.join(os.path.dirname(BASE_DIR), "openapi_20260518.json")
+SOURCE = os.path.join(os.path.dirname(BASE_DIR), "openapi_docs", "versions", "openapi_20260616.json")
 
 # Headers repeated on almost every endpoint
 SKIP_HEADERS = {"Authorization", "device-os", "user-agent", "device-name"}

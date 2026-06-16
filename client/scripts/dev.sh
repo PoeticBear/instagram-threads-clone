@@ -2,10 +2,12 @@
 # ============================================================================
 # dev.sh — Instagram Threads Clone 一键调试入口
 # ----------------------------------------------------------------------------
-# 交互式选择 3 个维度:
-#   1) API 环境 (dev / prod)
-#   2) 运行模式 (debug / profile)
-#   3) iOS 设备  (模拟器 / 真机)
+# 单一交互菜单:env(2) × mode(2) × device(N) = 2N 个组合,选中即启动,无二次确认。
+#
+# 维度:
+#   1) API 环境  (dev / prod)
+#   2) 运行模式  (debug / profile)
+#   3) iOS 设备  (动态枚举 flutter devices --machine 的 iOS 项)
 #
 # 用法:
 #   # 从项目根目录执行
@@ -14,8 +16,8 @@
 #   # 也可从 client/ 目录执行
 #   bash scripts/dev.sh
 #
-#   # 跳过交互菜单(适合 CI / 习惯性脚本)
-#   APP_ENV=dev FLUTTER_MODE=debug DEVICE_ID=FEED462A-... ./client/scripts/dev.sh
+#   # CI / 完全无交互:三个变量必须同时设置(避免部分注入造成歧义)
+#   APP_ENV=dev FLUTTER_MODE=debug DEVICE_ID=<UUID> ./client/scripts/dev.sh
 #
 # 推荐:加个 alias 进一步省事
 #   echo "alias dev='$PWD/client/scripts/dev.sh'" >> ~/.zshrc && source ~/.zshrc
@@ -50,69 +52,25 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 # ============================================================================
-# Step 1: API 环境
+# 检测 iOS 设备
+# ----------------------------------------------------------------------------
+# 无论走 env-var 还是交互菜单,都先枚举一遍:env-var 模式用它回查 kind
+# (用于 profile+模拟器的兼容性回退判断);交互模式用它生成菜单。
 # ============================================================================
-if [ -n "${APP_ENV:-}" ]; then
-  ENV="$APP_ENV"
-  ok "API 环境(env 注入): $ENV"
-else
-  header "Step 1 / 3  ·  选择 API 环境"
-  cat <<'EOF'
-  1) dev        →  http://192.168.1.27:8005/   本地后端
-  2) prod       →  https://api.tweetcaht.com/  生产环境(默认)
-EOF
-  read -rp "  环境 [2]: " env_choice
-  env_choice=${env_choice:-2}
-  case "$env_choice" in
-    1) ENV="dev" ;;
-    2) ENV="prod" ;;
-    *) err "无效选项: $env_choice"; exit 1 ;;
-  esac
-fi
 
-# ============================================================================
-# Step 2: 运行模式
-# ============================================================================
-if [ -n "${FLUTTER_MODE:-}" ]; then
-  MODE="$FLUTTER_MODE"
-  ok "运行模式(env 注入): $MODE"
-else
-  header "Step 2 / 3  ·  选择运行模式"
-  cat <<'EOF'
-  1) debug      →  默认,带 hot reload,日常开发
-  2) profile    →  性能分析(DevTools: CPU/内存)
-EOF
-  read -rp "  模式 [1]: " mode_choice
-  mode_choice=${mode_choice:-1}
-  case "$mode_choice" in
-    1) MODE="debug" ;;
-    2) MODE="profile" ;;
-    *) err "无效选项: $mode_choice"; exit 1 ;;
-  esac
-fi
-
-# ============================================================================
-# Step 3: iOS 设备
-# ============================================================================
-if [ -n "${DEVICE_ID:-}" ]; then
-  ok "目标设备(env 注入): $DEVICE_ID"
-  DEVICE_NAME=""
-else
-  header "Step 3 / 3  ·  选择 iOS 设备"
-
-  # 启动模拟器(若没启动)
+# 没注入 DEVICE_ID 时,顺手把模拟器 App 唤起(确保能被 flutter devices 看到)
+if [ -z "${DEVICE_ID:-}" ]; then
   if ! pgrep -x Simulator >/dev/null 2>&1; then
     info "Simulator 未启动,正在打开..."
     open -a Simulator
     sleep 2
   fi
+fi
 
-  # 用 flutter devices --machine 拿结构化 JSON
-  # 关键字段:name / id / targetPlatform / emulator / sdk
-  DEVICES_JSON=$(flutter devices --machine 2>/dev/null || echo "[]")
+DEVICES_JSON=$(flutter devices --machine 2>/dev/null || echo "[]")
 
-  # 用 python3 解析为 name\tid\tsdk 三列(只保留 ios)
-  DEVICES_TSV=$(printf '%s' "$DEVICES_JSON" | python3 -c '
+# 用 python3 解析为 name\tkind\tsdk\tdid 四列(只保留 ios)
+DEVICES_TSV=$(printf '%s' "$DEVICES_JSON" | python3 -c '
 import json, sys
 try:
     data = json.load(sys.stdin)
@@ -128,51 +86,110 @@ for d in data:
         print(f"{name}\t{kind}\t{sdk}\t{did}")
 ')
 
-  if [ -z "$DEVICES_TSV" ]; then
+# 装进 bash 数组(避开 bash 3.2 不支持的 mapfile)
+IOS_NAMES=()
+IOS_KINDS=()
+IOS_SDKS=()
+IOS_IDS=()
+while IFS=$'\t' read -r name kind sdk did; do
+  [ -z "$did" ] && continue
+  IOS_NAMES+=("$name")
+  IOS_KINDS+=("$kind")
+  IOS_SDKS+=("$sdk")
+  IOS_IDS+=("$did")
+done <<< "$DEVICES_TSV"
+
+# ============================================================================
+# 决定 ENV / MODE / DEVICE_ID
+# ----------------------------------------------------------------------------
+# 三种模式:
+#   a) 三个 env-var 全注入 → 完全跳过菜单(CI / 自动化)
+#   b) 部分注入           → 报错(避免歧义:要么全免交互,要么走菜单)
+#   c) 全未注入           → 单一 2N 选项菜单,选完即 exec,不再二次确认
+# ============================================================================
+HAS_ENV="${APP_ENV:+1}"
+HAS_MODE="${FLUTTER_MODE:+1}"
+HAS_DEV="${DEVICE_ID:+1}"
+HAS_ANY=$((HAS_ENV + HAS_MODE + HAS_DEV))
+
+if [ "$HAS_ANY" -eq 3 ]; then
+  ENV="$APP_ENV"
+  MODE="$FLUTTER_MODE"
+  # 回查 kind(给兼容性检查用),找不到就留空
+  DEVICE_KIND=""
+  for i in "${!IOS_IDS[@]}"; do
+    if [ "${IOS_IDS[$i]}" = "$DEVICE_ID" ]; then
+      DEVICE_KIND="${IOS_KINDS[$i]}"
+      DEVICE_NAME="${IOS_NAMES[$i]}"
+      break
+    fi
+  done
+  ok "env 注入: ENV=$ENV  MODE=$MODE  DEVICE=$DEVICE_ID  KIND=${DEVICE_KIND:-?}"
+elif [ "$HAS_ANY" -gt 0 ]; then
+  err "env-var 快捷入口要求 APP_ENV / FLUTTER_MODE / DEVICE_ID 三个变量同时设置"
+  err "否则请使用交互菜单(不要设置任何 env-var)"
+  exit 1
+else
+  if [ "${#IOS_IDS[@]}" -eq 0 ]; then
     err "未找到 iOS 设备"
     info "启动模拟器: open -a Simulator"
     info "或连接真机后重新执行"
     exit 1
   fi
 
-  # 装进 bash 数组(避开 bash 3.2 不支持的 mapfile)
-  IOS_NAMES=()
-  IOS_KINDS=()
-  IOS_SDKS=()
-  IOS_IDS=()
-  while IFS=$'\t' read -r name kind sdk did; do
-    [ -z "$did" ] && continue
-    IOS_NAMES+=("$name")
-    IOS_KINDS+=("$kind")
-    IOS_SDKS+=("$sdk")
-    IOS_IDS+=("$did")
-  done <<< "$DEVICES_TSV"
+  ENV_OPTS=("dev" "prod")
+  MODE_OPTS=("debug" "profile")
 
-  # 打印菜单
-  for i in "${!IOS_IDS[@]}"; do
-    printf "  %d) %-20s  %-6s  %-30s  [%s]\n" \
-      $((i+1)) "${IOS_NAMES[$i]}" "${IOS_KINDS[$i]}" "${IOS_SDKS[$i]}" "${IOS_IDS[$i]}"
+  header "选择运行配置(env × mode × device,共 $(( ${#ENV_OPTS[@]} * ${#MODE_OPTS[@]} * ${#IOS_IDS[@]} )) 项)"
+
+  # 拼装所有 2×2×N 组合,顺序:env 外层 → mode 中层 → device 内层
+  COMBO_ENVS=()
+  COMBO_MODES=()
+  COMBO_IDS=()
+  COMBO_NAMES=()
+  COMBO_KINDS=()
+  for env in "${ENV_OPTS[@]}"; do
+    for mode in "${MODE_OPTS[@]}"; do
+      for i in "${!IOS_IDS[@]}"; do
+        COMBO_ENVS+=("$env")
+        COMBO_MODES+=("$mode")
+        COMBO_IDS+=("${IOS_IDS[$i]}")
+        COMBO_NAMES+=("${IOS_NAMES[$i]}")
+        COMBO_KINDS+=("${IOS_KINDS[$i]}")
+      done
+    done
+  done
+
+  TOTAL=${#COMBO_IDS[@]}
+
+  # 打印菜单(列头单独上色,与数据行区分)
+  printf "  ${CYAN}%-4s  %-6s  %-7s  %-22s  %-6s  %s${NC}\n" "#" "ENV" "MODE" "DEVICE" "KIND" "ID"
+  printf "  %s\n" "------------------------------------------------------------------------------------"
+  for i in "${!COMBO_IDS[@]}"; do
+    printf "  %2d) %-6s  %-7s  %-22s  %-6s  %s\n" \
+      $((i+1)) "${COMBO_ENVS[$i]}" "${COMBO_MODES[$i]}" \
+      "${COMBO_NAMES[$i]}" "${COMBO_KINDS[$i]}" "${COMBO_IDS[$i]}"
   done
   echo
-  read -rp "  设备 [1]: " dev_choice
-  dev_choice=${dev_choice:-1}
-  if ! [[ "$dev_choice" =~ ^[0-9]+$ ]] \
-     || [ "$dev_choice" -lt 1 ] \
-     || [ "$dev_choice" -gt ${#IOS_IDS[@]} ]; then
-    err "无效选项: $dev_choice"
+
+  read -rp "  配置 [1]: " combo_choice
+  combo_choice=${combo_choice:-1}
+  if ! [[ "$combo_choice" =~ ^[0-9]+$ ]] \
+     || [ "$combo_choice" -lt 1 ] \
+     || [ "$combo_choice" -gt $TOTAL ]; then
+    err "无效选项: $combo_choice"
     exit 1
   fi
-  idx=$((dev_choice-1))
-  DEVICE_ID="${IOS_IDS[$idx]}"
-  DEVICE_NAME="${IOS_NAMES[$idx]}"
-  DEVICE_KIND="${IOS_KINDS[$idx]}"
+  idx=$((combo_choice-1))
+  ENV="${COMBO_ENVS[$idx]}"
+  MODE="${COMBO_MODES[$idx]}"
+  DEVICE_ID="${COMBO_IDS[$idx]}"
+  DEVICE_NAME="${COMBO_NAMES[$idx]}"
+  DEVICE_KIND="${COMBO_KINDS[$idx]}"
 fi
 
 # ============================================================================
-# 兼容性校验:profile 模式不支持 iOS 模拟器
-# ----------------------------------------------------------------------------
-# Flutter 限制:profile 模式仅在 iOS 真机上支持,模拟器会报
-# "Profile mode is not supported by <device>". 这里主动检测并自动回退到 debug。
+# 兼容性校验:profile 模式不支持 iOS 模拟器(Flutter 限制)
 # ============================================================================
 if [ "$MODE" = "profile" ] && [ "${DEVICE_KIND:-}" = "模拟器" ]; then
   warn "Profile 模式不支持 iOS 模拟器(Flutter 限制,仅真机支持)"
@@ -182,7 +199,7 @@ if [ "$MODE" = "profile" ] && [ "${DEVICE_KIND:-}" = "模拟器" ]; then
 fi
 
 # ============================================================================
-# 汇总 + 执行
+# 汇总 + 执行(无二次确认)
 # ============================================================================
 header "即将执行"
 printf "  ${GREEN}flutter run -d \"%s\" --%s --dart-define=APP_ENV=%s${NC}\n\n" \
@@ -190,8 +207,6 @@ printf "  ${GREEN}flutter run -d \"%s\" --%s --dart-define=APP_ENV=%s${NC}\n\n" 
 [ -n "${DEVICE_NAME:-}" ] && info "目标设备: $DEVICE_NAME"
 info "API 环境: $ENV"
 info "运行模式: $MODE"
-echo
-read -rp "  按 Enter 启动,Ctrl+C 取消: _"
 
 # 用 exec 替换当前 shell,这样 Ctrl+C 直接杀 flutter,不会留下 wrapper
 exec flutter run -d "$DEVICE_ID" --"$MODE" --dart-define=APP_ENV="$ENV"

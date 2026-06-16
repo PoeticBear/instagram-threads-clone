@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import '../helper/utility.dart';
 import '../model/draft.module.dart';
 import '../state/draft.state.dart';
 import '../theme/app_colors.dart';
@@ -112,7 +113,7 @@ class DraftListSheet extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      draft.createTime,
+                      Utility.getdob(draft.createTime, context: context),
                       style: TextStyle(color: appColors.textSecondary, fontSize: 13),
                     ),
                   ],

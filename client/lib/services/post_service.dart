@@ -12,8 +12,7 @@ import '../network/api_exception.dart';
 /// 在 +08:00 客户端上会出现"刚刚发布却显示 8 小时前"的偏差。
 /// 此处兜底：没有时区标识时强制按 UTC 解析。
 DateTime _parseUtc(String s) {
-  final hasZone = s.endsWith('Z') ||
-      RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(s);
+  final hasZone = s.endsWith('Z') || RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(s);
   return DateTime.parse(hasZone ? s : '${s}Z');
 }
 
@@ -31,6 +30,8 @@ class PostService {
     String? replyToPostId,
     int? replyToUserId,
     String? location,
+    double? latitude,
+    double? longitude,
     List<int>? topicIds,
     int? communityId,
     int? quoteRepostId,
@@ -62,6 +63,8 @@ class PostService {
       }
       if (replyToUserId != null) body['reply_to_user_id'] = replyToUserId;
       if (location != null) body['location'] = location;
+      if (latitude != null) body['latitude'] = latitude;
+      if (longitude != null) body['longitude'] = longitude;
       if (topicIds != null && topicIds.isNotEmpty) body['topic_ids'] = topicIds;
       if (communityId != null) body['community_id'] = communityId;
       if (quoteRepostId != null) body['quote_post_id'] = quoteRepostId;
@@ -70,7 +73,9 @@ class PostService {
       final response = await _apiClient.post('post/create', body: body);
       return Post.fromJson(response['data']);
     } on ApiException catch (e) {
-      developer.log('❌ createPost API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})', name: 'PostService');
+      developer.log(
+          '❌ createPost API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})',
+          name: 'PostService');
       rethrow;
     } catch (e, stackTrace) {
       developer.log('❌ createPost 未知异常: $e\n$stackTrace', name: 'PostService');
@@ -115,7 +120,9 @@ class PostService {
       final response = await _apiClient.put('post/$postId', body: body);
       return Post.fromJson(response['data']);
     } on ApiException catch (e) {
-      developer.log('❌ updatePost API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})', name: 'PostService');
+      developer.log(
+          '❌ updatePost API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})',
+          name: 'PostService');
       rethrow;
     } catch (e, stackTrace) {
       developer.log('❌ updatePost 未知异常: $e\n$stackTrace', name: 'PostService');
@@ -148,14 +155,16 @@ class PostService {
 
       developer.log('Feed parsed ${items.length} items');
 
-      final result = items.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+      final result =
+          items.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
       return result;
     } on ApiException {
       rethrow;
     }
   }
 
-  Future<List<Post>> getUserPosts(int userId, {int page = 1, int size = 20}) async {
+  Future<List<Post>> getUserPosts(int userId,
+      {int page = 1, int size = 20}) async {
     try {
       final response = await _apiClient.get(
         'post/user/$userId/posts',
@@ -178,7 +187,9 @@ class PostService {
         items = [];
       }
 
-      return items.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+      return items
+          .map((e) => Post.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on ApiException {
       rethrow;
     }
@@ -277,6 +288,7 @@ class PostService {
     required String postId,
     required String content,
     String? imageUrl,
+
     /// 嵌套回复的父回复 ID（OpenAPI 字段 parent_id）。
     /// 为 null 时表示创建帖子的一级回复,非 null 时表示创建某条回复的子回复。
     int? parentId,
@@ -293,10 +305,12 @@ class PostService {
       final response = await _apiClient.post('post/reply', body: body);
       print('✅ createReply 原始响应: ${json.encode(response)}');
       final reply = Reply.fromJson(response['data']);
-      print('✅ createReply 解析结果: id=${reply.id}, content=${reply.content}, user=${reply.displayName}');
+      print(
+          '✅ createReply 解析结果: id=${reply.id}, content=${reply.content}, user=${reply.displayName}');
       return reply;
     } on ApiException catch (e) {
-      print('❌ createReply API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})');
+      print(
+          '❌ createReply API异常: ${e.message} (status: ${e.statusCode}, data: ${e.data})');
       rethrow;
     } catch (e, stackTrace) {
       print('❌ createReply 未知异常: $e\n$stackTrace');
@@ -308,6 +322,7 @@ class PostService {
     String postId, {
     int page = 1,
     int pageSize = 20,
+
     /// 嵌套回复的父回复 ID（OpenAPI 字段 parent_id,GET 端点 schema 标的是 string）。
     /// 为 null 时获取帖子的一级回复列表,非 null 时获取该回复的子回复列表。
     int? parentId,
@@ -325,12 +340,15 @@ class PostService {
         'post/reply/list/$postId',
         queryParameters: queryParameters,
       );
-      print('[REPLY_DEBUG] getReplies raw response type: ${response.runtimeType}');
-      print('[REPLY_DEBUG] getReplies raw response keys: ${response is Map ? response.keys.toList() : "N/A"}');
+      print(
+          '[REPLY_DEBUG] getReplies raw response type: ${response.runtimeType}');
+      print(
+          '[REPLY_DEBUG] getReplies raw response keys: ${response is Map ? response.keys.toList() : "N/A"}');
 
       // API returns PageMeta: { "data": { "items": [...], "total": ..., "page": ..., "size": ... } }
       final data = response['data'];
-      print('[REPLY_DEBUG] response[\'data\'] type: ${data.runtimeType}, value: $data');
+      print(
+          '[REPLY_DEBUG] response[\'data\'] type: ${data.runtimeType}, value: $data');
 
       List items;
       if (data is List) {
@@ -396,14 +414,17 @@ class PostService {
       } else {
         items = [];
       }
-      return items.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+      return items
+          .map((e) => Post.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on ApiException {
       rethrow;
     }
   }
 
   Future<void> votePoll(int postId, int optionId) async {
-    await _apiClient.post('post/poll/$postId/vote', body: {'option_id': optionId});
+    await _apiClient
+        .post('post/poll/$postId/vote', body: {'option_id': optionId});
   }
 
   Future<void> hideReply(String replyId) async {
@@ -452,7 +473,9 @@ class PostService {
       } else {
         items = [];
       }
-      return items.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+      return items
+          .map((e) => Post.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on ApiException {
       rethrow;
     }
@@ -470,7 +493,9 @@ class PostService {
     try {
       final response = await _apiClient.get('post/$postId/edit-history');
       final list = response['data'] as List? ?? [];
-      return list.map((e) => EditHistory.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => EditHistory.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on ApiException {
       rethrow;
     }
@@ -522,6 +547,8 @@ class PostService {
     int? topicId,
     int? replyType,
     String? location,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final body = <String, dynamic>{'content': content};
@@ -536,10 +563,13 @@ class PostService {
           body['media_types'] = mediaTypes;
         }
       }
-      if (pollOptions != null && pollOptions.isNotEmpty) body['poll_options'] = pollOptions;
+      if (pollOptions != null && pollOptions.isNotEmpty)
+        body['poll_options'] = pollOptions;
       if (topicId != null) body['topic_id'] = topicId;
       if (replyType != null) body['reply_type'] = replyType;
       if (location != null) body['location'] = location;
+      if (latitude != null) body['latitude'] = latitude;
+      if (longitude != null) body['longitude'] = longitude;
 
       final response = await _apiClient.post('post/draft', body: body);
       return DraftInfo.fromJson(response['data']);
@@ -563,7 +593,9 @@ class PostService {
       } else {
         items = [];
       }
-      return items.map((e) => DraftInfo.fromJson(e as Map<String, dynamic>)).toList();
+      return items
+          .map((e) => DraftInfo.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on ApiException {
       rethrow;
     }
@@ -616,9 +648,12 @@ class PostService {
 
   Future<List<GuestReplyRequest>> getPendingGuestReplies(String postId) async {
     try {
-      final response = await _apiClient.get('post/guest-reply-request/$postId/pending');
+      final response =
+          await _apiClient.get('post/guest-reply-request/$postId/pending');
       final list = response['data'] as List? ?? [];
-      return list.map((e) => GuestReplyRequest.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => GuestReplyRequest.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on ApiException {
       rethrow;
     }
@@ -648,7 +683,9 @@ class PostService {
     try {
       final response = await _apiClient.get('post/reply/pending/$postId');
       final list = response['data'] as List? ?? [];
-      return list.map((e) => Reply.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => Reply.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on ApiException {
       rethrow;
     }
@@ -687,15 +724,23 @@ class PostService {
       // Parse poll data from response
       final pollOptionsRaw = data['poll_options'];
       final pollId = data['poll_id'];
-      if (pollId != null && pollOptionsRaw is List && pollOptionsRaw.isNotEmpty) {
-        final options = pollOptionsRaw.map((e) => PollOption.fromJson(e as Map<String, dynamic>)).toList();
+      if (pollId != null &&
+          pollOptionsRaw is List &&
+          pollOptionsRaw.isNotEmpty) {
+        final options = pollOptionsRaw
+            .map((e) => PollOption.fromJson(e as Map<String, dynamic>))
+            .toList();
         final expireStr = data['poll_expire_time'];
         return PollData(
           pollId: pollId is int ? pollId : int.tryParse(pollId.toString()),
           options: options,
           totalVotes: data['poll_total_votes'] ?? 0,
-          expireTime: expireStr != null ? DateTime.tryParse(expireStr.toString()) : null,
-          userVotedOptionId: data['poll_user_voted_option_id'] is int ? data['poll_user_voted_option_id'] : null,
+          expireTime: expireStr != null
+              ? DateTime.tryParse(expireStr.toString())
+              : null,
+          userVotedOptionId: data['poll_user_voted_option_id'] is int
+              ? data['poll_user_voted_option_id']
+              : null,
         );
       }
       return null;
@@ -794,15 +839,18 @@ class Post {
   });
 
   /// First image URL from mediaList, or null
-  String? get imageUrl => mediaList.where((m) => m.mediaType == 1 && m.url.isNotEmpty).map((m) => _resolveImageUrl(m.url)).firstOrNull;
+  String? get imageUrl => mediaList
+      .where((m) => m.mediaType == 1 && m.url.isNotEmpty)
+      .map((m) => _resolveImageUrl(m.url))
+      .firstOrNull;
 
   // Helper getter for compatibility with PostModel.user
   PostUser get user => PostUser(
-    userId: userId,
-    userName: username,
-    displayName: displayName,
-    profilePic: profilePic,
-  );
+        userId: userId,
+        userName: username,
+        displayName: displayName,
+        profilePic: profilePic,
+      );
 
   factory Post.fromJson(Map<String, dynamic> json) {
     // Parse user info from nested "user" object or flat fields
@@ -815,7 +863,8 @@ class Post {
       userId = userObj['user_id'] ?? userObj['userId'] ?? userObj['id'] ?? 0;
       username = userObj['username'] ?? '';
       displayName = userObj['display_name'] ?? userObj['displayName'] ?? '';
-      profilePic = userObj['avatar'] ?? userObj['profile_pic'] ?? userObj['profilePic'];
+      profilePic =
+          userObj['avatar'] ?? userObj['profile_pic'] ?? userObj['profilePic'];
     } else {
       userId = json['user_id'] ?? json['userId'] ?? 0;
       username = json['username'] ?? '';
@@ -827,28 +876,40 @@ class Post {
     final mediaRaw = json['media_list'];
     final List<MediaItem> mediaList;
     if (mediaRaw is List) {
-      mediaList = mediaRaw.map((e) => MediaItem.fromJson(e as Map<String, dynamic>)).toList();
+      mediaList = mediaRaw
+          .map((e) => MediaItem.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       mediaList = [];
     }
 
     // Parse created_at / create_time
-    final createdAtStr = json['created_at'] ?? json['createdAt'] ?? json['create_time'] ?? json['createTime'];
-    final createdAt = createdAtStr != null ? _parseUtc(createdAtStr.toString()) : DateTime.now();
+    final createdAtStr = json['created_at'] ??
+        json['createdAt'] ??
+        json['create_time'] ??
+        json['createTime'];
+    final createdAt = createdAtStr != null
+        ? _parseUtc(createdAtStr.toString())
+        : DateTime.now();
 
     // Parse poll data
     final pollOptionsRaw = json['poll_options'];
     final pollId = json['poll_id'];
     PollData? pollData;
     if (pollId != null && pollOptionsRaw is List && pollOptionsRaw.isNotEmpty) {
-      final options = pollOptionsRaw.map((e) => PollOption.fromJson(e as Map<String, dynamic>)).toList();
+      final options = pollOptionsRaw
+          .map((e) => PollOption.fromJson(e as Map<String, dynamic>))
+          .toList();
       final expireStr = json['poll_expire_time'];
       pollData = PollData(
         pollId: pollId is int ? pollId : int.tryParse(pollId.toString()),
         options: options,
         totalVotes: json['poll_total_votes'] ?? 0,
-        expireTime: expireStr != null ? DateTime.tryParse(expireStr.toString()) : null,
-        userVotedOptionId: json['poll_user_voted_option_id'] is int ? json['poll_user_voted_option_id'] : null,
+        expireTime:
+            expireStr != null ? DateTime.tryParse(expireStr.toString()) : null,
+        userVotedOptionId: json['poll_user_voted_option_id'] is int
+            ? json['poll_user_voted_option_id']
+            : null,
       );
     }
 
@@ -856,7 +917,9 @@ class Post {
     final topicIdsRaw = json['topic_ids'] ?? json['topicIds'];
     final List<int> topicIds;
     if (topicIdsRaw is List) {
-      topicIds = topicIdsRaw.map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList();
+      topicIds = topicIdsRaw
+          .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+          .toList();
     } else {
       topicIds = [];
     }
@@ -865,7 +928,9 @@ class Post {
     final threadPostIdsRaw = json['thread_post_ids'] ?? json['threadPostIds'];
     final List<int> threadPostIds;
     if (threadPostIdsRaw is List) {
-      threadPostIds = threadPostIdsRaw.map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0).toList();
+      threadPostIds = threadPostIdsRaw
+          .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+          .toList();
     } else {
       threadPostIds = [];
     }
@@ -874,15 +939,18 @@ class Post {
     final threadPostsRaw = json['thread_posts'] ?? json['threadPosts'];
     final List<Post> threadPosts;
     if (threadPostsRaw is List) {
-      threadPosts = threadPostsRaw.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+      threadPosts = threadPostsRaw
+          .map((e) => Post.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       threadPosts = [];
     }
 
     // Parse quote_post (recursive)
     final quotePostRaw = json['quote_post'] ?? json['quotePost'];
-    final Post? quotePost = quotePostRaw != null ? Post.fromJson(quotePostRaw as Map<String, dynamic>) : null;
-
+    final Post? quotePost = quotePostRaw != null
+        ? Post.fromJson(quotePostRaw as Map<String, dynamic>)
+        : null;
 
     return Post(
       id: json['id']?.toString() ?? json['post_id']?.toString() ?? '',
@@ -901,15 +969,21 @@ class Post {
       isLiked: json['is_liked'] ?? json['isLiked'] ?? false,
       isSaved: json['is_saved'] ?? json['isSaved'] ?? false,
       isReposted: json['is_reposted'] ?? json['isReposted'] ?? false,
-      replyTo: json['reply_to'] != null ? Post.fromJson(json['reply_to']) : null,
-      replyToReply: json['reply_to_reply'] != null ? Reply.fromJson(json['reply_to_reply']) : null,
+      replyTo:
+          json['reply_to'] != null ? Post.fromJson(json['reply_to']) : null,
+      replyToReply: json['reply_to_reply'] != null
+          ? Reply.fromJson(json['reply_to_reply'])
+          : null,
       // P3 fields
       location: json['location'],
       topicIds: topicIds,
       isGhost: json['is_ghost'] ?? json['isGhost'] ?? false,
       communityId: json['community_id'] ?? json['communityId'],
       replySettings: json['reply_settings'] ?? json['replySettings'],
-      quoteRepostId: json['quote_repost_id'] ?? json['quoteRepostId'] ?? json['quote_post_id'] ?? json['quotePostId'],
+      quoteRepostId: json['quote_repost_id'] ??
+          json['quoteRepostId'] ??
+          json['quote_post_id'] ??
+          json['quotePostId'],
       isPinned: json['is_pinned'] ?? json['isPinned'] ?? false,
       scheduledTime: json['scheduled_time'] ?? json['scheduledTime'],
       isAi: json['is_ai'] ?? json['isAi'] ?? false,
@@ -924,9 +998,11 @@ class Post {
       // Edit-related fields
       isEdited: json['is_edited'] ?? json['isEdited'] ?? false,
       editCount: json['edit_count'] ?? json['editCount'] ?? 0,
-      lastEditTime: json['last_edit_time'] != null || json['lastEditTime'] != null
-          ? _parseUtc((json['last_edit_time'] ?? json['lastEditTime']).toString())
-          : null,
+      lastEditTime:
+          json['last_edit_time'] != null || json['lastEditTime'] != null
+              ? _parseUtc(
+                  (json['last_edit_time'] ?? json['lastEditTime']).toString())
+              : null,
       // Sensitive content fields
       isSensitive: json['is_sensitive'] ?? json['isSensitive'] ?? false,
       contentWarning: json['content_warning'] ?? json['contentWarning'],
@@ -959,7 +1035,8 @@ class PollData {
   });
 
   bool get hasVoted => userVotedOptionId != null;
-  bool get isExpired => expireTime != null && DateTime.now().isAfter(expireTime!);
+  bool get isExpired =>
+      expireTime != null && DateTime.now().isAfter(expireTime!);
 
   PollData copyWith({
     int? pollId,
@@ -1083,6 +1160,7 @@ class Reply {
   // 嵌套回复相关字段
   /// 父回复 ID;为 null 表示该回复是帖子的直接（一级）回复，非 null 表示这是某个回复的子（二级）回复。
   final String? parentId;
+
   /// 子回复总数（仅一级回复使用，二级回复此字段恒为 0）。
   final int repliesCount;
 
@@ -1154,7 +1232,8 @@ class Reply {
       userId = userObj['id'] ?? userObj['user_id'] ?? userObj['userId'] ?? 0;
       username = userObj['username'] ?? '';
       displayName = userObj['display_name'] ?? userObj['displayName'] ?? '';
-      profilePic = userObj['avatar'] ?? userObj['profile_pic'] ?? userObj['profilePic'];
+      profilePic =
+          userObj['avatar'] ?? userObj['profile_pic'] ?? userObj['profilePic'];
     } else {
       userId = json['user_id'] ?? json['userId'] ?? 0;
       username = json['username'] ?? '';
@@ -1174,12 +1253,18 @@ class Reply {
     imageUrl ??= json['image_url'] ?? json['imageUrl'];
 
     // Parse create_time (API spec) or created_at / createdAt
-    final createdAtStr = json['create_time'] ?? json['created_at'] ?? json['createdAt'] ?? json['createTime'];
-    final createdAt = createdAtStr != null ? _parseUtc(createdAtStr.toString()) : DateTime.now();
+    final createdAtStr = json['create_time'] ??
+        json['created_at'] ??
+        json['createdAt'] ??
+        json['createTime'];
+    final createdAt = createdAtStr != null
+        ? _parseUtc(createdAtStr.toString())
+        : DateTime.now();
 
     // Parse parent_id (支持 snake_case / camelCase;post.json 中 schema 是 int?,此处统一转 String)
     final parentIdRaw = json['parent_id'] ?? json['parentId'];
-    final String? parentId = parentIdRaw != null ? parentIdRaw.toString() : null;
+    final String? parentId =
+        parentIdRaw != null ? parentIdRaw.toString() : null;
 
     return Reply(
       id: json['id']?.toString() ?? json['reply_id']?.toString() ?? '',
@@ -1267,7 +1352,8 @@ class EditHistory {
       return int.tryParse(v.toString()) ?? 0;
     }
 
-    final editedAtStr = json['create_time'] ?? json['edited_at'] ?? json['editedAt'];
+    final editedAtStr =
+        json['create_time'] ?? json['edited_at'] ?? json['editedAt'];
     return EditHistory(
       id: parseInt(json['id']),
       postId: parseInt(json['post_id'] ?? json['postId']),

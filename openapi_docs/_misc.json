@@ -32,13 +32,14 @@
     {
       "name": "Get Presigned Url",
       "method": "POST",
-      "path": "/upload/upload/presigned_url",
+      "path": "/upload/presigned_url",
       "auth": true,
       "desc": "获取 COS 预签名上传 URL 上传流程： 1. 前端选择文件后调用此接口 请求: {filename: \"photo.jpg\", content_type: \"image/jpeg\", file_size: 1048576} 2. 后端校验文件大小，调用 COS SDK 生成预签名 PUT URL 返回: {upload_url: \"https://...\", cos_url: \"https://cos...\", expires_in: 600} 3. 前端直接 PUT 文件到 upload_url（无需鉴权，URL 自身签名有效期内有效） 4. 前端将 cos_url 存入媒体库，创建帖子/发消息时传入 media_urls",
       "request": {
         "filename": "string, 文件名（含扩展名）",
         "content_type": "string, MIME 类型，如 image/jpeg",
-        "file_size": "int, 文件大小（字节）"
+        "file_size": "int, 文件大小（字节）",
+        "duration": "int?, 视频/语音时长（秒）, optional"
       },
       "response": "PresignedUrlResponse?"
     }

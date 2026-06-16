@@ -126,13 +126,6 @@
       "response": "OKResponse?"
     },
     {
-      "name": "退出登录",
-      "method": "DELETE",
-      "path": "/auth/logout",
-      "auth": true,
-      "response": "OKResponse?"
-    },
-    {
       "name": "我的信息",
       "method": "GET",
       "path": "/user/me",
@@ -177,17 +170,6 @@
         "user_id": "int"
       },
       "response": "UserProfileResponse?"
-    },
-    {
-      "name": "用户名注册",
-      "method": "POST",
-      "path": "/auth/username/register",
-      "request": {
-        "username": "string, max 50, 用户名",
-        "password": "string, max 50, 密码",
-        "confirm_password": "string, max 50, 确认密码"
-      },
-      "response": "OKResponse?"
     },
     {
       "name": "添加关系管控",
@@ -279,25 +261,6 @@
         "content_rating": "int?, 内容分级：1=全部，2=青少年，3=成人, optional"
       },
       "response": "OKResponse?"
-    },
-    {
-      "name": "用户名登录",
-      "method": "POST",
-      "path": "/auth/username/signin",
-      "request": {
-        "username": "string, max 50, 用户名",
-        "password": "string, max 50, 密码"
-      },
-      "response": "SigninResponse?"
-    },
-    {
-      "name": "刷新令牌",
-      "method": "POST",
-      "path": "/auth/token/refresh",
-      "request": {
-        "refresh_token": "string, 刷新令牌, optional"
-      },
-      "response": "RefreshTokenResponse?"
     }
   ],
   "schemas": {
@@ -314,11 +277,7 @@
     "MeUserResponse": {
       "id": "int, 用户ID, default: 0, optional",
       "username": "string, max 32, 用户名, optional",
-      "avatar": "string, max 32, 头像, optional"
-    },
-    "RefreshTokenResponse": {
-      "access_token": "string, 访问令牌, optional",
-      "refresh_token": "string, 刷新令牌, optional"
+      "avatar": "string, max 512, 头像, optional"
     },
     "SaveCollectionResponse": {
       "id": "int, 收藏夹ID, default: 0, optional",
@@ -350,13 +309,6 @@
       "interaction_restriction_type": "int, 互动限制：1=无限制，2=关注超过1周，3=仅互关, default: 1, optional",
       "silent_mode": "int, 静默模式：0=关闭，1=开启, default: 0, optional",
       "content_rating": "int, 内容分级：1=全部，2=青少年，3=成人, default: 1, optional"
-    },
-    "SigninResponse": {
-      "id": "int, 用户ID, default: 0, optional",
-      "username": "string, max 32, 用户名, optional",
-      "avatar": "string, max 32, 头像, optional",
-      "access_token": "string, 访问令牌, optional",
-      "refresh_token": "string, 刷新令牌, optional"
     },
     "UserProfileResponse": {
       "user_id": "int, 用户ID, default: 0, optional",

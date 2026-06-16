@@ -24,6 +24,7 @@ import 'package:threads/state/follow_request.state.dart';
 import 'package:threads/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:threads/state/media_preferences.state.dart';
+import 'package:threads/state/media_layout_preferences.state.dart';
 import 'package:threads/state/app_icon_state.dart';
 
 List<CameraDescription> cameras = [];
@@ -93,6 +94,11 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<MediaPreferences>(
           create: (_) => MediaPreferences(widget.sharedPreferences),
           lazy: false, // 关键：启动即构造，跑 _load() 把开关写入 VideoPlayerPool
+        ),
+        // ===== feed 媒体布局模式（纯客户端，九宫格 / 横向滑动） =====
+        ChangeNotifierProvider<MediaLayoutPreferences>(
+          create: (_) => MediaLayoutPreferences(widget.sharedPreferences),
+          lazy: false,
         ),
         // ===== app icon (iOS 25 pre-bundled, Android no-op) =====
         ChangeNotifierProvider<AppIconState>(

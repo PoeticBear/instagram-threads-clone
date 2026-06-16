@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
@@ -121,8 +122,9 @@ class _PollWidgetState extends State<PollWidget> {
     // 客户端兜底：服务端 isExpired 字段可能因时钟偏差 / 缓存延迟不准确
     final isExpiredLocally = _pollData.expireTime != null &&
         _pollData.expireTime!.isBefore(DateTime.now());
-    final showResults =
-        _pollData.hasVoted || _pollData.isExpired || isExpiredLocally;
+    // 统一标记"投票已结束"，驱动 banner / opacity / footer 抑制
+    final isEnded = _pollData.isExpired || isExpiredLocally;
+    final showResults = _pollData.hasVoted || isEnded;
 
     // 在 build 顶部算一次百分比，避免每个选项重复计算
     final percentages =
@@ -133,6 +135,8 @@ class _PollWidgetState extends State<PollWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 已结束状态：顶部 banner 明确告知用户"投票已截止"
+          if (isEnded) _buildEndedBanner(context),
           ..._pollData.options.asMap().entries.map((entry) {
             final index = entry.key;
             final option = entry.value;
@@ -141,6 +145,7 @@ class _PollWidgetState extends State<PollWidget> {
                 context: context,
                 option: option,
                 percentage: percentages[index],
+                isEnded: isEnded,
               );
             } else {
               return _BuildVotingOption(
@@ -152,7 +157,7 @@ class _PollWidgetState extends State<PollWidget> {
             }
           }),
           const SizedBox(height: 6),
-          _buildFooter(context, showResults),
+          _buildFooter(context, showResults, isEnded: isEnded),
         ],
       ),
     );
@@ -164,15 +169,30 @@ class _PollWidgetState extends State<PollWidget> {
     required BuildContext context,
     required PollOption option,
     required int percentage,
+    required bool isEnded,
   }) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final l10n = AppLocalizations.of(context)!;
     final isVoted = _pollData.userVotedOptionId == option.id;
 
-    // 无障碍：让 VoiceOver / TalkBack 朗读「选项 X, 60%, 你已投票」
-    final semanticsLabel = isVoted
-        ? '${option.optionText}, ${l10n.pollYouVoted}, $percentage%'
-        : '${option.optionText}, $percentage%';
+    // ─── 样式 token ───
+    // isEnded=true 时失去"已投"的强调（border 加粗 + 字体 w600），
+    // 整体通过外层 Opacity 进一步压暗；保留 check/circle 图标形状
+    // 是为了仍能区分"我投了哪个"，只是不作为视觉焦点。
+    final Color borderColor = (isVoted && !isEnded)
+        ? appColors.textPrimary
+        : (isEnded ? appColors.divider : appColors.border);
+    final double borderWidth = (isVoted && !isEnded) ? 1.5 : 1.0;
+    final FontWeight textWeight =
+        (isVoted && !isEnded) ? FontWeight.w600 : FontWeight.normal;
+
+    // 无障碍：让 VoiceOver / TalkBack 朗读「选项 X, 60%, 你已投票, 投票已结束」
+    final semanticsLabel = [
+      option.optionText,
+      if (isVoted) l10n.pollYouVoted,
+      '$percentage%',
+      if (isEnded) l10n.pollEnded,
+    ].join(', ');
 
     final content = Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -181,8 +201,8 @@ class _PollWidgetState extends State<PollWidget> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isVoted ? appColors.textPrimary : appColors.border,
-            width: isVoted ? 1.5 : 1,
+            color: borderColor,
+            width: borderWidth,
           ),
         ),
         child: ClipRRect(
@@ -223,8 +243,7 @@ class _PollWidgetState extends State<PollWidget> {
                         style: TextStyle(
                           color: appColors.textPrimary,
                           fontSize: 14,
-                          fontWeight:
-                              isVoted ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: textWeight,
                         ),
                       ),
                     ),
@@ -244,30 +263,39 @@ class _PollWidgetState extends State<PollWidget> {
       ),
     );
 
+    // 已结束：外层 Opacity 整体压暗到 0.6（不影响 hit test，仍可点跳详情）
+    final Widget contentInner =
+        isEnded ? Opacity(opacity: 0.6, child: content) : content;
+
     // 结果态外包 GestureDetector：让用户可点跳详情（投票态不受影响）
     return Semantics(
       container: true,
       label: semanticsLabel,
       child: widget.onCardTap == null
-          ? content
+          ? contentInner
           : GestureDetector(
               onTap: widget.onCardTap,
               behavior: HitTestBehavior.opaque,
-              child: content,
+              child: contentInner,
             ),
     );
   }
 
   // ──────────────────── 底部文案（票数 + 你已投票 + 倒计时） ────────────────────
 
-  Widget _buildFooter(BuildContext context, bool showResults) {
+  Widget _buildFooter(
+    BuildContext context,
+    bool showResults, {
+    required bool isEnded,
+  }) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final l10n = AppLocalizations.of(context)!;
     final parts = <String>[l10n.pollVotesCount(_pollData.totalVotes)];
     if (showResults && _pollData.hasVoted) {
       parts.add(l10n.pollYouVoted);
     }
-    if (_pollData.expireTime != null) {
+    // 已结束时不重复"投票已结束"——顶部 banner 已明确告知
+    if (!isEnded && _pollData.expireTime != null) {
       parts.add(_formatRemainingTime(l10n));
     }
     final text = Text(
@@ -283,6 +311,34 @@ class _PollWidgetState extends State<PollWidget> {
       );
     }
     return text;
+  }
+
+  // ──────────────────── "已结束" 状态 Banner ────────────────────
+  //
+  // 仅在 isEnded=true 时渲染。沿用项目惯例
+  // （scheduled_posts_page.dart:80-99）：
+  //   Icon(size:14, color:textMuted) + SizedBox(6) + Text(textMuted, size:12)
+  // 选 CupertinoIcons.clock 而非 Icons.lock*（后者专用于隐私/密码场景）。
+  Widget _buildEndedBanner(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(CupertinoIcons.clock, size: 14, color: appColors.textMuted),
+          const SizedBox(width: 6),
+          Text(
+            l10n.pollEnded,
+            style: TextStyle(
+              color: appColors.textMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

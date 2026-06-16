@@ -15,8 +15,8 @@
         "keyword": "string, 搜索关键词",
         "search_type": "int, 搜索类型：1=综合，2=用户，3=话题，4=帖子, default: 1",
         "sort": "string, 排序：top=最相关，recent=近期, default: top",
-        "page": "int, 页码, default: 1",
-        "limit": "int, 每页数量, default: 20"
+        "page": "int, 页码, default: 1, min: 1",
+        "limit": "int, 每页数量, default: 20, min: 1, max: 100"
       },
       "response": "SearchResult?"
     },
@@ -26,7 +26,7 @@
       "path": "/search/history",
       "auth": true,
       "query": {
-        "limit": "int, 返回数量, default: 10"
+        "limit": "int, 返回数量, default: 10, min: 1"
       },
       "response": "SearchHistoryResponse?"
     },
@@ -52,7 +52,7 @@
       "method": "GET",
       "path": "/search/hot-topics",
       "query": {
-        "limit": "int, 返回数量, default: 10"
+        "limit": "int, 返回数量, default: 10, min: 1"
       },
       "response": "ResponseModel"
     },
@@ -62,7 +62,7 @@
       "path": "/search/trending",
       "desc": "获取热门帖子（Trending Now）",
       "query": {
-        "limit": "int, 返回数量, default: 10"
+        "limit": "int, 返回数量, default: 10, min: 1"
       },
       "response": "ResponseModel"
     }

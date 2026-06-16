@@ -27,6 +27,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get publishFailed => 'Post failed, please retry';
 
   @override
+  String publishFailedWithReason(String reason) {
+    return 'Post failed: $reason';
+  }
+
+  @override
   String get noPostsYet => 'No posts yet';
 
   @override
@@ -401,6 +406,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
+  String get saveAction => 'Save';
+
+  @override
   String get unsave => 'Unsave';
 
   @override
@@ -429,6 +437,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get following => 'Following';
+
+  @override
+  String followUser(Object username) {
+    return 'Follow $username';
+  }
 
   @override
   String get posts => 'Posts';
@@ -830,6 +843,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearLocation => 'Clear';
+
+  @override
+  String get selectLocation => 'Select Location';
+
+  @override
+  String get confirmLocation => 'Confirm';
+
+  @override
+  String get locatingAddress => 'Locating address...';
+
+  @override
+  String get unknownLocation => 'Unknown location';
 
   @override
   String get scheduledPosts => 'Scheduled posts';
@@ -1475,12 +1500,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String imageTooLarge(String size) {
-    return 'Image exceeds 20MB limit (current ${size}MB)';
+    return 'Image exceeds 10MB limit (current ${size}MB)';
   }
 
   @override
   String gifTooLarge(String size) {
-    return 'GIF exceeds 20MB limit (current ${size}MB)';
+    return 'GIF exceeds 10MB limit (current ${size}MB)';
   }
 
   @override
@@ -1511,6 +1536,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get feedVideoAutoPlayDesc =>
       'Videos will play muted and loop while scrolling';
+
+  @override
+  String get feedMediaLayoutMode => 'Media layout';
+
+  @override
+  String get feedMediaLayoutModeDesc =>
+      'Choose how images and videos appear in posts.';
+
+  @override
+  String get feedMediaLayoutGrid => 'Grid';
+
+  @override
+  String get feedMediaLayoutHorizontal => 'Horizontal';
 
   @override
   String get markAsSensitive => 'Mark as sensitive content';

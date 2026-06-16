@@ -20,16 +20,22 @@ import 'package:threads/utils/video_processor.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/draft_list_sheet.dart';
 import 'package:threads/pages/composePost/compose_camera_page.dart';
+import 'package:threads/pages/composePost/location_picker_page.dart';
+import 'package:latlong2/latlong.dart';
 
 class ComposePost extends StatefulWidget {
   final VoidCallback? onPostSuccess;
   final VoidCallback? onCancel;
+
   /// 编辑模式：传非空 postId 即进入编辑模式
   final String? editingPostId;
+
   /// 编辑模式：预填的帖子内容
   final String? initialContent;
+
   /// 编辑模式：原帖是否标记为敏感
   final bool? initialIsSensitive;
+
   /// 编辑模式：原帖的敏感内容警告
   final String? initialContentWarning;
   const ComposePost({
@@ -59,7 +65,13 @@ class ComposePostState extends State<ComposePost> {
   List<TextEditingController> _pollControllers = [];
   int _replyType = 1;
   bool _isSubmitting = false;
+
+  /// 保存草稿中（含媒体上传）：用于草稿按钮显示加载动画
+  bool _isSavingDraft = false;
   String? _location;
+  // 地图选址时与 _location 一起带回的经纬度
+  double? _latitude;
+  double? _longitude;
   DateTime? _scheduledTime;
   // 编辑模式：敏感内容
   bool _isSensitive = false;
@@ -70,19 +82,21 @@ class ComposePostState extends State<ComposePost> {
   static const int _minPollOptions = 2;
   static const int _maxContentLength = 500;
 
-  // 视频相关限制（与后端 / VideoProcessor 保持一致）
-  static const int _maxVideoDurationMs = 60 * 1000;
-  static const int _maxVideoSizeBytes = 100 * 1024 * 1024;
-  static const int _maxGifSizeBytes = 20 * 1024 * 1024;
-  static const int _maxImageSizeBytes = 20 * 1024 * 1024;
+  // 视频 / 媒体相关限制 — 严格对齐服务端 openapi_docs/_misc.json
+  static const int _maxVideoDurationMs = 300 * 1000; // ≤ 300 秒（5 分钟）
+  static const int _maxVideoSizeBytes = 100 * 1024 * 1024; // 100MB
+  static const int _maxGifSizeBytes = 10 * 1024 * 1024; // 10MB
+  static const int _maxImageSizeBytes = 10 * 1024 * 1024; // 10MB
 
   bool get _isEditing => widget.editingPostId != null;
 
   @override
   void initState() {
     super.initState();
-    _textEditingController = TextEditingController(text: widget.initialContent ?? '');
-    _contentWarningController = TextEditingController(text: widget.initialContentWarning ?? '');
+    _textEditingController =
+        TextEditingController(text: widget.initialContent ?? '');
+    _contentWarningController =
+        TextEditingController(text: widget.initialContentWarning ?? '');
     _isSensitive = widget.initialIsSensitive ?? false;
     _initPollControllers();
   }
@@ -209,7 +223,7 @@ class ComposePostState extends State<ComposePost> {
               Navigator.pop(dialogContext);
               await onSave();
             },
-            child: Text(AppLocalizations.of(context)!.save),
+            child: Text(AppLocalizations.of(context)!.saveAction),
           ),
         ],
       ),
@@ -226,6 +240,8 @@ class ComposePostState extends State<ComposePost> {
       _showPollEditor = false;
       _replyType = 1;
       _location = null;
+      _latitude = null;
+      _longitude = null;
       _scheduledTime = null;
     });
   }
@@ -304,7 +320,8 @@ class ComposePostState extends State<ComposePost> {
     // 1) 上限保护：剩余配额 = _maxMediaCount - _mediaDrafts.length
     final remaining = _maxMediaCount - _mediaDrafts.length;
     if (remaining <= 0) {
-      _showSnack(AppLocalizations.of(context)!.mediaLimitReached(_maxMediaCount));
+      _showSnack(
+          AppLocalizations.of(context)!.mediaLimitReached(_maxMediaCount));
       return;
     }
 
@@ -313,10 +330,10 @@ class ComposePostState extends State<ComposePost> {
     final List<XFile> picked;
     try {
       picked = await picker.pickMultipleMedia(
-        // 不传 imageQuality / maxWidth：保留原始尺寸
-        // 注：image_picker 0.8.x 的 pickMultipleMedia 不支持 limit 参数，
-        // 上限由下面客户端二次截断兜底。
-      );
+          // 不传 imageQuality / maxWidth：保留原始尺寸
+          // 注：image_picker 0.8.x 的 pickMultipleMedia 不支持 limit 参数，
+          // 上限由下面客户端二次截断兜底。
+          );
     } catch (e) {
       developer.log('pickMultipleMedia failed: $e', name: 'ComposePost');
       return; // 用户取消时也走这里，不打扰
@@ -329,7 +346,8 @@ class ComposePostState extends State<ComposePost> {
     for (final xfile in picked) {
       if (accepted.length >= remaining) {
         // 在客户端二次截断（覆盖 limit 参数不生效的低版本系统）
-        rejected.add(AppLocalizations.of(context)!.mediaTruncated(_maxMediaCount));
+        rejected
+            .add(AppLocalizations.of(context)!.mediaTruncated(_maxMediaCount));
         break;
       }
       final result = await _buildMediaDraftFromXFile(xfile);
@@ -424,7 +442,8 @@ class ComposePostState extends State<ComposePost> {
         // 探测失败：仍允许通过，时长显示为空即可
         developer.log('getMediaInfo failed: ${e.message}', name: 'ComposePost');
         return (
-          item: MediaDraftItem.fromLocalVideo(file, durationMs: 0, fileSizeBytes: size),
+          item: MediaDraftItem.fromLocalVideo(file,
+              durationMs: 0, fileSizeBytes: size),
           error: null,
         );
       }
@@ -559,6 +578,8 @@ class ComposePostState extends State<ComposePost> {
       if (detail.location != null && detail.location!.isNotEmpty) {
         _location = detail.location;
       }
+      _latitude = detail.latitude;
+      _longitude = detail.longitude;
     });
     if (_mediaDrafts.isNotEmpty || (detail.location?.isNotEmpty ?? false)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -581,7 +602,8 @@ class ComposePostState extends State<ComposePost> {
     for (int i = 0; i < mediaUrls.length; i++) {
       final url = mediaUrls[i];
       if (url.isEmpty) continue;
-      final mt = (mediaTypes != null && i < mediaTypes.length) ? mediaTypes[i] : 1;
+      final mt =
+          (mediaTypes != null && i < mediaTypes.length) ? mediaTypes[i] : 1;
       out.add(
         MediaDraftItem.fromRemote(
           url: url,
@@ -642,40 +664,51 @@ class ComposePostState extends State<ComposePost> {
       );
       return;
     }
-    final draftState = Provider.of<DraftState>(context, listen: false);
 
-    // 上传本地媒体，收集 (url, mediaType) 平行数组
-    final resolved = await _resolveDraftMedia();
-    if (!mounted) return;
-    if (hasMedia && resolved == null) return; // 上传失败已提示
+    setState(() => _isSavingDraft = true);
+    try {
+      final draftState = Provider.of<DraftState>(context, listen: false);
 
-    final mediaUrls = resolved?.map((e) => e.key).toList();
-    final mediaTypes = resolved?.map((e) => e.value).toList();
+      // 上传本地媒体，收集 (url, mediaType) 平行数组
+      final resolved = await _resolveDraftMedia();
+      if (!mounted) return;
+      if (hasMedia && resolved == null) return; // 上传失败已提示
 
-    final saved = await draftState.saveDraft(
-      content: content,
-      mediaUrls: (mediaUrls != null && mediaUrls.isNotEmpty) ? mediaUrls : null,
-      mediaTypes: (mediaTypes != null && mediaTypes.isNotEmpty) ? mediaTypes : null,
-      pollOptions: _getValidPollOptions(),
-      replyType: _replyType != 1 ? _replyType : null,
-      location: _location,
-    );
-    if (!mounted) return;
-    if (saved != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.draftSaved),
-          backgroundColor: appColors.repost,
-          duration: const Duration(seconds: 1),
-        ),
+      final mediaUrls = resolved?.map((e) => e.key).toList();
+      final mediaTypes = resolved?.map((e) => e.value).toList();
+
+      final saved = await draftState.saveDraft(
+        content: content,
+        mediaUrls:
+            (mediaUrls != null && mediaUrls.isNotEmpty) ? mediaUrls : null,
+        mediaTypes:
+            (mediaTypes != null && mediaTypes.isNotEmpty) ? mediaTypes : null,
+        pollOptions: _getValidPollOptions(),
+        replyType: _replyType != 1 ? _replyType : null,
+        location: _location,
+        latitude: _latitude,
+        longitude: _longitude,
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.draftSaveFailed),
-          backgroundColor: appColors.destructive,
-        ),
-      );
+      if (!mounted) return;
+      if (saved != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.draftSaved),
+            backgroundColor: appColors.repost,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.draftSaveFailed),
+            backgroundColor: appColors.destructive,
+          ),
+        );
+      }
+    } finally {
+      // 无论成功 / 失败 / 提前 return，都关闭加载动画
+      if (mounted) setState(() => _isSavingDraft = false);
     }
   }
 
@@ -709,7 +742,6 @@ class ComposePostState extends State<ComposePost> {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     var state = Provider.of<PostState>(context, listen: false);
 
-    String? postId;
     if (_isEditing) {
       // ── 编辑模式：仅可改 content / is_sensitive / content_warning ──
       final updated = await state.updatePost(
@@ -747,12 +779,14 @@ class ComposePostState extends State<ComposePost> {
     // ── 新建模式 ──
     PostModel postModel = await _createPostModel();
     final pollOptions = _getValidPollOptions();
-    postId = await state.createPost(
+    final result = await state.createPost(
       postModel,
       mediaDrafts: _mediaDrafts.isNotEmpty ? _mediaDrafts : null,
       pollOptions: pollOptions,
       replyType: _replyType != 1 ? _replyType : null,
       location: _location,
+      latitude: _latitude,
+      longitude: _longitude,
       scheduledTime: _scheduledTime?.toUtc().toIso8601String(),
     );
 
@@ -760,7 +794,7 @@ class ComposePostState extends State<ComposePost> {
 
     setState(() => _isSubmitting = false);
 
-    if (postId != null) {
+    if (result.isSuccess) {
       final isScheduled = _scheduledTime != null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -780,14 +814,27 @@ class ComposePostState extends State<ComposePost> {
         _showPollEditor = false;
         _replyType = 1;
         _location = null;
+        _latitude = null;
+        _longitude = null;
         _scheduledTime = null;
       });
       widget.onPostSuccess?.call();
     } else {
+      // 发布失败 — 把服务端 / 网络的具体错误展示给用户，方便反馈与排障
+      // 完整 stackTrace 已写入 developer.log，详见 PostState [stage="$stage"] 日志
+      final l10n = AppLocalizations.of(context)!;
+      final reason = result.errorMessage?.trim().isNotEmpty == true
+          ? result.errorMessage!.trim()
+          : '未知错误';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.publishFailed),
+          content: Text(
+            l10n.publishFailedWithReason(reason),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
           backgroundColor: appColors.destructive,
+          duration: const Duration(seconds: 5),
         ),
       );
     }
@@ -795,55 +842,26 @@ class ComposePostState extends State<ComposePost> {
 
   // ─── Location ────────────────────────────────────────────
 
-  void _showLocationDialog() {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    final controller = TextEditingController(text: _location ?? '');
-    showCupertinoDialog(
-      context: context,
-      builder: (dialogContext) => CupertinoAlertDialog(
-        title: Text(
-          AppLocalizations.of(context)!.addLocation,
-          style: TextStyle(color: appColors.textPrimary),
+  /// 打开地图选址全屏页。返回 PickedLocation(name, lat, lng) 时一并写入状态；
+  /// 用户取消（返回 null）则保持原值不变。
+  Future<void> _openLocationPicker() async {
+    final result = await Navigator.of(context).push<PickedLocation>(
+      CupertinoPageRoute(
+        builder: (_) => LocationPickerPage(
+          initialCenter: (_latitude != null && _longitude != null)
+              ? LatLng(_latitude!, _longitude!)
+              : null,
+          initialName: _location,
         ),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: CupertinoTextField(
-            controller: controller,
-            placeholder: AppLocalizations.of(context)!.enterLocation,
-            placeholderStyle: TextStyle(color: appColors.textMuted),
-            style: TextStyle(color: appColors.textPrimary),
-            decoration: BoxDecoration(
-              color: appColors.surface,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          ),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              setState(() => _location = null);
-              Navigator.pop(dialogContext);
-            },
-            child: Text(AppLocalizations.of(context)!.clearLocation),
-          ),
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              final value = controller.text.trim();
-              setState(() => _location = value.isEmpty ? null : value);
-              Navigator.pop(dialogContext);
-            },
-            child: Text(AppLocalizations.of(context)!.save),
-          ),
-        ],
       ),
     );
+    if (result == null) return;
+    if (!mounted) return;
+    setState(() {
+      _location = result.name;
+      _latitude = result.latitude;
+      _longitude = result.longitude;
+    });
   }
 
   // ─── Schedule ───────────────────────────────────────────
@@ -890,10 +908,11 @@ class ComposePostState extends State<ComposePost> {
                 CupertinoButton(
                   child: Text(l10n.confirmButton,
                       style: TextStyle(
-                          color: appColors.accent, fontWeight: FontWeight.w600)),
+                          color: appColors.accent,
+                          fontWeight: FontWeight.w600)),
                   onPressed: () {
-                    if (selectedTime
-                        .isBefore(DateTime.now().add(const Duration(minutes: 5)))) {
+                    if (selectedTime.isBefore(
+                        DateTime.now().add(const Duration(minutes: 5)))) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(l10n.scheduleTimeTooEarly),
                         backgroundColor: appColors.destructive,
@@ -952,10 +971,14 @@ class ComposePostState extends State<ComposePost> {
                 ),
               ),
               Divider(color: appColors.divider, height: 1),
-              _replyTypeOption(1, Iconsax.global, AppLocalizations.of(context)!.everyoneCanReply),
-              _replyTypeOption(2, Iconsax.user, AppLocalizations.of(context)!.followersCanReply),
-              _replyTypeOption(3, Iconsax.people, AppLocalizations.of(context)!.followingCanReply),
-              _replyTypeOption(4, Icons.alternate_email, AppLocalizations.of(context)!.mentionedCanReply),
+              _replyTypeOption(1, Iconsax.global,
+                  AppLocalizations.of(context)!.everyoneCanReply),
+              _replyTypeOption(2, Iconsax.user,
+                  AppLocalizations.of(context)!.followersCanReply),
+              _replyTypeOption(3, Iconsax.people,
+                  AppLocalizations.of(context)!.followingCanReply),
+              _replyTypeOption(4, Icons.alternate_email,
+                  AppLocalizations.of(context)!.mentionedCanReply),
               const SizedBox(height: 8),
             ],
           ),
@@ -968,7 +991,9 @@ class ComposePostState extends State<ComposePost> {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final isSelected = _replyType == value;
     return ListTile(
-      leading: Icon(icon, color: isSelected ? appColors.textPrimary : appColors.textSecondary, size: 22),
+      leading: Icon(icon,
+          color: isSelected ? appColors.textPrimary : appColors.textSecondary,
+          size: 22),
       title: Text(label,
           style: TextStyle(
             color: isSelected ? appColors.textPrimary : appColors.textSecondary,
@@ -986,10 +1011,14 @@ class ComposePostState extends State<ComposePost> {
 
   IconData get _replyTypeIcon {
     switch (_replyType) {
-      case 2: return Iconsax.user;
-      case 3: return Iconsax.people;
-      case 4: return Icons.alternate_email;
-      default: return Iconsax.global;
+      case 2:
+        return Iconsax.user;
+      case 3:
+        return Iconsax.people;
+      case 4:
+        return Icons.alternate_email;
+      default:
+        return Iconsax.global;
     }
   }
 
@@ -1017,7 +1046,8 @@ class ComposePostState extends State<ComposePost> {
                 GestureDetector(
                   onTap: () => _handleBack(context),
                   child: Text(AppLocalizations.of(context)!.back,
-                      style: TextStyle(color: appColors.textPrimary, fontSize: 16)),
+                      style: TextStyle(
+                          color: appColors.textPrimary, fontSize: 16)),
                 ),
                 Expanded(
                   child: Center(
@@ -1079,16 +1109,19 @@ class ComposePostState extends State<ComposePost> {
                             ),
                             TextField(
                               maxLength: _maxContentLength,
-                              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                              maxLengthEnforcement:
+                                  MaxLengthEnforcement.enforced,
                               keyboardAppearance: Theme.of(context).brightness,
-                              style: TextStyle(color: appColors.textPrimary, fontSize: 16),
+                              style: TextStyle(
+                                  color: appColors.textPrimary, fontSize: 16),
                               controller: _textEditingController,
                               onChanged: (_) => setState(() {}),
                               maxLines: null,
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                                 counterText: '',
-                                hintText: AppLocalizations.of(context)!.saySomething,
+                                hintText:
+                                    AppLocalizations.of(context)!.saySomething,
                                 hintStyle: TextStyle(
                                   fontSize: 16,
                                   color: appColors.textHint,
@@ -1101,7 +1134,9 @@ class ComposePostState extends State<ComposePost> {
                                 child: Text(
                                   '$charCount / $_maxContentLength',
                                   style: TextStyle(
-                                    color: charCount > 450 ? Colors.orange : appColors.textSecondary,
+                                    color: charCount > 450
+                                        ? Colors.orange
+                                        : appColors.textSecondary,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -1110,7 +1145,8 @@ class ComposePostState extends State<ComposePost> {
                             if (_isEditing) ...[
                               const SizedBox(height: 8),
                               GestureDetector(
-                                onTap: () => setState(() => _isSensitive = !_isSensitive),
+                                onTap: () => setState(
+                                    () => _isSensitive = !_isSensitive),
                                 behavior: HitTestBehavior.opaque,
                                 child: Row(
                                   children: [
@@ -1125,7 +1161,8 @@ class ComposePostState extends State<ComposePost> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      AppLocalizations.of(context)!.markAsSensitive,
+                                      AppLocalizations.of(context)!
+                                          .markAsSensitive,
                                       style: TextStyle(
                                         color: _isSensitive
                                             ? appColors.textPrimary
@@ -1147,18 +1184,21 @@ class ComposePostState extends State<ComposePost> {
                                   decoration: BoxDecoration(
                                     color: appColors.surface,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: appColors.divider),
+                                    border:
+                                        Border.all(color: appColors.divider),
                                   ),
                                   child: TextField(
                                     controller: _contentWarningController,
                                     maxLength: 200,
                                     style: TextStyle(
-                                        color: appColors.textPrimary, fontSize: 14),
+                                        color: appColors.textPrimary,
+                                        fontSize: 14),
                                     decoration: InputDecoration(
                                       hintText: AppLocalizations.of(context)!
                                           .contentWarningHint,
                                       hintStyle: TextStyle(
-                                          color: appColors.textHint, fontSize: 14),
+                                          color: appColors.textHint,
+                                          fontSize: 14),
                                       border: InputBorder.none,
                                       counterText: '',
                                       isDense: true,
@@ -1185,8 +1225,10 @@ class ComposePostState extends State<ComposePost> {
                             runSpacing: 8,
                             children: [
                               for (int i = 0; i < _mediaDrafts.length; i++)
-                                _buildMediaPreview(appColors, _mediaDrafts[i], i),
-                              if (_canAddMoreMedia) _buildAddMediaTile(appColors),
+                                _buildMediaPreview(
+                                    appColors, _mediaDrafts[i], i),
+                              if (_canAddMoreMedia)
+                                _buildAddMediaTile(appColors),
                             ],
                           ),
                           // 媒体计数
@@ -1216,16 +1258,19 @@ class ComposePostState extends State<ComposePost> {
                     Padding(
                       padding: const EdgeInsets.only(left: 52, top: 8),
                       child: GestureDetector(
-                        onTap: _showLocationDialog,
+                        onTap: _openLocationPicker,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Iconsax.location, size: 14, color: appColors.textMuted),
+                            Icon(Iconsax.location,
+                                size: 14, color: appColors.textMuted),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
                                 _location!,
-                                style: TextStyle(color: appColors.textSecondary, fontSize: 13),
+                                style: TextStyle(
+                                    color: appColors.textSecondary,
+                                    fontSize: 13),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -1243,12 +1288,14 @@ class ComposePostState extends State<ComposePost> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Iconsax.clock, size: 14, color: appColors.accent),
+                            Icon(Iconsax.clock,
+                                size: 14, color: appColors.accent),
                             const SizedBox(width: 4),
                             Text(
                               '${_scheduledTime!.year}-${_scheduledTime!.month.toString().padLeft(2, '0')}-${_scheduledTime!.day.toString().padLeft(2, '0')} '
                               '${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                              style: TextStyle(color: appColors.accent, fontSize: 13),
+                              style: TextStyle(
+                                  color: appColors.accent, fontSize: 13),
                             ),
                           ],
                         ),
@@ -1285,7 +1332,8 @@ class ComposePostState extends State<ComposePost> {
           color: appColors.surface,
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
+        child: Icon(Icons.person,
+            size: size * 0.6, color: appColors.textSecondary),
       );
     }
     return ClipRRect(
@@ -1310,7 +1358,8 @@ class ComposePostState extends State<ComposePost> {
   }
 
   /// 通用媒体预览：图片 / 视频缩略图（带 ▶ + 时长）/ GIF（动画）
-  Widget _buildMediaPreview(AppColors appColors, MediaDraftItem item, int index) {
+  Widget _buildMediaPreview(
+      AppColors appColors, MediaDraftItem item, int index) {
     return Stack(
       children: [
         ClipRRect(
@@ -1365,7 +1414,8 @@ class ComposePostState extends State<ComposePost> {
     // 视频：缩略图（本地或远端） + ▶ 角标
     if (item.isVideo) {
       final thumbWidget = item.thumbPath != null
-          ? Image.file(File(item.thumbPath!), fit: BoxFit.cover, width: 80, height: 80)
+          ? Image.file(File(item.thumbPath!),
+              fit: BoxFit.cover, width: 80, height: 80)
           : item.remoteThumbUrl != null
               ? CachedNetworkImage(
                   imageUrl: item.remoteThumbUrl!,
@@ -1373,8 +1423,9 @@ class ComposePostState extends State<ComposePost> {
                   width: 80,
                   height: 80,
                   placeholder: (_, __) => Container(color: appColors.surface),
-                  errorWidget: (_, __, ___) =>
-                      Container(color: appColors.surface, child: const Icon(Icons.videocam)),
+                  errorWidget: (_, __, ___) => Container(
+                      color: appColors.surface,
+                      child: const Icon(Icons.videocam)),
                 )
               : Container(
                   color: appColors.surface,
@@ -1399,7 +1450,8 @@ class ComposePostState extends State<ComposePost> {
     // 图片
     if (item.isImage) {
       if (item.localFile != null) {
-        return Image.file(item.localFile!, fit: BoxFit.cover, width: 80, height: 80);
+        return Image.file(item.localFile!,
+            fit: BoxFit.cover, width: 80, height: 80);
       }
       if (item.remoteUrl != null) {
         return CachedNetworkImage(
@@ -1410,7 +1462,8 @@ class ComposePostState extends State<ComposePost> {
           placeholder: (_, __) => Container(color: appColors.surface),
           errorWidget: (_, __, ___) => Container(
             color: appColors.surface,
-            child: Icon(Icons.broken_image, color: appColors.textMuted, size: 20),
+            child:
+                Icon(Icons.broken_image, color: appColors.textMuted, size: 20),
           ),
         );
       }
@@ -1419,7 +1472,8 @@ class ComposePostState extends State<ComposePost> {
     // GIF
     if (item.isGif) {
       if (item.localFile != null) {
-        return Image.file(item.localFile!, fit: BoxFit.cover, width: 80, height: 80);
+        return Image.file(item.localFile!,
+            fit: BoxFit.cover, width: 80, height: 80);
       }
       if (item.remoteUrl != null) {
         return CachedNetworkImage(
@@ -1430,7 +1484,8 @@ class ComposePostState extends State<ComposePost> {
           placeholder: (_, __) => Container(color: appColors.surface),
           errorWidget: (_, __, ___) => Container(
             color: appColors.surface,
-            child: Icon(Icons.broken_image, color: appColors.textMuted, size: 20),
+            child:
+                Icon(Icons.broken_image, color: appColors.textMuted, size: 20),
           ),
         );
       }
@@ -1473,13 +1528,17 @@ class ComposePostState extends State<ComposePost> {
                   Expanded(
                     child: TextField(
                       controller: _pollControllers[i],
-                      style: TextStyle(color: appColors.textPrimary, fontSize: 14),
+                      style:
+                          TextStyle(color: appColors.textPrimary, fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.optionLabel(i + 1),
-                        hintStyle: TextStyle(color: appColors.textSecondary, fontSize: 14),
+                        hintText:
+                            AppLocalizations.of(context)!.optionLabel(i + 1),
+                        hintStyle: TextStyle(
+                            color: appColors.textSecondary, fontSize: 14),
                         filled: true,
                         fillColor: appColors.surface,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: appColors.divider),
@@ -1498,7 +1557,8 @@ class ComposePostState extends State<ComposePost> {
                   ),
                   if (_pollControllers.length > _minPollOptions)
                     IconButton(
-                      icon: Icon(Icons.close, size: 18, color: appColors.textMuted),
+                      icon: Icon(Icons.close,
+                          size: 18, color: appColors.textMuted),
                       onPressed: () => _removePollOption(i),
                     ),
                 ],
@@ -1514,7 +1574,8 @@ class ComposePostState extends State<ComposePost> {
                     Icon(Icons.add, size: 18, color: appColors.textMuted),
                     const SizedBox(width: 4),
                     Text(AppLocalizations.of(context)!.addOption,
-                        style: TextStyle(color: appColors.textMuted, fontSize: 14)),
+                        style: TextStyle(
+                            color: appColors.textMuted, fontSize: 14)),
                   ],
                 ),
               ),
@@ -1524,7 +1585,9 @@ class ComposePostState extends State<ComposePost> {
             child: GestureDetector(
               onTap: _togglePollEditor,
               child: Text(AppLocalizations.of(context)!.removePoll,
-                  style: TextStyle(color: appColors.destructive.withValues(alpha: 0.8), fontSize: 13)),
+                  style: TextStyle(
+                      color: appColors.destructive.withValues(alpha: 0.8),
+                      fontSize: 13)),
             ),
           ),
         ],
@@ -1561,7 +1624,8 @@ class ComposePostState extends State<ComposePost> {
                             ? AppLocalizations.of(context)!.saveEdits
                             : AppLocalizations.of(context)!.post,
                         style: TextStyle(
-                          color: _canPost ? appColors.accent : appColors.divider,
+                          color:
+                              _canPost ? appColors.accent : appColors.divider,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1584,10 +1648,13 @@ class ComposePostState extends State<ComposePost> {
             _toolbarIcon(
               onTap: _showPollEditor ? null : _openCamera,
               icon: Iconsax.camera,
-              color: _showPollEditor ? appColors.divider : appColors.textPrimary,
+              color:
+                  _showPollEditor ? appColors.divider : appColors.textPrimary,
             ),
             _toolbarIcon(
-              onTap: (_showPollEditor || !_canAddMoreMedia) ? null : _pickMultipleMedia,
+              onTap: (_showPollEditor || !_canAddMoreMedia)
+                  ? null
+                  : _pickMultipleMedia,
               icon: Iconsax.gallery,
               color: (_showPollEditor || !_canAddMoreMedia)
                   ? appColors.divider
@@ -1598,65 +1665,77 @@ class ComposePostState extends State<ComposePost> {
               icon: Iconsax.chart_square,
               color: _mediaDrafts.isNotEmpty
                   ? appColors.divider
-                  : (_showPollEditor ? appColors.accent : appColors.textPrimary),
+                  : (_showPollEditor
+                      ? appColors.accent
+                      : appColors.textPrimary),
             ),
             _toolbarIcon(
               onTap: _showReplyTypeSheet,
               icon: _replyTypeIcon,
               color: appColors.textMuted,
             ),
-            // TODO: 暂时隐藏草稿/定位/定时入口 — 恢复时去掉这段注释
-            // _toolbarIcon(
-            //   onTap: _showDraftListSheet,
-            //   icon: Iconsax.note_text,
-            //   color: appColors.textMuted,
-            // ),
-            // _toolbarIcon(
-            //   onTap: _showLocationDialog,
-            //   icon: Iconsax.location,
-            //   color: _location != null ? appColors.accent : appColors.textMuted,
-            // ),
-            // _toolbarIcon(
-            //   onTap: _showSchedulePicker,
-            //   icon: Iconsax.clock,
-            //   color: _scheduledTime != null ? appColors.accent : appColors.textMuted,
-            // ),
+            _toolbarIcon(
+              onTap: _showDraftListSheet,
+              icon: Iconsax.note_text,
+              color: appColors.textMuted,
+            ),
+            _toolbarIcon(
+              onTap: _openLocationPicker,
+              icon: Iconsax.location,
+              color: _location != null ? appColors.accent : appColors.textMuted,
+            ),
+            _toolbarIcon(
+              onTap: _showSchedulePicker,
+              icon: Iconsax.clock,
+              color: _scheduledTime != null
+                  ? appColors.accent
+                  : appColors.textMuted,
+            ),
             const Spacer(),
             if (_hasContent)
               GestureDetector(
-                onTap: _saveCurrentDraft,
+                onTap: _isSavingDraft ? null : _saveCurrentDraft,
+                behavior: HitTestBehavior.opaque,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Text(
-                    AppLocalizations.of(context)!.draft,
-                    style: TextStyle(
-                      color: appColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
+                  padding: const EdgeInsets.all(6),
+                  child: _isSavingDraft
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: appColors.textSecondary,
+                          ),
+                        )
+                      : Icon(
+                          Iconsax.save_2,
+                          size: 22,
+                          color: appColors.textSecondary,
+                        ),
                 ),
               ),
             GestureDetector(
               onTap: _canPost ? _submit : null,
-              child: _isSubmitting
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: appColors.accent,
-                      ),
-                    )
-                  : Text(
-                      _scheduledTime != null
-                          ? AppLocalizations.of(context)!.schedulePost
-                          : AppLocalizations.of(context)!.post,
-                      style: TextStyle(
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: _isSubmitting
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: appColors.accent,
+                        ),
+                      )
+                    : Icon(
+                        _scheduledTime != null
+                            ? Iconsax.timer_1
+                            : Iconsax.send_1,
+                        size: 24,
                         color: _canPost ? appColors.accent : appColors.divider,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
+              ),
             ),
           ],
         ),

@@ -18,7 +18,7 @@ from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 
-SOURCE_FILE = "openapi_20260518.json"
+SOURCE_FILE = "openapi_docs/versions/openapi_20260616.json"
 OUTPUT_DIR = "openapi_docs"
 
 # --- 模块名映射（小模块合并） ---

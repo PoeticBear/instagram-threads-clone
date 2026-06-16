@@ -13,6 +13,9 @@ class DraftInfo {
   final int? quotePostId;
   final String createTime;
   final String? updateTime;
+  // 位置经纬度（与 location 配套；地图选址时由服务端可选使用）
+  final double? latitude;
+  final double? longitude;
 
   DraftInfo({
     required this.id,
@@ -23,6 +26,8 @@ class DraftInfo {
     this.topicId,
     this.replyType,
     this.location,
+    this.latitude,
+    this.longitude,
     this.quotePostId,
     required this.createTime,
     this.updateTime,
@@ -107,11 +112,21 @@ class DraftInfo {
       mediaUrls: mediaUrls,
       mediaTypes: mediaTypes,
       pollOptions: (json['poll_options'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList(),
+          ?.map((e) => e.toString())
+          .toList(),
       topicId: json['topic_id'] as int?,
       replyType: json['reply_type'] as int?,
       location: json['location'] as String?,
+      latitude: (json['latitude'] is num)
+          ? (json['latitude'] as num).toDouble()
+          : (json['latitude'] is String
+              ? double.tryParse(json['latitude'] as String)
+              : null),
+      longitude: (json['longitude'] is num)
+          ? (json['longitude'] as num).toDouble()
+          : (json['longitude'] is String
+              ? double.tryParse(json['longitude'] as String)
+              : null),
       quotePostId: json['quote_post_id'] as int?,
       createTime: json['create_time'] as String? ?? '',
       updateTime: json['update_time'] as String?,
@@ -128,6 +143,8 @@ class DraftInfo {
       if (topicId != null) 'topic_id': topicId,
       if (replyType != null) 'reply_type': replyType,
       if (location != null) 'location': location,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
       if (quotePostId != null) 'quote_post_id': quotePostId,
       'create_time': createTime,
       if (updateTime != null) 'update_time': updateTime,
@@ -143,6 +160,8 @@ class DraftInfo {
     int? topicId,
     int? replyType,
     String? location,
+    double? latitude,
+    double? longitude,
     int? quotePostId,
     String? createTime,
     String? updateTime,
@@ -156,6 +175,8 @@ class DraftInfo {
       topicId: topicId ?? this.topicId,
       replyType: replyType ?? this.replyType,
       location: location ?? this.location,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       quotePostId: quotePostId ?? this.quotePostId,
       createTime: createTime ?? this.createTime,
       updateTime: updateTime ?? this.updateTime,

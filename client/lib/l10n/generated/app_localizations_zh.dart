@@ -27,6 +27,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get publishFailed => '发布失败，请重试';
 
   @override
+  String publishFailedWithReason(String reason) {
+    return '发布失败：$reason';
+  }
+
+  @override
   String get noPostsYet => '暂无帖子';
 
   @override
@@ -392,6 +397,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get save => '收藏';
 
   @override
+  String get saveAction => '保存';
+
+  @override
   String get unsave => '取消收藏';
 
   @override
@@ -420,6 +428,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get following => '已关注';
+
+  @override
+  String followUser(Object username) {
+    return '关注 $username';
+  }
 
   @override
   String get posts => '帖子';
@@ -816,6 +829,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clearLocation => '清除';
+
+  @override
+  String get selectLocation => '选择位置';
+
+  @override
+  String get confirmLocation => '确定';
+
+  @override
+  String get locatingAddress => '正在获取地址...';
+
+  @override
+  String get unknownLocation => '未知位置';
 
   @override
   String get scheduledPosts => '定时帖子';
@@ -1455,12 +1480,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String imageTooLarge(String size) {
-    return '图片超过 20MB 上限（当前 ${size}MB）';
+    return '图片超过 10MB 上限（当前 ${size}MB）';
   }
 
   @override
   String gifTooLarge(String size) {
-    return 'GIF 超过 20MB 上限（当前 ${size}MB）';
+    return 'GIF 超过 10MB 上限（当前 ${size}MB）';
   }
 
   @override
@@ -1490,6 +1515,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get feedVideoAutoPlayDesc => '滚动时视频将以静音循环方式自动播放';
+
+  @override
+  String get feedMediaLayoutMode => '媒体布局';
+
+  @override
+  String get feedMediaLayoutModeDesc => '选择帖子中图片和视频的展示方式。';
+
+  @override
+  String get feedMediaLayoutGrid => '九宫格';
+
+  @override
+  String get feedMediaLayoutHorizontal => '横向滑动';
 
   @override
   String get markAsSensitive => '标记为敏感内容';

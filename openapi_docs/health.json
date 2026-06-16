@@ -1,0 +1,16 @@
+{
+  "common": {
+    "response_wrapper": "{ code: int, msg: string, data: T }",
+    "pagination": "{ total: int, page: int, size: int, items: T[] }",
+    "auth_header": "Authorization: string (大部分接口必传)",
+    "device_header": "device-os: string (可选)"
+  },
+  "endpoints": [
+    {
+      "name": "健康检查",
+      "method": "GET",
+      "path": "/health",
+      "response": "ResponseModel"
+    }
+  ]
+}

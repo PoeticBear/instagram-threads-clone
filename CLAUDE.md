@@ -53,6 +53,7 @@ docs/
 > 现有清单：
 > - [`docs/code-locations/publish-post.md`](docs/code-locations/publish-post.md) — 发布帖子（ComposePost / ComposeCameraPage）相关代码位置。
 > - [`docs/code-locations/select-media.md`](docs/code-locations/select-media.md) — 选择媒体（相册 / 相机 / 上传 / 预览）相关代码位置 + 简要设计分析。
+> - [`docs/code-locations/user-avatar-with-follow.md`](docs/code-locations/user-avatar-with-follow.md) — 带头像关注加号的可复用组件（`UserAvatarWithFollow`）代码定位 + 显示判定 + PostModel/PostState 扩展点 + 复用点清单。
 
 ## 架构约定
 

@@ -15,8 +15,10 @@ import 'package:threads/common/locator.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/state/media_layout_preferences.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/poll_widget.dart';
+import 'package:threads/widget/user_avatar_with_follow.dart';
 import 'package:threads/widget/video_player_pool.dart';
 import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -128,6 +130,10 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     final hasPoll = widget.postModel.pollData != null;
     final hasQuoteId = widget.postModel.quoteRepostId != null;
     final quotePost = _effectiveQuotePost;
+    // 当前登录用户 ID（用于「加号」组件判断是否显示自己帖子的加号）
+    final currentUserId = int.tryParse(
+      Provider.of<AuthState>(context, listen: false).userId,
+    );
 
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
 
@@ -176,9 +182,25 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             ],
             Row(
               children: [
-                GestureDetector(
-                  onTap: () => _navigateToProfile(context),
-                  child: avatar(profilePic, 35),
+                UserAvatarWithFollow(
+                  avatarUrl: profilePic,
+                  size: 35,
+                  userId: user?.userId,
+                  currentUserId: currentUserId,
+                  isFollowing: widget.postModel.isFollowing,
+                  userName: displayName,
+                  onAvatarTap: () => _navigateToProfile(context),
+                  onFollow: () async {
+                    final postState = Provider.of<PostState>(context, listen: false);
+                    final authorId = user?.userId;
+                    if (authorId == null) return;
+                    try {
+                      await postState.followPostAuthor(widget.postModel.id, authorId);
+                    } catch (_) {
+                      // PostState 已自动回滚 PostModel.isFollowing，UI 重建后加号会
+                      // 自动重新出现。这里不再弹 toast（错误已记录在 PostState 日志）。
+                    }
+                  },
                 ),
                 Container(width: 5),
                 Expanded(
@@ -260,7 +282,10 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             if (!hasPoll && hasMedia)
               Padding(
                 padding: EdgeInsets.only(left: 40, right: 10),
-                child: _buildMediaGallery(appColors),
+                child: Consumer<MediaLayoutPreferences>(
+                  builder: (context, layoutPrefs, _) =>
+                      _buildMediaGallery(appColors, layoutPrefs.isHorizontalLayout),
+                ),
               ),
             Container(
               height: 10,
@@ -430,9 +455,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   /// 2-4 张：2 列网格（2×2 满格）
   /// 5-9 张：3 列网格（3×3 满格）
   /// >9 张：显示前 9 个，最后一个叠 +N 半透明角标
-  Widget _buildMediaGallery(AppColors appColors) {
+  Widget _buildMediaGallery(AppColors appColors, bool isHorizontal) {
     final items = widget.postModel.effectiveMediaItems;
     if (items.isEmpty) return SizedBox.shrink();
+    if (isHorizontal) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : 300.0; // 兜底：父级无界时给个固定值
+          return _buildHorizontalMedia(appColors, items, maxWidth);
+        },
+      );
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth.isFinite
@@ -588,6 +623,97 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
             child: tile,
           );
         },
+      ),
+    );
+  }
+
+  /// 单行横向滚动：固定高度 220pt，按宽高比缩放宽度；最后一个 tile 贴右。
+  /// - 复用 _buildMediaImage（图片 / GIF / 视频 + 池控制器 + 时长 / 静音）
+  /// - 视频子项：包 VisibilityDetector，可见时由 VideoPlayerPool 自动播放
+  /// - 不裁切；tile 间 4pt 间隙作为滑动 peek
+  /// - 无数量上限：所有媒体（>9 也可）都能横滑到
+  Widget _buildHorizontalMedia(
+    AppColors appColors,
+    List<MediaItemModel> items,
+    double maxWidth,
+  ) {
+    const double fixedHeight = 220.0;
+    const double gap = 4.0;
+    const double landscapeMaxRatio = 0.85; // 多图时横图封顶，避免单 tile 撑满
+    const double minWidthRatio = 0.9; // 单图时最小宽度 = fixedHeight * 0.9
+
+    final children = <Widget>[];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final w = item.width ?? 0;
+      final h = item.height ?? 0;
+      final hasRatio = w > 0 && h > 0;
+      final aspect = hasRatio ? w / h : 1.0;
+
+      double tileWidth;
+      if (items.length == 1) {
+        tileWidth = (fixedHeight * aspect).clamp(
+          fixedHeight * minWidthRatio,
+          maxWidth,
+        );
+      } else {
+        tileWidth = aspect >= 1.0
+            ? (fixedHeight * aspect).clamp(0.0, maxWidth * landscapeMaxRatio)
+            : fixedHeight * aspect;
+      }
+
+      final mediaKey = 'feed_video_${widget.postModel.id}_$i';
+      final isPlayableVideo =
+          item.isVideo && (item.url != null && item.url!.isNotEmpty);
+
+      Widget tile = ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: tileWidth,
+          height: fixedHeight,
+          child: _buildMediaImage(appColors, item, mediaKey: mediaKey),
+        ),
+      );
+
+      if (isPlayableVideo) {
+        final videoUrl = item.url!;
+        tile = VisibilityDetector(
+          key: ValueKey('vd_$mediaKey'),
+          onVisibilityChanged: (info) {
+            if (info.visibleFraction > 0.5) {
+              VideoPlayerPool.instance.acquire(mediaKey, videoUrl);
+              VideoPlayerPool.instance.playVisible(mediaKey);
+            } else {
+              VideoPlayerPool.instance.pauseVisible(mediaKey);
+            }
+          },
+          child: tile,
+        );
+      }
+
+      tile = GestureDetector(
+        onTap: () {
+          if (isPlayableVideo) {
+            VideoPlayerPool.instance.pauseAll();
+          }
+          _openMediaViewer(context, tappedIndex: i);
+        },
+        child: tile,
+      );
+
+      children.add(tile);
+      if (i != items.length - 1) {
+        children.add(const SizedBox(width: gap));
+      }
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.zero, // 最后一个 tile 与外层 Padding.right=10 贴齐
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
       ),
     );
   }

@@ -6,6 +6,12 @@
   "post": "发布",
   "publishSuccess": "发布成功",
   "publishFailed": "发布失败，请重试",
+  "publishFailedWithReason": "发布失败：{reason}",
+  "@publishFailedWithReason": {
+    "placeholders": {
+      "reason": { "type": "String" }
+    }
+  },
   "noPostsYet": "暂无帖子",
   "anonymousUser": "匿名用户",
   "whatsNew": "有什么新鲜事？",
@@ -148,6 +154,7 @@
   "undoRepost": "撤销转发",
   "quote": "引用",
   "save": "收藏",
+  "saveAction": "保存",
   "unsave": "取消收藏",
   "share": "分享",
   "copyLink": "复制链接",
@@ -158,6 +165,7 @@
   "unfollow": "取消关注",
   "followers": "粉丝",
   "following": "已关注",
+  "followUser": "关注 {username}",
   "posts": "帖子",
   "linkCopiedToClipboard": "链接已复制到剪贴板",
   "copied": "已复制",
@@ -290,6 +298,10 @@
   "addLocation": "添加位置",
   "enterLocation": "输入位置名称",
   "clearLocation": "清除",
+  "selectLocation": "选择位置",
+  "confirmLocation": "确定",
+  "locatingAddress": "正在获取地址...",
+  "unknownLocation": "未知位置",
   "scheduledPosts": "定时帖子",
   "noScheduledPosts": "暂无定时帖子",
   "cancelSchedule": "取消定时",
@@ -617,13 +629,13 @@
       "max": { "type": "int" }
     }
   },
-  "imageTooLarge": "图片超过 20MB 上限（当前 {size}MB）",
+  "imageTooLarge": "图片超过 10MB 上限（当前 {size}MB）",
   "@imageTooLarge": {
     "placeholders": {
       "size": { "type": "String" }
     }
   },
-  "gifTooLarge": "GIF 超过 20MB 上限（当前 {size}MB）",
+  "gifTooLarge": "GIF 超过 10MB 上限（当前 {size}MB）",
   "@gifTooLarge": {
     "placeholders": {
       "size": { "type": "String" }
@@ -647,6 +659,10 @@
   "mediaSettings": "媒体播放",
   "feedVideoAutoPlay": "信息流自动播放视频",
   "feedVideoAutoPlayDesc": "滚动时视频将以静音循环方式自动播放",
+  "feedMediaLayoutMode": "媒体布局",
+  "feedMediaLayoutModeDesc": "选择帖子中图片和视频的展示方式。",
+  "feedMediaLayoutGrid": "九宫格",
+  "feedMediaLayoutHorizontal": "横向滑动",
   "markAsSensitive": "标记为敏感内容",
   "contentWarningHint": "内容警告（如剧透、暴力等） - 可选",
   "saveEdits": "保存",

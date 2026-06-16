@@ -210,7 +210,7 @@
         "url": "string, 帖子URL，格式: https://domain/t/{short_code}",
         "format": "string, 响应格式（json）, default: json"
       },
-      "response": "void"
+      "response": "OEmbedResponse?"
     },
     {
       "name": "置顶帖子",
@@ -277,7 +277,6 @@
       "method": "POST",
       "path": "/post/reply/hide/{reply_id}",
       "auth": true,
-      "desc": "隐藏回复（帖子作者或回复作者可操作）",
       "path_params": {
         "reply_id": "int"
       },
@@ -288,7 +287,6 @@
       "method": "DELETE",
       "path": "/post/reply/hide/{reply_id}",
       "auth": true,
-      "desc": "取消隐藏回复（帖子作者或回复作者可操作）",
       "path_params": {
         "reply_id": "int"
       },
@@ -392,6 +390,17 @@
       "response": "OKResponse?"
     },
     {
+      "name": "删除回复",
+      "method": "DELETE",
+      "path": "/post/reply/{reply_id}",
+      "auth": true,
+      "desc": "删除回复（回复作者可删除自己的，帖子作者可删除任意回复）",
+      "path_params": {
+        "reply_id": "int"
+      },
+      "response": "OKResponse?"
+    },
+    {
       "name": "举报内容",
       "method": "POST",
       "path": "/post/report",
@@ -486,6 +495,21 @@
         "size": "int, 每页数量, default: 20, min: 1, max: 100"
       },
       "response": "Page<PostResponse>?"
+    },
+    {
+      "name": "用户回复列表",
+      "method": "GET",
+      "path": "/post/user/{user_id}/replies",
+      "auth": true,
+      "desc": "用户回复历史列表 用于个人主页 Replies Tab，展示该用户发布过的所有回复记录。 每条回复附带所属父帖的摘要信息。",
+      "path_params": {
+        "user_id": "int"
+      },
+      "query": {
+        "page": "int, 页码, default: 1, min: 1",
+        "size": "int, 每页数量, default: 20, min: 1, max: 100"
+      },
+      "response": "Page<dict>?"
     },
     {
       "name": "编辑帖子",
@@ -594,6 +618,18 @@
     },
     "NearbyPostsResponse": {
       "items": "NearbyLocationItem[], 附近位置列表, default: [], optional"
+    },
+    "OEmbedResponse": {
+      "version": "string, oEmbed 版本号, default: 1.0, optional",
+      "type": "string, 嵌入类型, default: rich, optional",
+      "provider_name": "string, 提供方名称, default: YTSocial, optional",
+      "provider_url": "string, 提供方网站URL, optional",
+      "author_name": "string, 作者名称, optional",
+      "author_url": "string, 作者主页URL, optional",
+      "title": "string, 帖子标题（截取前80字符）, optional",
+      "html": "string, 嵌入HTML代码, optional",
+      "width": "int, 嵌入宽度（像素）, default: 550, optional",
+      "height": "int?, 嵌入高度（像素）, optional"
     },
     "PollOptionResponse": {
       "id": "int, 选项ID, default: 0, optional",

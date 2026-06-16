@@ -5,9 +5,61 @@ import 'package:threads/model/user.module.dart';
 import 'package:threads/model/media_draft_item.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/services/upload_service.dart';
+import 'package:threads/services/follow_service.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/common/locator.dart';
 import '../model/post.module.dart';
+import '../network/api_exception.dart';
+
+/// 创建帖子的结果。
+///
+/// - 成功：[postId] 非空（UI 用于跳转 / 提示），[isSuccess] = true
+/// - 失败：[errorMessage] 是给用户看的简短描述（直接放进 SnackBar），
+///   [error] / [stackTrace] 是给开发者日志用的完整异常，
+///   [stage] 标记失败发生在哪个阶段（用于日志定位，如「上传媒体 #3/20」或「提交 post/create」）
+class PostCreationResult {
+  final String? postId;
+  final String? errorMessage;
+  final String? stage;
+  final Object? error;
+  final StackTrace? stackTrace;
+
+  const PostCreationResult.success(this.postId)
+      : errorMessage = null,
+        stage = null,
+        error = null,
+        stackTrace = null;
+
+  const PostCreationResult.failure({
+    required this.errorMessage,
+    this.stage,
+    this.error,
+    this.stackTrace,
+  }) : postId = null;
+
+  bool get isSuccess => postId != null;
+
+  /// 从任意异常中提取「给用户看的简短消息」。
+  static String _messageOf(Object e) {
+    if (e is ApiException) return e.message;
+    if (e is StateError) return e.message;
+    return e.toString();
+  }
+
+  /// 构造一个失败结果（自动从异常提取消息）。
+  factory PostCreationResult.fromException(
+    Object e,
+    StackTrace s, {
+    required String stage,
+  }) {
+    return PostCreationResult.failure(
+      errorMessage: _messageOf(e),
+      stage: stage,
+      error: e,
+      stackTrace: s,
+    );
+  }
+}
 
 class PostState extends AppStates {
   bool isBusy = false;
@@ -77,6 +129,7 @@ class PostState extends AppStates {
 
   PostService? _postService;
   UploadService? _uploadService;
+  FollowService? _followService;
 
   PostService get postService {
     _postService ??= PostService(apiClient: getIt());
@@ -88,6 +141,11 @@ class PostState extends AppStates {
     return _uploadService!;
   }
 
+  FollowService get followService {
+    _followService ??= FollowService(apiClient: getIt());
+    return _followService!;
+  }
+
   /// Convert API Post to UI PostModel, preserving all quote/repost/thread data.
   PostModel _apiPostToModel(Post apiPost) {
     return PostModel(
@@ -96,9 +154,7 @@ class PostState extends AppStates {
       bio: apiPost.content,
       createdAt: apiPost.createdAt.toIso8601String(),
       imagePath: apiPost.imageUrl,
-      mediaList: apiPost.mediaList
-          .map((m) => m.toMediaItemModel())
-          .toList(),
+      mediaList: apiPost.mediaList.map((m) => m.toMediaItemModel()).toList(),
       user: UserModel(
         userId: apiPost.userId,
         userName: apiPost.username,
@@ -123,10 +179,13 @@ class PostState extends AppStates {
       isAi: apiPost.isAi,
       // Quote / Repost / Thread fields
       quoteContent: apiPost.quoteContent,
-      quotePost: apiPost.quotePost != null ? _apiPostToModel(apiPost.quotePost!) : null,
+      quotePost: apiPost.quotePost != null
+          ? _apiPostToModel(apiPost.quotePost!)
+          : null,
       isRepost: apiPost.isRepost,
       repostParentId: apiPost.repostParentId,
-      threadPosts: apiPost.threadPosts.map((tp) => _apiPostToModel(tp)).toList(),
+      threadPosts:
+          apiPost.threadPosts.map((tp) => _apiPostToModel(tp)).toList(),
       threadPostIds: apiPost.threadPostIds,
       quotesCount: apiPost.quotesCount,
       // Edit-related fields
@@ -139,11 +198,12 @@ class PostState extends AppStates {
     );
   }
 
-  Future<String?> createPost(
+  Future<PostCreationResult> createPost(
     PostModel model, {
     /// 多类型媒体草稿（image / video / gif）。新代码请使用此参数。
     /// 与 [mediaTypes] 配合传入 PostService。
     List<MediaDraftItem>? mediaDrafts,
+
     /// 旧的图片上传 API（保留向后兼容）。
     @Deprecated('Use mediaDrafts with mixed media types')
     List<File>? imageFiles,
@@ -152,30 +212,58 @@ class PostState extends AppStates {
     List<String>? pollOptions,
     int? replyType,
     String? location,
+    double? latitude,
+    double? longitude,
     List<int>? topicIds,
     int? communityId,
     int? quoteRepostId,
     String? scheduledTime,
   }) async {
-    try {
-      isBusy = true;
-      notifyListeners();
+    // 当前阶段标记 — 出错时写入 PostCreationResult.stage，方便日志定位
+    // 是「上传某张媒体」失败，还是「提交 post/create」失败。
+    var stage = '准备';
+    isBusy = true;
+    notifyListeners();
 
+    developer.log(
+      '📝 [开始] createPost: mediaDrafts=${mediaDrafts?.length ?? 0}, '
+      'imageFiles=${imageFiles?.length ?? 0}, '
+      'preUploadedUrls=${preUploadedUrls?.length ?? 0}, '
+      'pollOptions=${pollOptions?.length ?? 0}, '
+      'scheduled=${scheduledTime != null}',
+      name: 'PostState',
+    );
+
+    try {
       // 1) 处理媒体草稿：上传本地文件 → 收集 (mediaUrls, mediaTypes)
       List<String>? mediaUrls;
       List<int>? mediaTypes;
       if (mediaDrafts != null && mediaDrafts.isNotEmpty) {
+        stage = '上传媒体';
         mediaUrls = [];
         mediaTypes = [];
+        developer.log('📤 [上传阶段] 共 ${mediaDrafts.length} 个媒体待上传',
+            name: 'PostState');
         for (int i = 0; i < mediaDrafts.length; i++) {
           final item = mediaDrafts[i];
-          final url = item.needsUpload && item.localFile != null
-              ? await uploadService.uploadMedia(
-                  item.localFile!,
-                  mediaType: item.mediaTypeInt,
-                  durationMs: item.durationMs,
-                )
-              : (item.remoteUrl ?? '');
+          stage = '上传媒体 #${i + 1}/${mediaDrafts.length}';
+          String url;
+          if (item.needsUpload && item.localFile != null) {
+            developer.log(
+              '📤 [$stage] path=${item.localFile!.path}, '
+              'mediaType=${item.mediaTypeInt}, durationMs=${item.durationMs}',
+              name: 'PostState',
+            );
+            url = await uploadService.uploadMedia(
+              item.localFile!,
+              mediaType: item.mediaTypeInt,
+              durationMs: item.durationMs,
+            );
+            developer.log('✅ [$stage] 成功 → $url', name: 'PostState');
+          } else {
+            url = item.remoteUrl ?? '';
+            developer.log('⏭ [$stage] 跳过上传（已存在）→ $url', name: 'PostState');
+          }
           if (url.isEmpty) {
             throw StateError('MediaDraftItem[$i] has no URL after upload');
           }
@@ -184,10 +272,15 @@ class PostState extends AppStates {
         }
       } else if (imageFiles != null && imageFiles.isNotEmpty) {
         // 兼容旧 API：纯图片
+        stage = '上传图片（旧 API）';
         mediaUrls = [...?preUploadedUrls];
         mediaTypes = mediaUrls.map((_) => MediaType.image).toList();
+        developer.log('📤 [上传阶段-旧API] 共 ${imageFiles.length} 张图片待上传',
+            name: 'PostState');
         for (int i = 0; i < imageFiles.length; i++) {
+          stage = '上传图片 #${i + 1}/${imageFiles.length}（旧 API）';
           final cosUrl = await uploadService.uploadImage(imageFiles[i]);
+          developer.log('✅ [$stage] 成功 → $cosUrl', name: 'PostState');
           mediaUrls.add(cosUrl);
           mediaTypes.add(MediaType.image);
         }
@@ -196,6 +289,19 @@ class PostState extends AppStates {
         mediaTypes = mediaUrls.map((_) => MediaType.image).toList();
       }
 
+      // 2) 提交到 post/create
+      stage = '提交 post/create';
+      final payload = <String, dynamic>{
+        'content': model.bio ?? '',
+        'media_count': mediaUrls?.length ?? 0,
+        'replyType': replyType,
+        'communityId': communityId,
+        'quoteRepostId': quoteRepostId,
+        'scheduled': scheduledTime != null,
+      };
+      developer.log('📞 [$stage] payload=${payload.toString()}',
+          name: 'PostState');
+
       final post = await postService.createPost(
         content: model.bio ?? '',
         mediaUrls: mediaUrls,
@@ -203,16 +309,19 @@ class PostState extends AppStates {
         pollOptions: pollOptions,
         replyType: replyType,
         replyToPostId: model.replyToPostId,
-        replyToUserId:
-            model.replyToUserId != null ? int.tryParse(model.replyToUserId!) : null,
+        replyToUserId: model.replyToUserId != null
+            ? int.tryParse(model.replyToUserId!)
+            : null,
         location: location,
+        latitude: latitude,
+        longitude: longitude,
         topicIds: topicIds,
         communityId: communityId,
         quoteRepostId: quoteRepostId,
         scheduledTime: scheduledTime,
       );
 
-      developer.log('✅ 帖子创建成功: postId=${post.id}', name: 'PostState');
+      developer.log('✅ [完成] 帖子创建成功: postId=${post.id}', name: 'PostState');
 
       // Convert API Post to PostModel
       final newPost = PostModel(
@@ -221,9 +330,7 @@ class PostState extends AppStates {
         bio: post.content,
         createdAt: post.createdAt.toIso8601String(),
         imagePath: post.imageUrl,
-        mediaList: post.mediaList
-            .map((m) => m.toMediaItemModel())
-            .toList(),
+        mediaList: post.mediaList.map((m) => m.toMediaItemModel()).toList(),
         user: model.user,
         likesCount: post.likesCount,
         repliesCount: post.repliesCount,
@@ -241,12 +348,17 @@ class PostState extends AppStates {
 
       isBusy = false;
       notifyListeners();
-      return post.id;
+      return PostCreationResult.success(post.id);
     } catch (error, stackTrace) {
-      developer.log('❌ 创建帖子失败: $error\n$stackTrace', name: 'PostState');
+      developer.log(
+        '❌ [失败 stage="$stage"] $error',
+        name: 'PostState',
+        error: error,
+        stackTrace: stackTrace,
+      );
       isBusy = false;
       notifyListeners();
-      return null;
+      return PostCreationResult.fromException(error, stackTrace, stage: stage);
     }
   }
 
@@ -326,13 +438,14 @@ class PostState extends AppStates {
       }).toList();
 
       // Sort by createdAt descending
-      _feedlist!.sort((x, y) => DateTime.parse(y.createdAt)
-          .compareTo(DateTime.parse(x.createdAt)));
+      _feedlist!.sort((x, y) =>
+          DateTime.parse(y.createdAt).compareTo(DateTime.parse(x.createdAt)));
 
       isBusy = false;
       notifyListeners();
     } catch (error) {
-      developer.log('>>> getDataFromDatabase FAILED: $error', name: 'PostState');
+      developer.log('>>> getDataFromDatabase FAILED: $error',
+          name: 'PostState');
       isBusy = false;
       notifyListeners();
     }
@@ -350,8 +463,8 @@ class PostState extends AppStates {
         return _apiPostToModel(apiPost);
       }).toList();
 
-      _feedlist!.sort((x, y) => DateTime.parse(y.createdAt)
-          .compareTo(DateTime.parse(x.createdAt)));
+      _feedlist!.sort((x, y) =>
+          DateTime.parse(y.createdAt).compareTo(DateTime.parse(x.createdAt)));
     } catch (error) {
       developer.log('>>> refresh FAILED: $error', name: 'PostState');
     }
@@ -362,11 +475,14 @@ class PostState extends AppStates {
     // 提前解析 postId，非数字直接放弃（不抛、不发起网络请求）
     final pid = int.tryParse(postId);
     if (pid == null) {
-      developer.log('>>> voteOnPoll: invalid postId=$postId', name: 'PostState');
+      developer.log('>>> voteOnPoll: invalid postId=$postId',
+          name: 'PostState');
       return false;
     }
 
-    final postIndex = _feedlist?.indexWhere((p) => p.postId == postId || p.key == postId) ?? -1;
+    final postIndex =
+        _feedlist?.indexWhere((p) => p.postId == postId || p.key == postId) ??
+            -1;
     if (postIndex == -1) return false;
 
     final post = _feedlist![postIndex];
@@ -374,10 +490,14 @@ class PostState extends AppStates {
     if (oldPollData == null) return false;
 
     // 1) 构造新的 PollData（局部辅助，避免重复写两次）
-    PollData buildUpdated({required int? votedOptionId, required int? deltaVotes}) {
+    PollData buildUpdated(
+        {required int? votedOptionId, required int? deltaVotes}) {
       final updatedOptions = oldPollData.options.map((o) {
         if (o.id == optionId) {
-          return PollOption(id: o.id, optionText: o.optionText, votesCount: o.votesCount + (deltaVotes ?? 0));
+          return PollOption(
+              id: o.id,
+              optionText: o.optionText,
+              votesCount: o.votesCount + (deltaVotes ?? 0));
         }
         return o;
       }).toList();
@@ -395,8 +515,9 @@ class PostState extends AppStates {
 
     // 3) 乐观同步 _userPosts（仅 poll，不扩展到其他写操作）
     final userPostIndex = _userPosts?.indexWhere(
-      (p) => p.postId == postId || p.key == postId,
-    ) ?? -1;
+          (p) => p.postId == postId || p.key == postId,
+        ) ??
+        -1;
     if (userPostIndex != -1) {
       final userPost = _userPosts![userPostIndex];
       _userPosts![userPostIndex] = userPost.copyWith(
@@ -413,7 +534,8 @@ class PostState extends AppStates {
       developer.log('>>> voteOnPoll FAILED: $error', name: 'PostState');
       _feedlist![postIndex] = post.copyWith(pollData: oldPollData);
       if (userPostIndex != -1) {
-        _userPosts![userPostIndex] = _userPosts![userPostIndex].copyWith(pollData: oldPollData);
+        _userPosts![userPostIndex] =
+            _userPosts![userPostIndex].copyWith(pollData: oldPollData);
       }
       notifyListeners();
       return false;
@@ -430,11 +552,12 @@ class PostState extends AppStates {
       if (posts.isEmpty) {
         _hasMore = false;
       } else {
-        final newPosts = posts.map((apiPost) => _apiPostToModel(apiPost)).toList();
+        final newPosts =
+            posts.map((apiPost) => _apiPostToModel(apiPost)).toList();
 
         _feedlist!.addAll(newPosts);
-        _feedlist!.sort((x, y) => DateTime.parse(y.createdAt)
-            .compareTo(DateTime.parse(x.createdAt)));
+        _feedlist!.sort((x, y) =>
+            DateTime.parse(y.createdAt).compareTo(DateTime.parse(x.createdAt)));
       }
     } catch (_) {
       _currentPage--;
@@ -492,7 +615,8 @@ class PostState extends AppStates {
 
   void _updatePostLikeStatus(String postId, bool isLiked) {
     if (_feedlist != null) {
-      final index = _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+      final index =
+          _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
       if (index != -1) {
         final post = _feedlist![index];
         _feedlist![index] = post.copyWith(
@@ -512,7 +636,8 @@ class PostState extends AppStates {
       final apiPost = await postService.getPostDetail(quotePostId.toString());
       return _apiPostToModel(apiPost);
     } catch (error) {
-      developer.log('fetchQuotePostDetail failed for id=$quotePostId: $error', name: 'PostState');
+      developer.log('fetchQuotePostDetail failed for id=$quotePostId: $error',
+          name: 'PostState');
       return null;
     }
   }
@@ -530,7 +655,8 @@ class PostState extends AppStates {
     } catch (error) {
       // Don't rollback — the server may reject because already reposted
       // (e.g. after a local-only unrepost). The local state is correct.
-      developer.log('repost API error (kept local state): $error', name: 'PostState');
+      developer.log('repost API error (kept local state): $error',
+          name: 'PostState');
     }
   }
 
@@ -542,7 +668,8 @@ class PostState extends AppStates {
 
   void _updatePostRepostStatus(String postId, bool isReposted) {
     if (_feedlist != null) {
-      final index = _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+      final index =
+          _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
       if (index != -1) {
         final post = _feedlist![index];
         _feedlist![index] = post.copyWith(
@@ -575,14 +702,16 @@ class PostState extends AppStates {
     try {
       await postService.unsavePost(postId);
     } catch (error) {
-      developer.log('unsavePost failed, rolling back: $error', name: 'PostState');
+      developer.log('unsavePost failed, rolling back: $error',
+          name: 'PostState');
       _updatePostSaveStatus(postId, true);
     }
   }
 
   void _updatePostSaveStatus(String postId, bool isSaved) {
     if (_feedlist != null) {
-      final index = _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+      final index =
+          _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
       if (index != -1) {
         final post = _feedlist![index];
         _feedlist![index] = post.copyWith(isSaved: isSaved);
@@ -600,14 +729,16 @@ class PostState extends AppStates {
     try {
       await postService.sharePost(postId);
     } catch (error) {
-      developer.log('sharePost failed, rolling back: $error', name: 'PostState');
+      developer.log('sharePost failed, rolling back: $error',
+          name: 'PostState');
       _updatePostShareCount(postId, increment: false);
     }
   }
 
   void _updatePostShareCount(String postId, {required bool increment}) {
     if (_feedlist != null) {
-      final index = _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+      final index =
+          _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
       if (index != -1) {
         final post = _feedlist![index];
         _feedlist![index] = post.copyWith(
@@ -616,6 +747,49 @@ class PostState extends AppStates {
         notifyListeners();
       }
     }
+  }
+
+  // ==================== Follow / Unfollow ====================
+
+  /// Follow a post's author with optimistic update.
+  /// Sets the post's `isFollowing=true` locally first, then calls the API.
+  /// Rolls back to `false` and rethrows on failure.
+  ///
+  /// 注：当前 API /post/feed 不返回 is_following 字段，PostModel.isFollowing
+  /// 始终为 null（UI 视为「未关注」）。本方法首次执行后，Feed 中同一作者的
+  /// 帖子 isFollowing 才会被乐观更新。
+  Future<void> followPostAuthor(String postId, int userId) async {
+    _setFollowing(postId, true);
+    try {
+      await followService.followUser(userId);
+    } catch (error) {
+      developer.log('followPostAuthor failed, rolling back: $error',
+          name: 'PostState');
+      _setFollowing(postId, false);
+      rethrow;
+    }
+  }
+
+  /// Unfollow a post's author with optimistic update.
+  Future<void> unfollowPostAuthor(String postId, int userId) async {
+    _setFollowing(postId, false);
+    try {
+      await followService.unfollowUser(userId);
+    } catch (error) {
+      developer.log('unfollowPostAuthor failed, rolling back: $error',
+          name: 'PostState');
+      _setFollowing(postId, true);
+      rethrow;
+    }
+  }
+
+  void _setFollowing(String postId, bool value) {
+    if (_feedlist == null) return;
+    final index =
+        _feedlist!.indexWhere((p) => p.key == postId || p.postId == postId);
+    if (index == -1) return;
+    _feedlist![index] = _feedlist![index].copyWith(isFollowing: value);
+    notifyListeners();
   }
 
   // ==================== Report ====================
@@ -638,7 +812,8 @@ class PostState extends AppStates {
         reportType: reportType,
         description: description,
       );
-      developer.log('reportContent succeeded for targetId=$targetId', name: 'PostState');
+      developer.log('reportContent succeeded for targetId=$targetId',
+          name: 'PostState');
     } catch (error) {
       developer.log('reportContent failed: $error', name: 'PostState');
       rethrow;
@@ -723,7 +898,8 @@ class PostState extends AppStates {
   void incrementReplyCount(String postId) {
     for (final list in [_feedlist, _userPosts]) {
       if (list == null) continue;
-      final index = list.indexWhere((p) => p.id == postId || p.key == postId || p.postId == postId);
+      final index = list.indexWhere(
+          (p) => p.id == postId || p.key == postId || p.postId == postId);
       if (index != -1) {
         final post = list[index];
         list[index] = post.copyWith(
@@ -739,7 +915,8 @@ class PostState extends AppStates {
   void decrementReplyCount(String postId) {
     for (final list in [_feedlist, _userPosts]) {
       if (list == null) continue;
-      final index = list.indexWhere((p) => p.id == postId || p.key == postId || p.postId == postId);
+      final index = list.indexWhere(
+          (p) => p.id == postId || p.key == postId || p.postId == postId);
       if (index != -1) {
         final post = list[index];
         final current = post.repliesCount ?? 0;
@@ -784,7 +961,8 @@ class PostState extends AppStates {
     _isLoadingSavedPosts = true;
     notifyListeners();
     try {
-      final posts = await postService.getSavedPosts(page: page, pageSize: pageSize);
+      final posts =
+          await postService.getSavedPosts(page: page, pageSize: pageSize);
       _savedPosts = posts.map((apiPost) {
         final model = _apiPostToModel(apiPost);
         return model.copyWith(isSaved: true);
@@ -808,7 +986,8 @@ class PostState extends AppStates {
     notifyListeners();
     try {
       final posts = await postService.getScheduledPosts(page: page, size: size);
-      _scheduledPosts = posts.map((apiPost) => _apiPostToModel(apiPost)).toList();
+      _scheduledPosts =
+          posts.map((apiPost) => _apiPostToModel(apiPost)).toList();
     } catch (_) {
       _scheduledPosts = [];
     }
@@ -832,7 +1011,8 @@ class PostState extends AppStates {
   Future<void> pinReply(int replyId) async {
     try {
       await postService.pinReply(replyId);
-      developer.log('pinReply succeeded for replyId=$replyId', name: 'PostState');
+      developer.log('pinReply succeeded for replyId=$replyId',
+          name: 'PostState');
     } catch (error) {
       developer.log('pinReply failed: $error', name: 'PostState');
       rethrow;
@@ -843,7 +1023,8 @@ class PostState extends AppStates {
   Future<void> unpinReply(int replyId) async {
     try {
       await postService.unpinReply(replyId);
-      developer.log('unpinReply succeeded for replyId=$replyId', name: 'PostState');
+      developer.log('unpinReply succeeded for replyId=$replyId',
+          name: 'PostState');
     } catch (error) {
       developer.log('unpinReply failed: $error', name: 'PostState');
       rethrow;
@@ -875,7 +1056,8 @@ class PostState extends AppStates {
     try {
       final parentIdInt = int.tryParse(parentReplyId);
       if (parentIdInt == null) {
-        developer.log('loadChildReplies: invalid parentReplyId=$parentReplyId', name: 'PostState');
+        developer.log('loadChildReplies: invalid parentReplyId=$parentReplyId',
+            name: 'PostState');
         return;
       }
       final list = await postService.getReplies(
@@ -889,7 +1071,8 @@ class PostState extends AppStates {
       _childHasMoreByParent[parentReplyId] = list.length >= pageSize;
       _expandedParentIds.add(parentReplyId);
     } catch (error) {
-      developer.log('loadChildReplies failed for parent=$parentReplyId: $error', name: 'PostState');
+      developer.log('loadChildReplies failed for parent=$parentReplyId: $error',
+          name: 'PostState');
       rethrow;
     } finally {
       _childLoadingByParent[parentReplyId] = false;
@@ -926,7 +1109,9 @@ class PostState extends AppStates {
       _childPageByParent[parentReplyId] = next;
       _childHasMoreByParent[parentReplyId] = list.length >= pageSize;
     } catch (error) {
-      developer.log('loadMoreChildReplies failed for parent=$parentReplyId: $error', name: 'PostState');
+      developer.log(
+          'loadMoreChildReplies failed for parent=$parentReplyId: $error',
+          name: 'PostState');
     } finally {
       _childLoadingByParent[parentReplyId] = false;
       notifyListeners();

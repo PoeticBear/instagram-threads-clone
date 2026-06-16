@@ -33,11 +33,11 @@
 | 「+」按钮触发底部 sheet | `_showMediaPickerSheet` | `post.dart:406-452` |
 | Sheet 行按钮构造 | `_sheetItem` | `post.dart:454-467` |
 | 相册选图（带 100 质量） | `_pickImage` | `post.dart:305-318` |
-| 相册选 GIF（扩展名 + 20MB 校验） | `_pickGif` | `post.dart:320-345` |
-| 相册选视频（100MB / 60s 校验 + 异步补 duration） | `_pickVideo` + `_enrichVideoDuration` | `post.dart:347-403` |
+| 相册选 GIF（扩展名 + 10MB 校验） | `_pickGif` | `post.dart:320-345` |
+| 相册选视频（100MB / 300s 校验 + 异步补 duration） | `_pickVideo` + `_enrichVideoDuration` | `post.dart:347-403` |
 | 跳到相机页 | `_openCamera` | `post.dart:482-505` |
 | 添加 / 删除 / 替换草稿 | `_addMedia` / `_removeMedia` / `_replaceMedia` | `post.dart:239-264` |
-| 媒体上限校验 | `_canAddMoreMedia`（10 张） | `post.dart:67, 120` |
+| 媒体上限校验 | `_canAddMoreMedia`（10 张） | `post.dart:68, 120` |
 | 媒体预览 UI | `_buildMediaPreview` / `_buildMediaThumb` / `_buildAddMediaTile` | `post.dart:1301-1444` |
 | 工具栏图标 | `_buildBottomToolbar` 内 `_toolbarIcon` | `post.dart:1523-1666` |
 | Toast 错误提示 | `_showSnack` | `post.dart:469-478` |
@@ -51,10 +51,10 @@
 | 拍照 / 视频模式切换 | `_switchMode` | `compose_camera_page.dart:133-152` |
 | 拍照 | `_takePicture` | `compose_camera_page.dart:156-172` |
 | 录制启停 | `_startRecording` / `_stopRecording` / `_toggleRecording` | `compose_camera_page.dart:176-246` |
-| 60s 自动停止定时器 | `_scheduleAutoStop` | `compose_camera_page.dart:248-263` |
+| 300s 自动停止定时器 | `_scheduleAutoStop` | `compose_camera_page.dart:248-263` |
 | 前后摄像头切换 / 闪光灯 / 缩放 | `_switchCamera` / `_toggleFlash` / `_handleZoom` | `compose_camera_page.dart:267-304` |
 | UI 组件 | `_buildPreview` / `_buildHeader` / `_buildShutter` / `_buildFlipButton` / `_buildError` | `compose_camera_page.dart:308-668` |
-| 视频时长上限常量 | `_maxVideoDurationSec = 60` | `compose_camera_page.dart:49` |
+| 视频时长上限常量 | `_maxVideoDurationSec = 300` | `compose_camera_page.dart:49` |
 
 ### 2.3 数据模型
 
@@ -85,9 +85,9 @@
 5) 返回 cosUrl（远端可访问地址）
 ```
 
-- 视频 / GIF 走 `file.openRead()` 流式上传，避免 OOM（`upload_service.dart:110-158`）
-- 上限：图片 20MB / 视频 100MB / GIF 20MB（`upload_service.dart:14-16`）
-- MIME 推断表见 `_inferContentType`（`upload_service.dart:186-211`）
+- 视频 / GIF 走 `file.openRead()` 流式上传，避免 OOM（`upload_service.dart:183-230`）
+- 上限：图片 10MB / 视频 100MB / GIF 10MB（`upload_service.dart:14-17`）
+- MIME 推断表见 `_inferContentType`（`upload_service.dart:280-305`）
 
 **`VideoProcessor`（`client/lib/utils/video_processor.dart:11-136`）**
 
@@ -206,12 +206,12 @@
 
 | 项 | 上限 | 来源 |
 | --- | --- | --- |
-| 媒体数量 | ≤ 10 | `post.dart:67` (`_maxMediaCount`) |
+| 媒体数量 | ≤ 10 | `post.dart:68` (`_maxMediaCount`) |
 | 帖子内容长度 | ≤ 500 字符 | `post.dart:70` (`_maxContentLength`) |
-| 视频时长 | ≤ 60s | `post.dart:73` / `compose_camera_page.dart:49` |
-| 视频大小 | ≤ 100MB | `post.dart:74` / `upload_service.dart:15` |
-| GIF 大小 | ≤ 20MB | `post.dart:75` / `upload_service.dart:16` |
-| 图片大小 | ≤ 20MB | `upload_service.dart:14` |
+| 视频时长 | ≤ 300s | `post.dart:74` / `compose_camera_page.dart:49` |
+| 视频大小 | ≤ 100MB | `post.dart:75` / `upload_service.dart:15` |
+| GIF 大小 | ≤ 10MB | `post.dart:76` / `upload_service.dart:16` |
+| 图片大小 | ≤ 10MB | `upload_service.dart:14` |
 | 投票选项数 | 2 ~ 4 | `post.dart:68-69` |
 | 调度发布 | 5min 后 ~ 365 天后 | `post.dart:861, 919` |
 
@@ -234,17 +234,17 @@
 
 | 需求 | 检索关键词 | 关键文件 |
 | --- | --- | --- |
-| 修改媒体数量上限 | `_maxMediaCount` | `client/lib/pages/composePost/post.dart:67` |
-| 修改视频时长 / 大小限制 | `_maxVideoDurationMs` / `_maxVideoSizeBytes` | `post.dart:73-74` + `upload_service.dart:15` |
-| 修改 MIME 推断 | `_inferContentType` | `client/lib/services/upload_service.dart:186-211` |
-| 修改上传策略（流式 / 一次性） | `_streamPut` | `upload_service.dart:110-158` |
+| 修改媒体数量上限 | `_maxMediaCount` | `client/lib/pages/composePost/post.dart:68` |
+| 修改视频时长 / 大小限制 | `_maxVideoDurationMs` / `_maxVideoSizeBytes` | `post.dart:74-75` + `upload_service.dart:15` |
+| 修改 MIME 推断 | `_inferContentType` | `client/lib/services/upload_service.dart:280-305` |
+| 修改上传策略（流式 / 一次性） | `_streamPut` | `upload_service.dart:183-230` |
 | 修改媒体预览 UI | `_buildMediaPreview` / `_buildMediaThumb` | `post.dart:1301-1428` |
 | 修改相机拍照 / 录制 | `_takePicture` / `_startRecording` / `_stopRecording` | `compose_camera_page.dart:156-246` |
 | 接入视频压缩 | `VideoProcessor.compress` | `client/lib/utils/video_processor.dart:54-101`（在 `_addMedia` 之前调用即可） |
 | 替换相册选择器 | `image_picker` / `_pickImage` | `post.dart:305-318`，所有 `_pickXxx` 都在同一文件 |
 | 替换相机实现 | `camera` 包 / `ComposeCameraPage` | `compose_camera_page.dart` 整文件 |
-| 添加新的媒体类型 | `DraftMediaType` + `MediaType` + MIME 表 | `media_draft_item.dart:6-33` + `post.module.dart:5-9` + `upload_service.dart:186-211` |
+| 添加新的媒体类型 | `DraftMediaType` + `MediaType` + MIME 表 | `media_draft_item.dart:6-33` + `post.module.dart:5-13` + `upload_service.dart:280-305` |
 
 ---
 
-_最后更新：2026-06-15 — 由 Claude 自动化梳理（基于代码静态分析 + 关键模块阅读）。_
+_最后更新：2026-06-16 — 由 Claude 自动化梳理（基于代码静态分析 + 关键模块阅读），并对齐服务端 `openapi_docs/_misc.json` 文件上传规范（图片 10MB / 视频 100MB / GIF 10MB / 视频时长 300s / 帖子媒体数 ≤ 10）。_

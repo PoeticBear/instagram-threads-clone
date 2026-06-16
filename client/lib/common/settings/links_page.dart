@@ -181,7 +181,7 @@ class _LinksPageState extends State<LinksPage> {
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: onConfirm,
-            child: Text(AppLocalizations.of(context)!.save),
+            child: Text(AppLocalizations.of(context)!.saveAction),
           ),
         ],
       ),
