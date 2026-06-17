@@ -281,6 +281,8 @@
 	<string>Tweet will show you which of your contacts are already on Tweet. Your contacts will not be stored or shared with anyone.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Tweet needs access to your location to tag posts with a place.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Tweet needs access to your location to tag posts with a place.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Tweet needs access to your microphone for recording.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
