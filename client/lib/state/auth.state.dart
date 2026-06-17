@@ -70,6 +70,22 @@ class AuthState extends AppStates {
     await getIt<SharedPreferenceHelper>().clearPreferenceValues();
   }
 
+  /// 由 ApiClient.onSessionExpired 回调触发（被动登出）。
+  /// 与 logoutCallback 的区别：
+  ///   - 不调 authService.logout()（避免失效 token 再发请求触发新一轮 401）
+  ///   - 直接 clearLocalSession + 清 prefs + 切状态
+  /// 幂等：authStatus 已是 NOT_LOGGED_IN 时直接返回。
+  void forceSessionExpired() {
+    if (authStatus == AuthStatus.NOT_LOGGED_IN) return;
+    authStatus = AuthStatus.NOT_LOGGED_IN;
+    userId = '';
+    _userModel = null;
+    isBusy = false; // 复位脏状态（getProfileUser 的 try 块可能已把 isBusy 设为 true）
+    authService.clearLocalSession(); // 不 await
+    getIt<SharedPreferenceHelper>().clearPreferenceValues();
+    notifyListeners();
+  }
+
   Future<String?> signIn(
     String username,
     String password,
@@ -298,34 +314,15 @@ class AuthState extends AppStates {
       isBusy = false;
       notifyListeners();
       return null;
+    } on AuthException {
+      // ApiClient 已尝试过 refresh 且失败，会话已失效。
+      // forceSessionExpired() 会由 onSessionExpired 回调异步触发导航。
+      // 这里只兜底切状态，避免 UI 卡在 isBusy。
+      authStatus = AuthStatus.NOT_LOGGED_IN;
+      isBusy = false;
+      notifyListeners();
+      return null;
     } catch (error) {
-      // Access token 可能过期，尝试用 refresh token 刷新
-      try {
-        await authService.refreshToken();
-        final userInfo = await authService.getCurrentUser();
-        userId = userInfo.userId.toString();
-        _userModel = UserModel(
-          userId: userInfo.userId,
-          userName: userInfo.username,
-          displayName: userInfo.displayName,
-          bio: userInfo.bio,
-          profilePic: userInfo.profilePic,
-          link: userInfo.link,
-          isPrivate: userInfo.isPrivate,
-          followersCount: userInfo.followersCount,
-          followingCount: userInfo.followingCount,
-          pronouns: userInfo.pronouns,
-          gender: userInfo.gender,
-          location: userInfo.location,
-          isVerified: userInfo.isVerified,
-          accountType: userInfo.accountType,
-          postsCount: userInfo.postsCount,
-        );
-        getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
-        authStatus = AuthStatus.LOGGED_IN;
-      } catch (_) {
-        authStatus = AuthStatus.NOT_LOGGED_IN;
-      }
       isBusy = false;
       notifyListeners();
       return null;
@@ -461,6 +458,11 @@ class AuthState extends AppStates {
 
       isBusy = false;
       notifyListeners();
+    } on AuthException {
+      // 会话失效：ApiClient 已尝试 refresh 且失败，forceSessionExpired 会通过
+      // onSessionExpired 回调异步触发导航。这里不重置 isBusy，避免 UI 闪烁
+      //（forceSessionExpired 内部的 notifyListeners 会覆盖）。
+      debugPrint('getProfileUser - session expired, waiting for forceSessionExpired');
     } catch (error) {
       isBusy = false;
       notifyListeners();

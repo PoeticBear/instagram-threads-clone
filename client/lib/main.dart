@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:threads/auth/signup/name.dart';
 import 'package:threads/common/locator.dart';
 import 'package:threads/common/splash.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
@@ -71,7 +72,34 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       DeepLinkService.instance.init();
+      _wireupApiClientCallbacks();
     });
+  }
+
+  /// 把 ApiClient 与 Provider 树桥接起来：
+  /// - refreshTokensProvider：401 时由 ApiClient 调用，使用 refresh_token 换新 access_token
+  /// - onSessionExpired：refresh 失败时由 ApiClient 调用，触发全局登出 + 跳转登录页
+  ///
+  /// 时序：_MyAppState.initState 在 SplashPage.initState 之前执行（root widget 先 init），
+  /// 同一帧的 addPostFrameCallback 按 FIFO 注册顺序执行 → 本方法先于 Splash 的 timer()，
+  /// 保证 Splash 拉 getProfileUser 时 ApiClient 已具备 refresh 能力。
+  void _wireupApiClientCallbacks() {
+    final apiClient = getIt<ApiClient>();
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null) return;
+    final authState = Provider.of<AuthState>(ctx, listen: false);
+
+    apiClient.refreshTokensProvider = () => authState.authService.tryRefreshTokens();
+
+    apiClient.onSessionExpired = () {
+      final currentCtx = navigatorKey.currentContext;
+      if (currentCtx == null) return;
+      currentCtx.read<AuthState>().forceSessionExpired();
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const NamePage()),
+        (_) => false,
+      );
+    };
   }
 
   @override

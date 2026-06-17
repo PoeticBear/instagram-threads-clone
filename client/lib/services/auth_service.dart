@@ -176,27 +176,49 @@ class AuthService {
     }
   }
 
-  Future<void> refreshToken() async {
-    final refreshToken = _prefs.getString(_refreshTokenKey);
-    if (refreshToken == null) {
-      throw AuthException(message: '无 refresh token');
-    }
-
+  /// 供 ApiClient.refreshTokensProvider 调用。
+  /// 成功：保存新 token 到 prefs + ApiClient，返回新 access_token。
+  /// 失败：返回 null，不抛异常、不清 token（清理动作交给 ApiClient）。
+  Future<String?> tryRefreshTokens() async {
     try {
+      final refreshToken = _prefs.getString(_refreshTokenKey);
+      if (refreshToken == null) return null;
+
       final response = await _apiClient.post(
         'auth/token/refresh',
         body: {'refresh_token': refreshToken},
       );
 
       final data = response['data'];
-      await _saveTokens(
-        accessToken: data['access_token'],
-        refreshToken: data['refresh_token'],
-      );
-    } on ApiException {
-      await _clearTokens();
-      rethrow;
+      final newAccess = data['access_token'] as String?;
+      final newRefresh = data['refresh_token'] as String?;
+      if (newAccess == null || newRefresh == null) return null;
+
+      await _saveTokens(accessToken: newAccess, refreshToken: newRefresh);
+      return newAccess;
+    } catch (_) {
+      return null;
     }
+  }
+
+  Future<void> refreshToken() async {
+    final refreshToken = _prefs.getString(_refreshTokenKey);
+    if (refreshToken == null) {
+      throw AuthException(message: '无 refresh token');
+    }
+
+    // Note: 清理责任交给 tryRefreshTokens (供 ApiClient) 或 clearLocalSession (供主动登出)。
+    // 这里仅做纯调用 + 抛异常，避免双重清理。
+    final response = await _apiClient.post(
+      'auth/token/refresh',
+      body: {'refresh_token': refreshToken},
+    );
+
+    final data = response['data'];
+    await _saveTokens(
+      accessToken: data['access_token'],
+      refreshToken: data['refresh_token'],
+    );
   }
 
   Future<void> modifyPassword({
@@ -264,6 +286,12 @@ class AuthService {
     await _prefs.remove(_refreshTokenKey);
     await _prefs.remove(_userIdKey);
     _apiClient.clearTokens();
+  }
+
+  /// 仅清理本地凭证（prefs + ApiClient 内存），不调服务端 DELETE auth/logout。
+  /// 用于 token 已失效场景（避免失效 token 再发请求触发新一轮 401）。
+  Future<void> clearLocalSession() async {
+    await _clearTokens();
   }
 }
 

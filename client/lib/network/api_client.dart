@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 import 'api_exception.dart';
@@ -11,6 +12,15 @@ class ApiClient {
   final http.Client _client;
   String? _accessToken;
   String? _refreshToken;
+
+  // ── 401 自动 refresh + 全局登出机制 ──
+  // 由 main.dart 在 _MyAppState.initState 注入；为 null 时退化为旧行为（直接抛 AuthException）。
+  Future<String?> Function()? refreshTokensProvider;
+  void Function()? onSessionExpired;
+  // 并发 refresh 串行化：多个请求同时 401 时，只发一次 refresh，其他请求 await 同一个 Future。
+  Future<String?>? _refreshInFlight;
+  // 幂等保护：一次"会话失效事件"只通知一次，直到下次成功 refresh 后复位。
+  bool _sessionExpiredNotified = false;
 
   ApiClient({http.Client? client}) : _client = client ?? http.Client();
 
@@ -77,7 +87,84 @@ class ApiClient {
     return _request('DELETE', path, body: body, queryParameters: queryParameters);
   }
 
+  /// 外层请求编排：401 → refresh → 重试一次。
+  /// - refresh / logout / signin 等端点本身的 401 不重试（避免递归）。
+  /// - 已是重试的请求不再 refresh（避免无限循环）。
+  /// - 没注入 refreshTokensProvider / 没有 access_token 时退化为旧行为（直接抛）。
   Future<dynamic> _request(
+    String method,
+    String path, {
+    dynamic body,
+    Map<String, dynamic>? queryParameters,
+    bool isRetry = false,
+  }) async {
+    try {
+      return await _sendOnce(method, path,
+          body: body, queryParameters: queryParameters);
+    } on AuthException catch (e) {
+      const skipPaths = [
+        'auth/token/refresh',
+        'auth/logout',
+        'auth/username/signin',
+        'auth/apple/login',
+      ];
+      final shouldSkip = isRetry ||
+          refreshTokensProvider == null ||
+          _accessToken == null ||
+          skipPaths.any((p) => path.contains(p));
+      if (shouldSkip) rethrow;
+
+      final newToken = await _doRefresh();
+      if (newToken == null) {
+        // refresh 失败 → 清理本地 + 触发全局登出（幂等）+ 抛 AuthException
+        clearTokens();
+        _notifySessionExpired();
+        throw AuthException(
+          message: '会话已失效，请重新登录',
+          statusCode: 401,
+          data: e.data,
+        );
+      }
+
+      // refresh 成功 → 重试一次原请求
+      return _request(method, path,
+          body: body,
+          queryParameters: queryParameters,
+          isRetry: true);
+    }
+  }
+
+  /// 串行化 refresh：多个并发请求同时 401 时，复用同一个 Future。
+  Future<String?> _doRefresh() {
+    if (_refreshInFlight != null) return _refreshInFlight!;
+    final future = _doRefreshInner();
+    _refreshInFlight = future;
+    future.whenComplete(() => _refreshInFlight = null);
+    return future;
+  }
+
+  Future<String?> _doRefreshInner() async {
+    try {
+      final token = await refreshTokensProvider!();
+      if (token != null) _sessionExpiredNotified = false; // 复位
+      return token;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 触发全局登出回调，推到下一帧执行避免在网络回调里同步改 Provider 状态。
+  void _notifySessionExpired() {
+    if (_sessionExpiredNotified) return;
+    _sessionExpiredNotified = true;
+    final cb = onSessionExpired;
+    if (cb != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => cb());
+    }
+  }
+
+  /// 实际发请求 + 处理响应（原 _request 主体，逻辑不变）。
+  Future<dynamic> _sendOnce(
     String method,
     String path, {
     dynamic body,
