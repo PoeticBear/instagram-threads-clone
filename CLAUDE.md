@@ -233,3 +233,57 @@ xcodebuild -exportArchive \
 - **主版本.次版本.修订号**：功能变更时手动更新（如 1.0.0 → 1.1.0）
 - **构建序号**（`+` 后的数字）：每次发布递增 1，不可重复
 - 每次发布前必须更新构建序号，否则上传会被 App Store Connect 拒绝
+
+## 一键发布到 TestFlight（「发布 TestFlight」/「发版」指令）
+
+当用户发送「**发布 TestFlight**」「**发版**」「**打包发布**」指令时，Claude 必须按以下流水线**一次性、按顺序**完成发布，无需用户逐步确认（遇到报错或敏感文件时除外）。详细命令参数见 `docs/testflight-release-guide.md`。
+
+### 触发指令
+
+- `发布 TestFlight`
+- `发版`
+- `打包发布到 TestFlight`
+
+### 流水线步骤
+
+1. **确认 API 指向生产环境**
+   - 读 `client/lib/network/api_config.dart`，确认 `_prodBaseUrl` = `https://api.tweetcaht.com/` 且 `defaultValue: 'prod'`。
+   - 若被临时改成 dev，先改回 prod 再继续。
+
+2. **提交未发布代码**（遵循上文「## 提交代码」全部规范）
+   - `git status` / `git diff` 审查改动；**跳过** `.claude/settings.json`、`*.ips`、`.env`、证书等敏感文件。
+   - 精确 `git add <路径>` 暂存功能改动并 `git commit`（Conventional Commits + HEREDOC + Claude 协作 footer）。
+   - 若工作区无未提交功能改动，跳过本步。
+
+3. **递增构建序号**
+   - 在 `client/pubspec.yaml` 中把 `+N` 改成 `+(N+1)`。
+   - 作为**独立 commit**：`chore: bump build to {版本}+{新序号} for TestFlight release`。
+
+4. **推送到远程**
+   - `git push origin main`。
+
+5. **构建 Release IPA**
+   - `cd client && flutter build ipa --release`。
+   - **禁止**带 `--dart-define=APP_ENV=dev`（release / TestFlight 一律走 prod）。
+   - 确认产物 `build/ios/archive/Runner.xcarchive` 存在，Version / Build Number 与预期一致。
+
+6. **导出并上传到 App Store Connect**
+   - 创建 `build/ios/upload/UploadOptions.plist`（`method: app-store-connect` + `destination: upload`）。
+   - `xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportPath build/ios/upload -exportOptionsPlist build/ios/upload/UploadOptions.plist -allowProvisioningUpdates`。
+   - 看到 `** EXPORT SUCCEEDED **` 即上传成功。
+
+7. **回报结果**
+   - 给出本次版本号（如 `1.0.0+12`）、commit hash、上传状态。
+   - 提醒：App Store Connect 处理约需 5–15 分钟，之后可在 TestFlight 看到新构建。
+
+### 失败处理
+
+- 构建 / 上传失败：定位错误（签名 / 网络 / 配置），修复后从失败步骤重试；**不要**再次递增构建序号，除非上一次已经上传成功。
+- 上传成功后被 App Store Connect 拒绝（如 ITMS-90683）：按报错修完后，**必须**再递增一次构建序号重新上传。
+
+### 安全红线（同「## 提交代码」）
+
+- ❌ 不用 `git add .` / `git add -A`
+- ❌ release 包**绝不**带 `--dart-define=APP_ENV=dev`
+- ❌ 不提交 `.claude/settings.json`、`*.ips`
+- ✅ build bump 的 commit 信息必须显式标注版本号
