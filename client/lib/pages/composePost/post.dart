@@ -1029,8 +1029,15 @@ class ComposePostState extends State<ComposePost> {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     var authState = Provider.of<AuthState>(context);
     final charCount = _textEditingController.text.length;
-    final profilePic = authState.userModel?.profilePic ?? '';
-    final displayName = authState.userModel?.displayName ?? '';
+    final userModel = authState.userModel;
+    final profilePic = userModel?.profilePic ?? '';
+    // 服务端对未填写 displayName 的用户返回空字符串（非 null），
+    // 仅用 `?? ''` 会渲染成空白。需要显式判 isNotEmpty，按
+    // displayName → userName → anonymousUser 的优先级兜底（与 feed.dart 快捷发帖区一致）。
+    final displayName = (userModel?.displayName?.isNotEmpty == true
+            ? userModel!.displayName
+            : userModel?.userName) ??
+        AppLocalizations.of(context)!.anonymousUser;
 
     return Scaffold(
       backgroundColor: appColors.background,
