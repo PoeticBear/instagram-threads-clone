@@ -244,7 +244,37 @@ xcodebuild -exportArchive \
 - `发版`
 - `打包发布到 TestFlight`
 
-### 流水线步骤
+### 推荐方式：使用 `client/scripts/release.sh`
+
+收到发版指令时，**优先使用** `client/scripts/release.sh` 一键脚本完成整个流水线。脚本封装了下方「流水线步骤」的全部 6 步，并额外提供：
+
+- **实时进度展示**：xcodebuild 原始输出（含 `Progress xx%`）直接打印到终端，不再「看不到进度」
+- **日志落盘**：同步 `tee` 到 `client/build/ios/upload/upload.<timestamp>.log`，便于排错
+- **卡顿检测 + 自动重试**：上传日志 5 分钟无更新判定为 Apple 端卡顿 → 自动 `kill` 重试，最多 3 次（实测正常 1 分 30 秒左右完成）
+- **参数化**：`--only-upload`（仅重传 IPA）/ `--no-bump`（跳过构建号递增）/ `--no-push`（跳过 git push）
+
+```bash
+# 完整发布（默认）
+./client/scripts/release.sh
+
+# 只重新上传（IPA 已存在，跳过 bump/build；默认隐含 --no-bump）
+./client/scripts/release.sh --only-upload
+
+# 跳过构建号 bump（用于上传失败重试，避免重复递增）
+./client/scripts/release.sh --no-bump
+
+# 组合使用
+./client/scripts/release.sh --only-upload --no-bump
+
+# 查看完整用法
+./client/scripts/release.sh --help
+```
+
+> 推荐设置 alias：`echo "alias release='$PWD/client/scripts/release.sh'" >> ~/.zshrc && source ~/.zshrc`，之后在任何目录执行 `release` 即可。
+
+脚本若因环境问题不可用（如缺少依赖、权限异常），回退到下方手动流水线步骤。
+
+### 流水线步骤（脚本底层逻辑 / 手动回退参考）
 
 1. **确认 API 指向生产环境**
    - 读 `client/lib/network/api_config.dart`，确认 `_prodBaseUrl` = `https://api.tweetcaht.com/` 且 `defaultValue: 'prod'`。
