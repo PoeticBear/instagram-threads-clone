@@ -9,7 +9,8 @@ import 'package:video_player/video_player.dart';
 /// 行为：
 /// - 最多持有 [_maxCapacity] 个活跃 VideoPlayerController
 /// - LRU 淘汰：超出容量时，淘汰最久未访问的
-/// - 静音 + 循环
+/// - **全局共享的静音状态**：[isMuted] / [toggleMute] 操作池中所有 controller
+/// - 循环
 /// - acquire 不会自动播放，需要外部触发 [playVisible]
 ///
 /// 用法：
@@ -18,6 +19,8 @@ import 'package:video_player/video_player.dart';
 /// pool.acquire(postId, videoUrl);          // 滚动到可见时调
 /// pool.release(postId);                    // 滑出屏幕时调
 /// pool.pauseAll();                         // 跳转详情页前调
+/// pool.toggleMute();                       // 切换全局静音（影响池中所有视频）
+/// pool.isMuted();                          // 读全局静音状态
 /// ```
 class VideoPlayerPool {
   VideoPlayerPool._();
@@ -39,8 +42,10 @@ class VideoPlayerPool {
 
   /// key → controller。LRU 顺序：先入为「最久未访问」。
   final LinkedHashMap<String, VideoPlayerController> _pool = LinkedHashMap();
-  /// key → 是否静音（缺省 true，与历史默认行为一致）
-  final Map<String, bool> _mutedKeys = {};
+  /// 全局静音开关（缺省 true，与历史默认行为一致）。
+  /// 池内所有 controller 共享同一个状态，任意视频点静音 / 取消静音都会作用于池中所有视频。
+  /// LRU 淘汰的视频不保留独立状态——再滚回屏幕时走 [acquire] 会按当前 [_globalMuted] 应用音量。
+  bool _globalMuted = true;
   bool _disposed = false;
 
   /// 池变更通知（用于驱动 UI 重建）。Feed 订阅这个值即可。
@@ -76,7 +81,7 @@ class VideoPlayerPool {
     _bumpVersion();
     // 初始化在后台进行；外部等待 [controller.value.isInitialized]
     controller.initialize().then((_) {
-      controller.setVolume(isMuted(key) ? 0 : 1);
+      controller.setVolume(_globalMuted ? 0 : 1);
       controller.setLooping(true);
       _bumpVersion();
     }).catchError((e) {
@@ -91,7 +96,6 @@ class VideoPlayerPool {
   /// 释放指定 key（不调用 dispose，可能在可见性变化后再次 acquire）
   void release(String key) {
     final ctrl = _pool.remove(key);
-    _mutedKeys.remove(key);
     if (ctrl != null) _bumpVersion();
     _disposeController(ctrl);
   }
@@ -117,7 +121,7 @@ class VideoPlayerPool {
     if (ctrl.value.isPlaying) return;
     _pauseOthers(key);
     try {
-      ctrl.setVolume(isMuted(key) ? 0 : 1);
+      ctrl.setVolume(_globalMuted ? 0 : 1);
       ctrl.setLooping(true);
       ctrl.play();
     } catch (e) {
@@ -149,24 +153,24 @@ class VideoPlayerPool {
 
   VideoPlayerController? controllerOf(String key) => _pool[key];
 
-  /// 该 key 当前是否静音。缺省 true（与历史默认行为一致）。
-  bool isMuted(String key) => _mutedKeys[key] ?? true;
+  /// 全局静音状态。缺省 true（与历史默认行为一致）。
+  /// 池内所有 controller 共享同一个状态。
+  bool isMuted() => _globalMuted;
 
-  /// 切换 [key] 的静音状态。返回新的静音状态（true=静音, false=有声）。
-  /// 立即应用音量并 bump version 触发 UI 重建（图标 mute ↔ unmute 切换）。
-  bool toggleMute(String key) {
-    final nowMuted = !isMuted(key);
-    _mutedKeys[key] = nowMuted;
-    final ctrl = _pool[key];
-    if (ctrl != null) {
+  /// 切换全局静音状态。返回新的静音状态（true=静音, false=有声）。
+  /// 立即遍历池中所有 controller 应用音量，并 bump version 触发 UI 重建
+  /// （所有可见视频的音频图标会同步切换）。
+  bool toggleMute() {
+    _globalMuted = !_globalMuted;
+    for (final ctrl in _pool.values) {
       try {
         if (ctrl.value.isInitialized) {
-          ctrl.setVolume(nowMuted ? 0 : 1);
+          ctrl.setVolume(_globalMuted ? 0 : 1);
         }
       } catch (_) {}
     }
     _bumpVersion();
-    return nowMuted;
+    return _globalMuted;
   }
 
   /// 全部释放 + dispose

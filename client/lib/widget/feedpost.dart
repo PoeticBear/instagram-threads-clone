@@ -721,7 +721,8 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   /// 通用单图块（缩略图，点击进大图预览）
   /// - 图片 / GIF：直接显示缩略图（CachedNetworkImage 支持 GIF 动画）
   /// - 视频：缩略图 + 视频播放器（如果在池中已就绪）+ 右下角「时长 + 音频开关」
-  ///   - 音频开关图标：volume_off (静音) / volume_up (有声)，点击 VideoPlayerPool.toggleMute
+  ///   - 音频开关图标：volume_off (静音) / volume_up (有声)，
+  ///     点击 VideoPlayerPool.toggleMute() 切换全局静音状态（影响池中所有视频）
   ///
   /// [mediaKey]：当 [item] 是视频时，从 VideoPlayerPool 查找 controller 用的 key。
   /// 多图网格里同一帖子可能有多段视频，必须用 (postId, mediaIndex) 唯一定位。
@@ -796,12 +797,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     ),
                   ),
                 if (item.durationLabel.isNotEmpty) const SizedBox(width: 4),
-                // 音频开关：图标随 VideoPlayerPool.isMuted(mediaKey) 切换
+                // 音频开关：图标随 VideoPlayerPool.isMuted() 全局状态切换
+                // 点击 toggleMute() 会作用于池中所有 video
                 GestureDetector(
                   onTap: () {
-                    if (mediaKey != null) {
-                      VideoPlayerPool.instance.toggleMute(mediaKey);
-                    }
+                    VideoPlayerPool.instance.toggleMute();
                   },
                   behavior: HitTestBehavior.opaque,
                   child: Container(
@@ -811,7 +811,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Icon(
-                      VideoPlayerPool.instance.isMuted(mediaKey ?? '')
+                      VideoPlayerPool.instance.isMuted()
                           ? Icons.volume_off
                           : Icons.volume_up,
                       color: Colors.white,
