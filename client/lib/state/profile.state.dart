@@ -98,13 +98,23 @@ class ProfileState extends ChangeNotifier {
     }
   }
 
-  /// 监听 AuthState 变化，把自己 profile 的 username/displayName/profilePic
-  /// 在以下场景下二次同步过来：
-  ///   - _getProfileUser 网络请求返回时 AuthState.userModel 还没就绪，
-  ///     导致 _profileUserModel 关键字段为空；
-  ///   - 后续 AuthState.userModel 加载完成（登录流程尾段 / 下拉刷新触发
-  ///     getProfileUser）后，由本回调补齐。
+  /// 监听 AuthState 变化，把自己 profile 的 userName/displayName/profilePic 同步过来。
+  ///
+  /// 两种同步语义（仅 isMyProfile 时生效）：
+  ///
+  /// 1. **强制覆盖（用户资料变更场景）**：AuthState 是当前用户资料的权威源，
+  ///    EditProfilePage 提交后 AuthState.userModel 的 profilePic/displayName/userName
+  ///    会拿到新值。本回调检测到「AuthState 字段与本地不同」时强制覆盖到
+  ///    _profileUserModel，从而让 ProfilePage 顶部头像/昵称实时刷新。
+  ///    用「值不同」作为是否 notify 的门槛，防止无限循环。
+  ///
+  /// 2. **空字段补齐（首登时序竞态）**：_getProfileUser 网络请求返回时
+  ///    AuthState.userModel 可能还没就绪，导致 _profileUserModel 关键字段为空；
+  ///    后续 AuthState.userModel 加载完成（登录流程尾段 / 下拉刷新触发
+  ///    getProfileUser）后，由本回调把空字段补齐。
+  ///
   /// 不会循环：本回调只 notify 自己的 listener，不写 AuthState。
+  /// 他人 profile（!isMyProfile）不走本逻辑，避免误把别人的资料改成自己的。
   void _setupAuthStateFallbackSync() {
     final auth = authState;
     if (auth == null) return;
@@ -115,39 +125,56 @@ class ProfileState extends ChangeNotifier {
       if (authUser == null) return;
       if (_profileUserModel == null) return;
 
-      final currentUserName = _profileUserModel!.userName ?? '';
-      final currentDisplayName = _profileUserModel!.displayName ?? '';
-      final currentProfilePic = _profileUserModel!.profilePic ?? '';
+      final authUserName = authUser.userName ?? '';
+      final authDisplayName = authUser.displayName ?? '';
+      final authProfilePic = authUser.profilePic ?? '';
 
-      // 只在确实有空字段时才补 —— 避免无意义的 notifyListeners 引发额外重建。
-      final userNameMissing = currentUserName.isEmpty;
-      final displayNameMissing = currentDisplayName.isEmpty;
-      final profilePicMissing = currentProfilePic.isEmpty;
+      final curUserName = _profileUserModel!.userName ?? '';
+      final curDisplayName = _profileUserModel!.displayName ?? '';
+      final curProfilePic = _profileUserModel!.profilePic ?? '';
+
+      // 优先检测「强制覆盖」场景：AuthState 已有非空值且与本地不同。
+      // 这是头像/昵称编辑后实时刷新的关键路径。
+      final picOverride = authProfilePic.isNotEmpty && authProfilePic != curProfilePic;
+      final nameOverride = authUserName.isNotEmpty && authUserName != curUserName;
+      final dispOverride = authDisplayName.isNotEmpty && authDisplayName != curDisplayName;
+
+      if (picOverride || nameOverride || dispOverride) {
+        _profileUserModel = _profileUserModel!.copyWith(
+          profilePic: picOverride ? authProfilePic : null,
+          userName: nameOverride ? authUserName : null,
+          displayName: dispOverride ? authDisplayName : null,
+        );
+        debugPrint('ProfileState._authStateFallbackSync (override): '
+            'profilePic=${picOverride ? "changed" : "same"}, '
+            'userName=${nameOverride ? "changed" : "same"}, '
+            'displayName=${dispOverride ? "changed" : "same"}');
+        notifyListeners();
+        return;
+      }
+
+      // 兜底：空字段补齐场景（首次登录后字段未就绪）。
+      final userNameMissing = curUserName.isEmpty;
+      final displayNameMissing = curDisplayName.isEmpty;
+      final profilePicMissing = curProfilePic.isEmpty;
       if (!userNameMissing && !displayNameMissing && !profilePicMissing) return;
 
-      final newUserName = userNameMissing
-          ? (authUser.userName ?? '')
-          : currentUserName;
-      final newDisplayName = displayNameMissing
-          ? (authUser.displayName ?? '')
-          : currentDisplayName;
-      final newProfilePic = profilePicMissing
-          ? (authUser.profilePic ?? '')
-          : currentProfilePic;
+      final newUserName = userNameMissing && authUserName.isNotEmpty ? authUserName : null;
+      final newDisplayName = displayNameMissing && authDisplayName.isNotEmpty ? authDisplayName : null;
+      final newProfilePic = profilePicMissing && authProfilePic.isNotEmpty ? authProfilePic : null;
 
-      // 只补非空字段（copyWith 的 null 不会覆盖既有非空值）。
+      if (newUserName == null && newDisplayName == null && newProfilePic == null) return;
+
       _profileUserModel = _profileUserModel!.copyWith(
-        userName: userNameMissing && newUserName.isNotEmpty ? newUserName : null,
-        displayName: displayNameMissing && newDisplayName.isNotEmpty
-            ? newDisplayName
-            : null,
-        profilePic: profilePicMissing && newProfilePic.isNotEmpty
-            ? newProfilePic
-            : null,
+        userName: newUserName,
+        displayName: newDisplayName,
+        profilePic: newProfilePic,
       );
 
-      debugPrint('ProfileState._authStateFallbackSync: '
-          'userName=$newUserName, displayName=$newDisplayName, profilePic=${newProfilePic.isNotEmpty}');
+      debugPrint('ProfileState._authStateFallbackSync (fill): '
+          'userName=${newUserName != null ? "filled" : "skip"}, '
+          'displayName=${newDisplayName != null ? "filled" : "skip"}, '
+          'profilePic=${newProfilePic != null ? "filled" : "skip"}');
       notifyListeners();
     };
 

@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/model/media_draft_item.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/services/upload_service.dart';
 import 'package:threads/services/follow_service.dart';
 import 'package:threads/state/app.state.dart';
+import 'package:threads/state/auth.state.dart';
 import 'package:threads/common/locator.dart';
 import '../model/post.module.dart';
 import '../network/api_exception.dart';
@@ -62,6 +64,18 @@ class PostCreationResult {
 }
 
 class PostState extends AppStates {
+  /// AuthState 引用 —— 用于监听当前用户资料（profilePic/displayName/userName）变化，
+  /// 当 EditProfilePage 提交新头像/昵称后，回写到 feedlist / userPosts / postDetail 等
+  /// 所有缓存的 PostModel.user 字段，让首页 Feed / 个人中心 Threads Tab 等位置的
+  /// 作者头像/昵称实时刷新（无需下拉刷新）。
+  final AuthState _authState;
+  VoidCallback? _authStateUserListener;
+
+  PostState(this._authState) {
+    _authStateUserListener = _syncCurrentUserAcrossLists;
+    _authState.addListener(_authStateUserListener!);
+  }
+
   bool isBusy = false;
   PostModel? _postToReplyModel;
   PostModel? get postToReplyModel => _postToReplyModel;
@@ -1215,5 +1229,160 @@ class PostState extends AppStates {
     });
 
     notifyListeners();
+  }
+
+  // ==================== 当前用户资料同步（AuthState → PostState）====================
+
+  /// 当前用户资料变化时（EditProfilePage 提交头像 / 昵称 / 用户名后，
+  /// 或登录 / 登出 / 换号场景），把所有缓存列表中 author = 当前用户的
+  /// PostModel.user 字段同步到最新值，再 notifyListeners。
+  ///
+  /// 覆盖范围：
+  ///   - `_feedlist`（首页 Feed）
+  ///   - `_userPosts`（个人中心 Threads Tab）
+  ///   - `_postDetailModelList`（帖子详情缓存）
+  ///   - `_savedPosts`（已保存）
+  ///   - `_scheduledPosts`（定时发布）
+  ///   - `_postToReplyModel`（回复目标单帖）
+  ///
+  /// 每个 PostModel 内部还会递归处理 `quotePost`（引用帖作者也是自己）
+  /// 与 `threadPosts`（Thread 链中的自己）。
+  ///
+  /// 不会循环：只写自己的字段，不修改 AuthState。
+  /// 性能：feedlist 较大时遍历 O(n)，但 AuthState.notifyListeners 非高频
+  /// （登录/登出/资料更新），且仅在值真正变化时才 notify。
+  void _syncCurrentUserAcrossLists() {
+    final me = _authState.userModel;
+    if (me == null) return;
+    final myUserId = me.userId;
+    if (myUserId == null) return;
+
+    final newPic = me.profilePic ?? '';
+    final newName = me.userName ?? '';
+    final newDisp = me.displayName ?? '';
+
+    bool changed = false;
+
+    bool syncList(List<PostModel>? list) {
+      if (list == null) return false;
+      bool listChanged = false;
+      for (var i = 0; i < list.length; i++) {
+        final updated = _syncPostUser(
+          list[i], myUserId, newPic, newName, newDisp,
+        );
+        if (updated != null) {
+          list[i] = updated;
+          listChanged = true;
+        }
+      }
+      return listChanged;
+    }
+
+    if (syncList(_feedlist)) changed = true;
+    if (syncList(_userPosts)) changed = true;
+    if (syncList(_postDetailModelList)) changed = true;
+    if (syncList(_savedPosts)) changed = true;
+    if (syncList(_scheduledPosts)) changed = true;
+
+    // 单条回复目标
+    if (_postToReplyModel != null) {
+      final updated = _syncPostUser(
+        _postToReplyModel!, myUserId, newPic, newName, newDisp,
+      );
+      if (updated != null) {
+        _postToReplyModel = updated;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      developer.log(
+        '🔄 PostState._syncCurrentUserAcrossLists: '
+        'feedlist=${_feedlist?.length ?? 0}, '
+        'userPosts=${_userPosts?.length ?? 0}, '
+        'postDetail=${_postDetailModelList?.length ?? 0}, '
+        'saved=${_savedPosts.length}, '
+        'scheduled=${_scheduledPosts.length}',
+        name: 'PostState',
+      );
+      notifyListeners();
+    }
+  }
+
+  /// 若 [post] 的作者 = 当前用户且其 profilePic/displayName/userName 与最新值不同，
+  /// 返回替换了 user 字段的新 PostModel；否则返回 null（表示无需更新）。
+  ///
+  /// 递归处理 `quotePost` 与 `threadPosts`，覆盖「引用帖作者也是自己」
+  /// / 「Thread 链中包含自己」的场景。
+  PostModel? _syncPostUser(
+    PostModel post,
+    int myUserId,
+    String newPic,
+    String newName,
+    String newDisp,
+  ) {
+    final user = post.user;
+    bool needUpdate = false;
+    UserModel? updatedUser;
+
+    if (user != null && user.userId == myUserId) {
+      final curPic = user.profilePic ?? '';
+      final curName = user.userName ?? '';
+      final curDisp = user.displayName ?? '';
+      final picDiff = newPic.isNotEmpty && newPic != curPic;
+      final nameDiff = newName.isNotEmpty && newName != curName;
+      final dispDiff = newDisp.isNotEmpty && newDisp != curDisp;
+      if (picDiff || nameDiff || dispDiff) {
+        updatedUser = user.copyWith(
+          profilePic: picDiff ? newPic : null,
+          userName: nameDiff ? newName : null,
+          displayName: dispDiff ? newDisp : null,
+        );
+        needUpdate = true;
+      }
+    }
+
+    // 递归 quotePost（引用帖作者也可能是自己）
+    PostModel? updatedQuote;
+    if (post.quotePost != null) {
+      updatedQuote = _syncPostUser(
+        post.quotePost!, myUserId, newPic, newName, newDisp,
+      );
+      if (updatedQuote != null) needUpdate = true;
+    }
+
+    // 递归 threadPosts（Thread 链中也可能包含自己的帖子）
+    List<PostModel>? updatedThreads;
+    if (post.threadPosts != null && post.threadPosts!.isNotEmpty) {
+      bool threadChanged = false;
+      updatedThreads = List<PostModel>.from(post.threadPosts!);
+      for (var i = 0; i < updatedThreads.length; i++) {
+        final updated = _syncPostUser(
+          updatedThreads[i], myUserId, newPic, newName, newDisp,
+        );
+        if (updated != null) {
+          updatedThreads[i] = updated;
+          threadChanged = true;
+        }
+      }
+      if (!threadChanged) updatedThreads = null;
+    }
+
+    if (!needUpdate) return null;
+
+    return post.copyWith(
+      user: updatedUser, // null 时 copyWith 保留原值
+      quotePost: updatedQuote, // null 时保留原值
+      threadPosts: updatedThreads, // null 时保留原值
+    );
+  }
+
+  @override
+  void dispose() {
+    if (_authStateUserListener != null) {
+      _authState.removeListener(_authStateUserListener!);
+      _authStateUserListener = null;
+    }
+    super.dispose();
   }
 }

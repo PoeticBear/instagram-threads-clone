@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/model/user.module.dart';
 import 'package:threads/pages/community/community_list_page.dart';
 import 'package:threads/pages/message/message_page.dart';
 import 'package:threads/state/auth.state.dart';
@@ -155,7 +156,17 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
             itemCount: posts.length + 1 + (state.isLoadingMore ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == 0) {
-                return _buildQuickPostArea(authState.userModel);
+                // 用 Selector 精准订阅 AuthState.userModel 引用变化。
+                // UserModel 是 Equatable 子类，profilePic/displayName/userName
+                // 任一字段变化都会使新实例 != 旧实例 → 触发本 Selector 重建，
+                // 从而让快捷发帖区的头像/昵称实时跟随 EditProfilePage 的更新。
+                // 用 listen:false 拿不到这个效果（feed.dart:63 的 AuthState 是 listen:false）。
+                return Selector<AuthState, UserModel?>(
+                  selector: (_, a) => a.userModel,
+                  builder: (context, userModel, _) {
+                    return _buildQuickPostArea(userModel);
+                  },
+                );
               }
               final postIndex = index - 1;
               if (postIndex == posts.length) {

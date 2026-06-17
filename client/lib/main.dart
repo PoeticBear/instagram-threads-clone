@@ -114,7 +114,12 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider<AppStates>(create: (_) => AppStates()),
         ChangeNotifierProvider<AuthState>(create: (_) => AuthState()),
-        ChangeNotifierProvider<PostState>(create: (_) => PostState()),
+        ChangeNotifierProvider<PostState>(
+          // PostState 监听 AuthState：当前用户资料（头像/昵称/用户名）变化时，
+          // 把 feedlist / userPosts / postDetail 等缓存中作者=自己的帖子同步刷新。
+          // 注册顺序保证 AuthState 在 PostState 之前，create 时 context.read<AuthState>() 安全。
+          create: (context) => PostState(context.read<AuthState>()),
+        ),
         ChangeNotifierProvider<SearchState>(create: (_) => SearchState()),
         ChangeNotifierProvider<NotificationState>(create: (_) => NotificationState()),
         ChangeNotifierProvider<SettingsState>(create: (_) => SettingsState()..loadSettings()),
