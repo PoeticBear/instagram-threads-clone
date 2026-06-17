@@ -44,9 +44,16 @@ class ProfilePage extends StatefulWidget {
           // 否则 isMyProfile 完全依赖 SharedPreferences 缓存里的 userId，
           // 在缓存里 userId 为 0 / 缺失时会错误地把当前用户当成"别人"，
           // 把"编辑资料"显示成"关注"按钮。
+          //
+          // 同时注入 AuthState 引用：用于自己的 profile 兜底同步
+          // userName/displayName/profilePic（与 MyProfilePage 路径保持一致）。
           create: (BuildContext context) {
             final auth = Provider.of<AuthState>(context, listen: false);
-            return ProfileState(profileId, currentUserId: auth.userId);
+            return ProfileState(
+              profileId,
+              currentUserId: auth.userId,
+              authState: auth,
+            );
           },
           child: ProfilePage(
             profileId: profileId,

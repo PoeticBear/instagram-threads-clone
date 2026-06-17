@@ -34,7 +34,18 @@ class MyProfilePage extends StatelessWidget {
           // 把当前登录用户的 ID 显式传给 ProfileState，
           // 让 isMyProfile 优先用 AuthState.userId 而不是只依赖缓存里的 userId。
           // 修复登录后第一次打开个人中心显示"关注"按钮的 bug。
-          create: (_) => ProfileState(profileId, currentUserId: profileId),
+          //
+          // 同时把 AuthState 引用传进去：ProfileState 据此拿到实时的
+          // username/displayName/profilePic 兜底，避免首登场景下 SharedPreferences
+          // 缓存未落盘导致顶部名称显示空白。
+          create: (_) {
+            final authState = context.read<AuthState>();
+            return ProfileState(
+              profileId,
+              currentUserId: profileId,
+              authState: authState,
+            );
+          },
           child: ProfilePage(
             profileId: profileId,
             isOwnProfileTab: true,
