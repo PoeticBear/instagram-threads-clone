@@ -222,6 +222,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
           width: size,
           child: CachedNetworkImage(
             imageUrl: url,
+            fit: BoxFit.cover,
             errorWidget: (context, url, error) => Container(
               decoration: BoxDecoration(
                 color: appColors.surface,
