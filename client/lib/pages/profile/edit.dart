@@ -18,6 +18,7 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
+  late TextEditingController _userName;
   late TextEditingController _displayName;
   late TextEditingController _bio;
   late TextEditingController _link;
@@ -34,6 +35,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void initState() {
     super.initState();
     final state = Provider.of<AuthState>(context, listen: false);
+    _userName = TextEditingController(text: state.userModel?.userName ?? '');
     _displayName = TextEditingController(text: state.userModel?.displayName ?? '');
     _bio = TextEditingController(text: state.userModel?.bio ?? '');
     _link = TextEditingController(text: state.userModel?.link ?? '');
@@ -48,6 +50,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void dispose() {
     _bio.dispose();
     _link.dispose();
+    _userName.dispose();
     _displayName.dispose();
     _pronouns.dispose();
     _location.dispose();
@@ -165,6 +168,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Username (@handle)
+                            _fieldSection(
+                              label: AppLocalizations.of(context)!.username,
+                              controller: _userName,
+                              placeholder: AppLocalizations.of(context)!.usernameHint,
+                              leadingIcon: Icons.alternate_email,
+                            ),
                             // Name + Avatar row
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,6 +262,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required String label,
     required TextEditingController controller,
     required String placeholder,
+    IconData? leadingIcon,
   }) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
@@ -260,7 +271,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         Text(label, style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
         CupertinoTextField(
           controller: controller,
-          prefix: Icon(Icons.add, size: 15, color: appColors.textPrimary),
+          prefix: Icon(leadingIcon ?? Icons.add, size: 15, color: appColors.textPrimary),
           style: TextStyle(color: appColors.textPrimary, fontSize: 18),
           placeholder: placeholder,
           placeholderStyle: TextStyle(color: appColors.textSecondary, fontSize: 16),
@@ -478,6 +489,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() { _isSubmitting = true; });
     var state = Provider.of<AuthState>(context, listen: false);
     var model = state.userModel!.copyWith(
+      userName: _userName.text,
       displayName: _displayName.text,
       bio: _bio.text,
       link: _link.text,

@@ -1011,6 +1011,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get done => 'Done';
 
   @override
+  String get username => 'Username';
+
+  @override
   String get name => 'Name';
 
   @override

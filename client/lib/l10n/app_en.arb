@@ -375,6 +375,7 @@
   "statFollowing": "following",
   "statFollowers": "followers",
   "done": "Done",
+  "username": "Username",
   "name": "Name",
   "bio": "Bio",
   "addBio": "Add bio",

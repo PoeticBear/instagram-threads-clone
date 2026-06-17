@@ -997,6 +997,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get done => '完成';
 
   @override
+  String get username => '用户名';
+
+  @override
   String get name => '姓名';
 
   @override

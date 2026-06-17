@@ -2030,6 +2030,12 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get done;
 
+  /// No description provided for @username.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get username;
+
   /// No description provided for @name.
   ///
   /// In en, this message translates to:
