@@ -120,9 +120,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
         child: Container(
-          color: appColors.background.withAlpha(153),
+          color: appColors.background.withAlpha(77),
           height: 90,
           padding: EdgeInsets.only(bottom: 20),
           width: MediaQuery.of(context).size.width,
