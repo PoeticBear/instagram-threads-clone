@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
@@ -116,41 +118,47 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget bottomNavBar() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    return Container(
-        color: appColors.background,
-        height: 90,
-        padding: EdgeInsets.only(bottom: 20),
-        width: MediaQuery.of(context).size.width,
-        child: Row(children: [
-          _tabBarItem(tabIndex: 0, icon: Iconsax.home, appColors: appColors, isActive: tab == 0),
-          _tabBarItem(tabIndex: 1, icon: Iconsax.search_normal, appColors: appColors, isActive: tab == 1),
-          _tabBarItem(tabIndex: 2, icon: Iconsax.edit, appColors: appColors, isActive: tab == 2),
-          Consumer<NotificationState>(
-            builder: (_, state, __) {
-              return _tabBarItem(
-                tabIndex: 3,
-                icon: Iconsax.heart,
-                appColors: appColors,
-                isActive: tab == 3,
-                badge: state.unreadCount > 0
-                    ? Positioned(
-                        right: 0,
-                        top: 8,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: appColors.accent,
-                            shape: BoxShape.circle,
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          color: appColors.background.withAlpha(153),
+          height: 90,
+          padding: EdgeInsets.only(bottom: 20),
+          width: MediaQuery.of(context).size.width,
+          child: Row(children: [
+            _tabBarItem(tabIndex: 0, icon: Iconsax.home, appColors: appColors, isActive: tab == 0),
+            _tabBarItem(tabIndex: 1, icon: Iconsax.search_normal, appColors: appColors, isActive: tab == 1),
+            _tabBarItem(tabIndex: 2, icon: Iconsax.edit, appColors: appColors, isActive: tab == 2),
+            Consumer<NotificationState>(
+              builder: (_, state, __) {
+                return _tabBarItem(
+                  tabIndex: 3,
+                  icon: Iconsax.heart,
+                  appColors: appColors,
+                  isActive: tab == 3,
+                  badge: state.unreadCount > 0
+                      ? Positioned(
+                          right: 0,
+                          top: 8,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: appColors.accent,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                      )
-                    : null,
-              );
-            },
-          ),
-          _tabBarItem(tabIndex: 4, icon: CupertinoIcons.person, appColors: appColors, isActive: tab == 4),
-        ]));
+                        )
+                      : null,
+                );
+              },
+            ),
+            _tabBarItem(tabIndex: 4, icon: CupertinoIcons.person, appColors: appColors, isActive: tab == 4),
+          ]),
+        ),
+      ),
+    );
   }
 
   int tab = 0;
