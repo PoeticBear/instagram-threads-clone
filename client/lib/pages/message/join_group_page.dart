@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/state/message.state.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class JoinGroupPage extends StatefulWidget {
@@ -135,15 +136,9 @@ class _JoinGroupPageState extends State<JoinGroupPage> {
         );
         Navigator.of(context).pop();
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.updateFailed),
-            backgroundColor: appColors.destructive,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     } finally {
       if (mounted) {

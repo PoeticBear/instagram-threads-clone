@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class RelationControlPage extends StatefulWidget {
@@ -56,18 +57,12 @@ class _RelationControlPageState extends State<RelationControlPage> {
   }
 
   Future<void> _removeUser(RelationControlledUser user) async {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       await _userService.removeRelationControl(user.userId);
       _loadList();
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedRemoveUser),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }

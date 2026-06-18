@@ -104,10 +104,15 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              Image.asset(
-                "assets/threads.png",
-                height: 80,
-                fit: BoxFit.contain,
+              Text(
+                'Tweet',
+                style: TextStyle(
+                  color: appColors.textPrimary,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               Text(

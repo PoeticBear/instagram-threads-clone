@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/helper/utility.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/post_service.dart';
@@ -77,7 +78,6 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
     });
 
     final postState = Provider.of<PostState>(context, listen: false);
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
 
     // ===== 嵌套回复（对回复进行回复）路径 =====
     if (widget.parentReply != null) {
@@ -100,13 +100,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
           setState(() {
             _isPosting = false;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.failedToPostReply),
-              backgroundColor: appColors.surface,
-              duration: const Duration(seconds: 2),
-            ),
-          );
+          NetworkErrorNotifier.showApiError(e);
         }
       }
       return;
@@ -134,13 +128,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
         setState(() {
           _isPosting = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedToPostReply),
-            backgroundColor: appColors.surface,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }
@@ -308,7 +296,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
           duration: const Duration(seconds: 2),
         ),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       // Rollback：把删掉的项放回原位置（越界时追加到末尾）。
       setState(() {
@@ -316,13 +304,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
             backupIndex.clamp(0, _replies.length);
         _replies.insert(insertAt, backup);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.failedToDeleteReply),
-          backgroundColor: appColors.surface,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      NetworkErrorNotifier.showApiError(e);
     }
   }
 
@@ -361,17 +343,10 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
     } catch (e) {
       // Rollback on failure
       if (mounted) {
-        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
         setState(() {
           _replies[index] = reply;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(reply.isPinned ? AppLocalizations.of(context)!.failedToUnpinReply : AppLocalizations.of(context)!.failedToPinReply),
-            backgroundColor: appColors.surface,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }

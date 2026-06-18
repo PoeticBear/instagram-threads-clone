@@ -20,6 +20,7 @@ import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/pages/follow/follow_list_page.dart';
 import 'package:threads/pages/profile/share_profile_sheet.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -97,7 +98,7 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadUserPosts();
   }
 
@@ -260,7 +261,7 @@ class _ProfilePageState extends State<ProfilePage>
                     tabs: [
                       Tab(
                         child: Text(
-                          AppLocalizations.of(context)!.tabThreads,
+                          AppLocalizations.of(context)!.tabPosts,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -270,6 +271,15 @@ class _ProfilePageState extends State<ProfilePage>
                       Tab(
                         child: Text(
                           AppLocalizations.of(context)!.tabMedia,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Tab(
+                        child: Text(
+                          AppLocalizations.of(context)!.tabReposts,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -286,6 +296,7 @@ class _ProfilePageState extends State<ProfilePage>
                     children: [
                       _buildThreadsTab(),
                       _buildMediaTab(),
+                      _buildRepostsTab(),
                     ],
                   ),
                 ),
@@ -583,6 +594,17 @@ class _ProfilePageState extends State<ProfilePage>
           );
         },
       );
+  }
+
+  Widget _buildRepostsTab() {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    // 暂时不需要加载数据，仅显示空态占位
+    return Center(
+      child: Text(
+        AppLocalizations.of(context)!.noRepostsYet,
+        style: TextStyle(color: appColors.textHint),
+      ),
+    );
   }
 
   Widget _buildAvatar(ProfileState state) {
@@ -889,7 +911,6 @@ class _ProfilePageState extends State<ProfilePage>
     int controlType,
     String successMsg,
   ) async {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       final userService = UserService(apiClient: getIt());
       await userService.addRelationControl(
@@ -901,15 +922,9 @@ class _ProfilePageState extends State<ProfilePage>
           SnackBar(content: Text(successMsg), duration: Duration(seconds: 2)),
         );
       }
-    } catch (_) {
+    } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.operationFailed),
-            backgroundColor: appColors.destructive,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }

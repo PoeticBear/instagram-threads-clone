@@ -244,16 +244,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get shareProfile => '分享资料';
 
   @override
-  String get tabThreads => '主题';
-
-  @override
   String get tabReplies => '回复';
 
   @override
   String get tabMedia => '媒体';
 
   @override
+  String get tabReposts => '转发';
+
+  @override
   String get noThreadsYet => '你还没有发布任何主题。';
+
+  @override
+  String get noRepostsYet => '暂无转发';
 
   @override
   String get notificationSettings => '通知设置';

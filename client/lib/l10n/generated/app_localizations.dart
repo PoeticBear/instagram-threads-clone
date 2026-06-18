@@ -548,12 +548,6 @@ abstract class AppLocalizations {
   /// **'Share profile'**
   String get shareProfile;
 
-  /// No description provided for @tabThreads.
-  ///
-  /// In en, this message translates to:
-  /// **'Threads'**
-  String get tabThreads;
-
   /// No description provided for @tabReplies.
   ///
   /// In en, this message translates to:
@@ -566,11 +560,23 @@ abstract class AppLocalizations {
   /// **'Media'**
   String get tabMedia;
 
+  /// No description provided for @tabReposts.
+  ///
+  /// In en, this message translates to:
+  /// **'Reposts'**
+  String get tabReposts;
+
   /// No description provided for @noThreadsYet.
   ///
   /// In en, this message translates to:
   /// **'You haven\'t posted any threads yet.'**
   String get noThreadsYet;
+
+  /// No description provided for @noRepostsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reposts yet'**
+  String get noRepostsYet;
 
   /// No description provided for @notificationSettings.
   ///

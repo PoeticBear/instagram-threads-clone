@@ -8,6 +8,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/model/media_draft_item.dart';
@@ -619,7 +620,6 @@ class ComposePostState extends State<ComposePost> {
   /// - 返回 (mediaUrls, mediaTypes) 平行数组
   Future<List<MapEntry<String, int>>?> _resolveDraftMedia() async {
     if (_mediaDrafts.isEmpty) return null;
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final uploadService =
         Provider.of<PostState>(context, listen: false).uploadService;
 
@@ -636,14 +636,9 @@ class ComposePostState extends State<ComposePost> {
             : (item.remoteUrl ?? '');
         if (url.isEmpty) continue;
         out.add(MapEntry(url, item.mediaTypeInt));
-      } catch (_) {
+      } catch (e) {
         if (!mounted) return null;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.draftSaveFailed),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
         return null;
       }
     }
@@ -699,9 +694,11 @@ class ComposePostState extends State<ComposePost> {
           ),
         );
       } else {
+        // saveDraft 返回 null = 服务端拒绝或未知错误。具体原因未通过异常传上来，
+        // 调试阶段用通用占位提示。
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.draftSaveFailed),
+            content: Text('${AppLocalizations.of(context)!.draftSaveFailed} (saveDraft 返回 null)'),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -766,9 +763,10 @@ class ComposePostState extends State<ComposePost> {
         );
         widget.onPostSuccess?.call();
       } else {
+        // updatePost 返回 null = 服务端拒绝或未知错误。
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.publishFailed),
+            content: Text('${AppLocalizations.of(context)!.publishFailed} (updatePost 返回 null)'),
             backgroundColor: appColors.destructive,
           ),
         );
@@ -1088,18 +1086,8 @@ class ComposePostState extends State<ComposePost> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Left: avatar + thread line
-                      Column(
-                        children: [
-                          _buildAvatar(appColors, profilePic, 40),
-                          const SizedBox(height: 6),
-                          Container(
-                            width: 2,
-                            height: 30,
-                            color: appColors.dividerSecondary,
-                          ),
-                        ],
-                      ),
+                      // Left: avatar (thread line 暂时移除)
+                      _buildAvatar(appColors, profilePic, 40),
                       const SizedBox(width: 12),
                       // Right: name + text field + char count
                       Expanded(
@@ -1606,7 +1594,7 @@ class ComposePostState extends State<ComposePost> {
     // 编辑模式：仅显示提交按钮（不可改媒体/投票/草稿/位置/定时/回复权限）
     if (_isEditing) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: appColors.divider, width: 0.5)),
         ),
@@ -1644,7 +1632,7 @@ class ComposePostState extends State<ComposePost> {
       );
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: appColors.divider, width: 0.5)),
       ),
@@ -1652,63 +1640,77 @@ class ComposePostState extends State<ComposePost> {
         top: false,
         child: Row(
           children: [
-            _toolbarIcon(
-              onTap: _showPollEditor ? null : _openCamera,
-              icon: Iconsax.camera,
-              color:
-                  _showPollEditor ? appColors.divider : appColors.textPrimary,
+            // 左侧 7 个功能按钮: 用 Expanded + 横向滚动包裹,
+            // 避免图标加大后挤压右侧 2 个操作按钮 (出现 RenderFlex overflow)
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _toolbarIcon(
+                      onTap: _showPollEditor ? null : _openCamera,
+                      icon: Iconsax.camera,
+                      color: _showPollEditor
+                          ? appColors.divider
+                          : appColors.textPrimary,
+                    ),
+                    _toolbarIcon(
+                      onTap: (_showPollEditor || !_canAddMoreMedia)
+                          ? null
+                          : _pickMultipleMedia,
+                      icon: Iconsax.gallery,
+                      color: (_showPollEditor || !_canAddMoreMedia)
+                          ? appColors.divider
+                          : appColors.textPrimary,
+                    ),
+                    _toolbarIcon(
+                      onTap:
+                          _mediaDrafts.isNotEmpty ? null : _togglePollEditor,
+                      icon: Iconsax.chart_square,
+                      color: _mediaDrafts.isNotEmpty
+                          ? appColors.divider
+                          : (_showPollEditor
+                              ? appColors.accent
+                              : appColors.textPrimary),
+                    ),
+                    _toolbarIcon(
+                      onTap: _showReplyTypeSheet,
+                      icon: _replyTypeIcon,
+                      color: appColors.textMuted,
+                    ),
+                    _toolbarIcon(
+                      onTap: _showDraftListSheet,
+                      icon: Iconsax.note_text,
+                      color: appColors.textMuted,
+                    ),
+                    _toolbarIcon(
+                      onTap: _openLocationPicker,
+                      icon: Iconsax.location,
+                      color: _location != null
+                          ? appColors.accent
+                          : appColors.textMuted,
+                    ),
+                    _toolbarIcon(
+                      onTap: _showSchedulePicker,
+                      icon: Iconsax.clock,
+                      color: _scheduledTime != null
+                          ? appColors.accent
+                          : appColors.textMuted,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            _toolbarIcon(
-              onTap: (_showPollEditor || !_canAddMoreMedia)
-                  ? null
-                  : _pickMultipleMedia,
-              icon: Iconsax.gallery,
-              color: (_showPollEditor || !_canAddMoreMedia)
-                  ? appColors.divider
-                  : appColors.textPrimary,
-            ),
-            _toolbarIcon(
-              onTap: _mediaDrafts.isNotEmpty ? null : _togglePollEditor,
-              icon: Iconsax.chart_square,
-              color: _mediaDrafts.isNotEmpty
-                  ? appColors.divider
-                  : (_showPollEditor
-                      ? appColors.accent
-                      : appColors.textPrimary),
-            ),
-            _toolbarIcon(
-              onTap: _showReplyTypeSheet,
-              icon: _replyTypeIcon,
-              color: appColors.textMuted,
-            ),
-            _toolbarIcon(
-              onTap: _showDraftListSheet,
-              icon: Iconsax.note_text,
-              color: appColors.textMuted,
-            ),
-            _toolbarIcon(
-              onTap: _openLocationPicker,
-              icon: Iconsax.location,
-              color: _location != null ? appColors.accent : appColors.textMuted,
-            ),
-            _toolbarIcon(
-              onTap: _showSchedulePicker,
-              icon: Iconsax.clock,
-              color: _scheduledTime != null
-                  ? appColors.accent
-                  : appColors.textMuted,
-            ),
-            const Spacer(),
             if (_hasContent)
               GestureDetector(
                 onTap: _isSavingDraft ? null : _saveCurrentDraft,
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(8),
                   child: _isSavingDraft
                       ? SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: 24,
+                          height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: appColors.textSecondary,
@@ -1716,7 +1718,7 @@ class ComposePostState extends State<ComposePost> {
                         )
                       : Icon(
                           Iconsax.save_2,
-                          size: 22,
+                          size: 28,
                           color: appColors.textSecondary,
                         ),
                 ),
@@ -1725,11 +1727,11 @@ class ComposePostState extends State<ComposePost> {
               onTap: _canPost ? _submit : null,
               behavior: HitTestBehavior.opaque,
               child: Padding(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(8),
                 child: _isSubmitting
                     ? SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 24,
+                        height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           color: appColors.accent,
@@ -1739,7 +1741,7 @@ class ComposePostState extends State<ComposePost> {
                         _scheduledTime != null
                             ? Iconsax.timer_1
                             : Iconsax.send_1,
-                        size: 24,
+                        size: 30,
                         color: _canPost ? appColors.accent : appColors.divider,
                       ),
               ),
@@ -1760,7 +1762,7 @@ class ComposePostState extends State<ComposePost> {
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.all(6),
-        child: Icon(icon, size: 22, color: color),
+        child: Icon(icon, size: 28, color: color),
       ),
     );
   }

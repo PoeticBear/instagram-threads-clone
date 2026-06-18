@@ -60,9 +60,9 @@ class _NamePageState extends State<NamePage> {
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.loginFailedCheckCredentials)),
-      );
+      // signIn 内部已通过 NetworkErrorNotifier 弹过具体错误 SnackBar。
+      // 此处仅作为兜底，避免重复弹框。
+      debugPrint('[SignIn] authState.signIn 返回 null（具体原因见 NetworkErrorNotifier 日志）');
     }
   }
 
@@ -147,10 +147,15 @@ class _NamePageState extends State<NamePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              Image.asset(
-                "assets/threads.png",
-                height: 80,
-                fit: BoxFit.contain,
+              Text(
+                'Tweet',
+                style: TextStyle(
+                  color: appColors.textPrimary,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               Text(

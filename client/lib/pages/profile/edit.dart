@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/theme/app_colors.dart';
 
@@ -504,9 +505,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(AppLocalizations.of(context)!.updateFailed),
-        ));
+        NetworkErrorNotifier.showApiError(e);
       }
     } finally {
       if (mounted) setState(() { _isSubmitting = false; });

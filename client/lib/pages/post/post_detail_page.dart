@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/services/post_service.dart';
@@ -655,12 +656,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           )
           .catchError((e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedToPostReply),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       });
     }
   }
@@ -950,15 +946,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
           duration: const Duration(seconds: 2),
         ),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.failedToDeleteReply),
-          backgroundColor: appColors.surface,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      NetworkErrorNotifier.showApiError(e);
     }
   }
 
@@ -1103,15 +1093,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
           }
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() => _isPosting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedToPostReply),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }

@@ -238,8 +238,8 @@ class ApiClient {
         error: '网络连接失败: $e',
         elapsedMs: 0,
       );
-      NetworkErrorNotifier.showNetworkError();
-      throw NetworkException(message: '网络连接失败，请检查网络');
+      NetworkErrorNotifier.showNetworkError(e);
+      throw NetworkException(message: '网络连接失败: $e');
     } on http.ClientException catch (e) {
       ApiLogger.logError(
         method: method,
@@ -248,8 +248,8 @@ class ApiClient {
         error: '网络请求异常: $e',
         elapsedMs: 0,
       );
-      NetworkErrorNotifier.showNetworkError();
-      throw NetworkException(message: '网络请求失败');
+      NetworkErrorNotifier.showNetworkError(e);
+      throw NetworkException(message: '网络请求异常: $e');
     } on TimeoutException catch (e) {
       ApiLogger.logError(
         method: method,
@@ -258,8 +258,8 @@ class ApiClient {
         error: '请求超时: $e',
         elapsedMs: 0,
       );
-      NetworkErrorNotifier.showTimeoutError();
-      throw NetworkException(message: '请求超时');
+      NetworkErrorNotifier.showTimeoutError(e);
+      throw NetworkException(message: '请求超时: $e');
     } on ApiException catch (e) {
       ApiLogger.logError(
         method: method,
@@ -269,7 +269,7 @@ class ApiClient {
         elapsedMs: stopwatch.elapsedMilliseconds,
       );
       if (e is ServerException) {
-        NetworkErrorNotifier.showServerError();
+        NetworkErrorNotifier.showServerError(e);
       }
       rethrow;
     } catch (e) {
@@ -281,7 +281,7 @@ class ApiClient {
         elapsedMs: 0,
       );
       if (e is ApiException) rethrow;
-      NetworkErrorNotifier.showNetworkError();
+      NetworkErrorNotifier.showNetworkError(e);
       throw ApiException(message: '请求失败: $e');
     }
   }

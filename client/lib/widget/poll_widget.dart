@@ -86,9 +86,12 @@ class _PollWidgetState extends State<PollWidget> {
     setState(() => _isVoting = false);
 
     if (!success) {
+      // voteOnPoll 返回 false 表示投票失败，但接口未把具体原因抛回；
+      // 调试阶段在控制台打印一条日志，UI 上保留通用提示。
+      debugPrint('[PollWidget] voteOnPoll 返回 false，postId=${widget.postId} optionId=$optionId');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.voteFailed),
+          content: Text('${l10n.voteFailed} (voteOnPoll=false，无具体错误)'),
           backgroundColor: appColors.destructive,
           duration: const Duration(seconds: 2),
         ),

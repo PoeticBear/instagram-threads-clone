@@ -6,6 +6,7 @@ import 'package:threads/helper/utility.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/network/api_client.dart';
 import 'package:threads/services/post_service.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class ReplyReviewPage extends StatefulWidget {
@@ -59,15 +60,9 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
           _pendingReplies.removeWhere((r) => r.id == reply.id);
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedApproveReply),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }
@@ -83,15 +78,9 @@ class _ReplyReviewPageState extends State<ReplyReviewPage> {
           _pendingReplies.removeWhere((r) => r.id == reply.id);
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedRejectReply),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }

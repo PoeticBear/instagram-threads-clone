@@ -4,6 +4,7 @@ import 'package:threads/common/locator.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/network/api_client.dart';
 import 'package:threads/services/post_service.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class GuestReplyReviewPage extends StatefulWidget {
@@ -52,15 +53,9 @@ class _GuestReplyReviewPageState extends State<GuestReplyReviewPage> {
           _requests.removeWhere((r) => r.id == request.id);
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to approve request.'),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }
@@ -73,15 +68,9 @@ class _GuestReplyReviewPageState extends State<GuestReplyReviewPage> {
           _requests.removeWhere((r) => r.id == request.id);
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to reject request.'),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }

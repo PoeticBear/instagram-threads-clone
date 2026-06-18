@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/helper/utility.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
@@ -1399,15 +1400,24 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     ),
                   );
                   if (confirmed == true) {
-                    final success = await postState.deletePost(postId);
+                    bool success = false;
+                    try {
+                      success = await postState.deletePost(postId);
+                    } catch (e) {
+                      if (context.mounted) {
+                        NetworkErrorNotifier.showApiError(e);
+                      }
+                    }
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(success ? l10n.postDeleted : 'Failed'),
-                          backgroundColor: success ? appColors.repost : appColors.destructive,
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.postDeleted),
+                            backgroundColor: appColors.repost,
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      }
                     }
                     if (success) {
                       // 通知父组件（如 ProfilePage._userPosts）从本地列表移除该项，
@@ -1545,7 +1555,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     required int controlType,
     required String successMsg,
   }) async {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       final userService = UserService(apiClient: getIt());
       await userService.addRelationControl(
@@ -1557,15 +1566,9 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           SnackBar(content: Text(successMsg), duration: Duration(seconds: 2)),
         );
       }
-    } catch (_) {
+    } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.operationFailed),
-            backgroundColor: appColors.destructive,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }
@@ -1644,9 +1647,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     }
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.reportFailed)),
-                      );
+                      NetworkErrorNotifier.showApiError(e);
                     }
                   }
                 },

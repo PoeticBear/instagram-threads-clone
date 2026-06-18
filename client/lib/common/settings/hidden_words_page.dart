@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class HiddenWordsPage extends StatefulWidget {
@@ -46,20 +47,14 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
   }
 
   Future<void> _deleteWord(HiddenWord word) async {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       await _userService.deleteHiddenWord(word.id);
       setState(() {
         _allWords.removeWhere((w) => w.id == word.id);
       });
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedDeleteWord),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }
@@ -170,14 +165,9 @@ class _HiddenWordsPageState extends State<HiddenWordsPage> {
                           content: content,
                         );
                         _loadWords();
-                      } catch (_) {
+                      } catch (e) {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(AppLocalizations.of(context)!.failedAddWord),
-                              backgroundColor: appColors.destructive,
-                            ),
-                          );
+                          NetworkErrorNotifier.showApiError(e);
                         }
                       }
                     }

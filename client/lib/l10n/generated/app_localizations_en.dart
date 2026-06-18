@@ -253,16 +253,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareProfile => 'Share profile';
 
   @override
-  String get tabThreads => 'Threads';
-
-  @override
   String get tabReplies => 'Replies';
 
   @override
   String get tabMedia => 'Media';
 
   @override
+  String get tabReposts => 'Reposts';
+
+  @override
   String get noThreadsYet => 'You haven\'t posted any threads yet.';
+
+  @override
+  String get noRepostsYet => 'No reposts yet';
 
   @override
   String get notificationSettings => 'Notification Settings';

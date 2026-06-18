@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class LinksPage extends StatefulWidget {
@@ -42,20 +43,14 @@ class _LinksPageState extends State<LinksPage> {
   }
 
   Future<void> _deleteLink(UserLink link) async {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       await _userService.deleteLink(link.id);
       setState(() {
         _links.removeWhere((l) => l.id == link.id);
       });
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedDeleteLink),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }
@@ -75,15 +70,9 @@ class _LinksPageState extends State<LinksPage> {
           try {
             await _userService.addLink(title: title, url: url);
             _loadLinks();
-          } catch (_) {
+          } catch (e) {
             if (mounted) {
-              final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(AppLocalizations.of(context)!.failedAddLink),
-                  backgroundColor: appColors.destructive,
-                ),
-              );
+              NetworkErrorNotifier.showApiError(e);
             }
           }
         }
@@ -110,15 +99,9 @@ class _LinksPageState extends State<LinksPage> {
               url: newUrl,
             );
             _loadLinks();
-          } catch (_) {
+          } catch (e) {
             if (mounted) {
-              final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(AppLocalizations.of(context)!.failedUpdateLink),
-                  backgroundColor: appColors.destructive,
-                ),
-              );
+              NetworkErrorNotifier.showApiError(e);
             }
           }
         }

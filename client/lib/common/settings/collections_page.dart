@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/user_service.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/helper/network_error.dart';
 import 'package:threads/theme/app_colors.dart';
 
 class CollectionsPage extends StatefulWidget {
@@ -42,39 +43,27 @@ class _CollectionsPageState extends State<CollectionsPage> {
   }
 
   Future<void> _createCollection(String name) async {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       final newCollection = await _userService.createCollection(name);
       setState(() {
         _collections.add(newCollection);
       });
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedCreateCollection),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }
 
   Future<void> _deleteCollection(SaveCollection collection) async {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     try {
       await _userService.deleteCollection(collection.id);
       setState(() {
         _collections.removeWhere((c) => c.id == collection.id);
       });
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedDeleteCollection),
-            backgroundColor: appColors.destructive,
-          ),
-        );
+        NetworkErrorNotifier.showApiError(e);
       }
     }
   }
