@@ -102,18 +102,29 @@ class _ProfilePageState extends State<ProfilePage>
     _loadUserPosts();
   }
 
+  /// 首次加载 / 切换回 Threads Tab / 编辑资料后刷新的入口。
+  /// 走 full-screen loading 语义：会切换 _isLoadingPosts，让 _buildThreadsTab 显示居中 spinner。
   Future<void> _loadUserPosts() async {
+    if (!mounted) return;
+    setState(() => _isLoadingPosts = true);
+    await _refreshUserPosts();
+    if (mounted) {
+      setState(() => _isLoadingPosts = false);
+    }
+  }
+
+  /// 静默拉取 _userPosts（不切换 _isLoadingPosts）。
+  /// 专供 RefreshIndicator.onRefresh 使用：下拉刷新时希望保留列表骨架，
+  /// 仅顶部显示下拉指示器，不替换为全屏 spinner。
+  Future<void> _refreshUserPosts() async {
     final userId = int.tryParse(widget.profileId);
     if (userId == null) return;
-    setState(() => _isLoadingPosts = true);
     final postState = Provider.of<PostState>(context, listen: false);
     final posts = await postState.getUserPosts(userId);
-    if (mounted) {
-      setState(() {
-        _userPosts = posts;
-        _isLoadingPosts = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _userPosts = posts;
+    });
   }
 
   Future<void> _refreshAll() async {
@@ -464,46 +475,60 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildThreadsTab() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    if (_isLoadingPosts) {
-      return Center(
-        child: CircularProgressIndicator(color: appColors.textPrimary),
-      );
-    }
-    if (_userPosts.isEmpty) {
-      return Center(
-        child: Text(
-          AppLocalizations.of(context)!.noThreadsYetOthers,
-          style: TextStyle(color: appColors.textHint),
-        ),
-      );
-    }
-    // padding: EdgeInsets.zero 避免 ListView 默认消费 MediaQuery.padding，
-    // 导致第一项与 TabBar 之间出现额外间距（原 80pt 空白 hack 的根因）。
-    // bottom: _listBottomPadding — 当 Profile 作为底部 Tab 显示时，
-    // HomePage 用了 extendBody: true，90pt bottomNavigationBar 浮在 body 之上，
-    // 列表底部必须预留对应高度，否则最后一项被导航栏遮挡。
-    return ListView.builder(
-      padding: EdgeInsets.only(bottom: _listBottomPadding),
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: _userPosts.length,
-      itemBuilder: (context, index) {
-        final post = _userPosts[index];
-        return FeedPostWidget(
-          postModel: post,
-          // 第一项 isFirst=true:跳过 FeedPostWidget 顶部的 0.2px 分割线
-          // + 10px 间距,让第一个帖子紧贴 TabBar。
-          isFirst: index == 0,
-          // 帖子删除成功后,同步从本地 _userPosts 移除,解决 Threads Tab
-          // 删除后列表不刷新的问题(PostState.deletePost 只更新全局 _userPosts,
-          // 不会反向同步到 ProfilePage 的本地缓存)。
-          onPostDeleted: () {
-            if (!mounted) return;
-            setState(() {
-              _userPosts.removeWhere((p) => p.id == post.id);
-            });
-          },
-        );
-      },
+    return RefreshIndicator(
+      color: appColors.textPrimary,
+      backgroundColor: appColors.background,
+      onRefresh: _refreshUserPosts,
+      // 单一 ListView.builder 覆盖 loading / empty / data 三种状态，
+      // 保证 RefreshIndicator 在任何状态下都能下拉触发
+      // （AlwaysScrollableScrollPhysics + 至少 1 个 item 让滚动骨架始终存在）。
+      // padding: EdgeInsets.only(bottom: _listBottomPadding) —
+      // Profile 作为底部 Tab 显示时，HomePage 用了 extendBody: true，
+      // 90pt bottomNavigationBar 浮在 body 之上，列表底部必须预留对应高度。
+      child: ListView.builder(
+        padding: EdgeInsets.only(bottom: _listBottomPadding),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _isLoadingPosts
+            ? 1
+            : (_userPosts.isEmpty ? 1 : _userPosts.length),
+        itemBuilder: (context, index) {
+          if (_isLoadingPosts) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 80),
+              child: Center(
+                child: CircularProgressIndicator(color: appColors.textPrimary),
+              ),
+            );
+          }
+          if (_userPosts.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 80),
+              child: Center(
+                child: Text(
+                  AppLocalizations.of(context)!.noThreadsYetOthers,
+                  style: TextStyle(color: appColors.textHint),
+                ),
+              ),
+            );
+          }
+          final post = _userPosts[index];
+          return FeedPostWidget(
+            postModel: post,
+            // 第一项 isFirst=true:跳过 FeedPostWidget 顶部的 0.2px 分割线
+            // + 10px 间距,让第一个帖子紧贴 TabBar。
+            isFirst: index == 0,
+            // 帖子删除成功后,同步从本地 _userPosts 移除,解决 Threads Tab
+            // 删除后列表不刷新的问题(PostState.deletePost 只更新全局 _userPosts,
+            // 不会反向同步到 ProfilePage 的本地缓存)。
+            onPostDeleted: () {
+              if (!mounted) return;
+              setState(() {
+                _userPosts.removeWhere((p) => p.id == post.id);
+              });
+            },
+          );
+        },
+      ),
     );
   }
 
