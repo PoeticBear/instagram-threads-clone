@@ -155,7 +155,10 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         child: Container(
           height: size,
           width: size,
-          child: CachedNetworkImage(imageUrl: url),
+          child: CachedNetworkImage(
+            imageUrl: url,
+            fit: BoxFit.cover,
+          ),
         ),
       );
     }

@@ -380,7 +380,10 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
       child: Container(
         height: 30,
         width: 30,
-        child: CachedNetworkImage(imageUrl: profilePic),
+        child: CachedNetworkImage(
+          imageUrl: profilePic,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
