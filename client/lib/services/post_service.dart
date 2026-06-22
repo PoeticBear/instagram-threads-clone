@@ -195,6 +195,86 @@ class PostService {
     }
   }
 
+  /// 用户转发列表（GET /post/user/{user_id}/reposts）
+  ///
+  /// 返回该用户转发过的所有帖子，每条记录包含被转发的原始帖子的完整信息。
+  /// 响应是分页结构（PageMeta），沿用与 [getUserPosts] 相同的解析兜底。
+  ///
+  /// **响应是包装结构**（openapi 中 schema 为 `Page<dict>`，不是 `Page<PostResponse>`）：
+  /// 每条记录除了包含被转发的原始帖子外，还附带了转发元信息（如 repost_id /
+  /// user_id（转发者）/ reposted_at 等）。如果直接对整条 record 解析 Post.fromJson，
+  /// 顶层的 `user_id`（=转发者）会被当成帖子作者，顶层的其他字段会覆盖原帖对应字段，
+  /// 而真正的原帖内容（嵌套在子字段中）会被完全忽略 —— 表现为「Reposts Tab 列表项的
+  /// 头像/用户名/内容全部错乱」。
+  ///
+  /// 通过 [_extractOriginalPostJson] 从包装层中抽离出真正的原始帖子 JSON 再解析。
+  Future<List<Post>> getUserReposts(int userId,
+      {int page = 1, int size = 20}) async {
+    try {
+      final response = await _apiClient.get(
+        'post/user/$userId/reposts',
+        queryParameters: {
+          'page': page.toString(),
+          'size': size.toString(),
+        },
+      );
+
+      final data = response['data'];
+      List items;
+      if (data is List) {
+        items = data;
+      } else if (data is Map && data.containsKey('items')) {
+        items = data['items'] as List? ?? [];
+      } else if (data is Map && data.containsKey('posts')) {
+        items = data['posts'] as List? ?? [];
+      } else {
+        items = [];
+      }
+
+      // 每条 record 是「转发记录」包装层，原始 PostResponse 嵌在子字段中。
+      // 找不到嵌套字段时回退到把整条 record 当作 PostResponse 解析
+      // （旧行为兜底，确保不影响其他潜在的数据形态）。
+      final reposts = <Post>[];
+      for (final raw in items) {
+        if (raw is! Map<String, dynamic>) continue;
+        final postJson = _extractOriginalPostJson(raw) ?? raw;
+        try {
+          reposts.add(Post.fromJson(postJson));
+        } catch (_) {
+          // 单条解析失败不影响整体；跳过坏记录。
+        }
+      }
+      return reposts;
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  /// 从 reposts 接口的单条 record 中抽离出被转发的原始帖子 JSON。
+  ///
+  /// openapi 描述：「每条记录包含被转发的原始帖子的完整信息」，但 schema 标记为
+  /// 不透明 dict，未指定嵌套字段名。遍历常见命名（snake_case + camelCase）以
+  /// 兼容服务端可能使用的字段名；找不到嵌套字段时返回 null。
+  static Map<String, dynamic>? _extractOriginalPostJson(
+      Map<String, dynamic> record) {
+    const candidateKeys = <String>[
+      'original_post',
+      'originalPost',
+      'post',
+      'source_post',
+      'sourcePost',
+      'quote_post',
+      'quotePost',
+      'parent_post',
+      'parentPost',
+    ];
+    for (final key in candidateKeys) {
+      final v = record[key];
+      if (v is Map<String, dynamic>) return v;
+    }
+    return null;
+  }
+
   Future<void> likePost(String postId) async {
     try {
       await _apiClient.post('post/like/$postId');

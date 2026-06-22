@@ -95,11 +95,23 @@ class _ProfilePageState extends State<ProfilePage>
   List<PostModel> _userPosts = [];
   bool _isLoadingPosts = false;
 
+  // Reposts Tab 独立维护一份列表，与 Threads Tab 的 _userPosts 解耦
+  // ——Reposts 数据来自 /post/user/{user_id}/reposts，与帖子主列表不是同一个接口，
+  // 也可能为空（如从未转发的用户），不能与 _userPosts 复用。
+  List<PostModel> _userReposts = [];
+  bool _isLoadingReposts = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadUserPosts();
+    // 首次打开 ProfilePage 时并行预加载 Reposts 数据。
+    // ——用户从其他页面切到个人中心时，Reposts Tab 默认是隐藏的，
+    // onTap(index == 2) 不会触发；如果不在 initState 预加载，
+    // 用户必须先点一次 Reposts Tab 才能看到数据，体验差。
+    // 预加载后切到 Reposts Tab 即时显示，点击 Tab 2 仍走 onTap 重拉（与 Threads 一致）。
+    _loadUserReposts();
   }
 
   /// 首次加载 / 切换回 Threads Tab / 编辑资料后刷新的入口。
@@ -124,6 +136,30 @@ class _ProfilePageState extends State<ProfilePage>
     if (!mounted) return;
     setState(() {
       _userPosts = posts;
+    });
+  }
+
+  /// 首次加载 Reposts Tab（full-screen loading 语义）。
+  /// 由 onTap(index == 2) 触发；首次切换到 Reposts Tab 才请求，节省首屏流量。
+  Future<void> _loadUserReposts() async {
+    if (!mounted) return;
+    setState(() => _isLoadingReposts = true);
+    await _refreshUserReposts();
+    if (mounted) {
+      setState(() => _isLoadingReposts = false);
+    }
+  }
+
+  /// 静默拉取 _userReposts（不切换 _isLoadingReposts）。
+  /// 专供 RefreshIndicator.onRefresh 使用：下拉时保留列表骨架，仅顶部显示指示器。
+  Future<void> _refreshUserReposts() async {
+    final userId = int.tryParse(widget.profileId);
+    if (userId == null) return;
+    final postState = Provider.of<PostState>(context, listen: false);
+    final reposts = await postState.getUserReposts(userId);
+    if (!mounted) return;
+    setState(() {
+      _userReposts = reposts;
     });
   }
 
@@ -262,6 +298,8 @@ class _ProfilePageState extends State<ProfilePage>
                     onTap: (index) {
                       if (index == 0) {
                         _loadUserPosts();
+                      } else if (index == 2) {
+                        _loadUserReposts();
                       }
                     },
                     isScrollable: false,
@@ -656,29 +694,52 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildRepostsTab() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    // 当前没有「某用户转发列表」专用接口（openapi_docs/post.json 仅有
-    // /post/repost/{post_id} 转发动作接口），保持「暂无转发」占位文案。
-    // 包 RefreshIndicator + no-op 是为了与 Threads / Media Tab 的下拉手势
-    // 保持一致 —— 用户从其他 Tab 切过来会有同样的下拉期望。
-    // onRefresh 为空 Future，下拉后顶部指示器立即消失，体验上 = 占位 Tab 不响应刷新。
     return RefreshIndicator(
       color: appColors.textPrimary,
       backgroundColor: appColors.background,
-      onRefresh: () async {}, // no-op：等待后续转发列表接口上线
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      onRefresh: _refreshUserReposts,
+      // 单一 ListView.builder 覆盖 loading / empty / data 三种状态，
+      // 保证 RefreshIndicator 在任何状态下都能下拉触发。
+      child: ListView.builder(
         padding: EdgeInsets.only(bottom: _listBottomPadding),
-        children: [
-          SizedBox(
-            height: 200,
-            child: Center(
-              child: Text(
-                AppLocalizations.of(context)!.noRepostsYet,
-                style: TextStyle(color: appColors.textHint),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _isLoadingReposts
+            ? 1
+            : (_userReposts.isEmpty ? 1 : _userReposts.length),
+        itemBuilder: (context, index) {
+          if (_isLoadingReposts) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 80),
+              child: Center(
+                child: CircularProgressIndicator(color: appColors.textPrimary),
               ),
-            ),
-          ),
-        ],
+            );
+          }
+          if (_userReposts.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 80),
+              child: Center(
+                child: Text(
+                  AppLocalizations.of(context)!.noRepostsYet,
+                  style: TextStyle(color: appColors.textHint),
+                ),
+              ),
+            );
+          }
+          final post = _userReposts[index];
+          return FeedPostWidget(
+            postModel: post,
+            // 第一项 isFirst=true：跳过 FeedPostWidget 顶部的 0.2px 分割线
+            // + 10px 间距，让第一个帖子紧贴 TabBar。
+            isFirst: index == 0,
+            onPostDeleted: () {
+              if (!mounted) return;
+              setState(() {
+                _userReposts.removeWhere((p) => p.id == post.id);
+              });
+            },
+          );
+        },
       ),
     );
   }

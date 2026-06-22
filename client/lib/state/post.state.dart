@@ -596,6 +596,26 @@ class PostState extends AppStates {
     notifyListeners();
   }
 
+  /// 用户转发列表（GET /post/user/{user_id}/reposts）
+  ///
+  /// 返回该用户转发过的所有帖子（被转发原始帖子的完整信息），
+  /// 用于个人中心 Reposts Tab。与 [getUserPosts] 行为对齐：
+  /// 失败时返回空列表，不抛异常。
+  ///
+  /// 过滤 id 为空的记录（包装层 schema 异常时 Post.fromJson 会得到空 id），
+  /// 防止「空壳帖子」污染列表。
+  Future<List<PostModel>> getUserReposts(int userId) async {
+    try {
+      final posts = await postService.getUserReposts(userId);
+      return posts
+          .where((p) => p.id.isNotEmpty)
+          .map((apiPost) => _apiPostToModel(apiPost))
+          .toList();
+    } catch (error) {
+      return [];
+    }
+  }
+
   Future<void> likePost(String postId) async {
     _updatePostLikeStatus(postId, true);
     try {
