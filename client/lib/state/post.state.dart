@@ -337,23 +337,10 @@ class PostState extends AppStates {
 
       developer.log('✅ [完成] 帖子创建成功: postId=${post.id}', name: 'PostState');
 
-      // Convert API Post to PostModel
-      final newPost = PostModel(
-        key: post.id,
-        postId: post.id,
-        bio: post.content,
-        createdAt: post.createdAt.toIso8601String(),
-        imagePath: post.imageUrl,
-        mediaList: post.mediaList.map((m) => m.toMediaItemModel()).toList(),
-        user: model.user,
-        likesCount: post.likesCount,
-        repliesCount: post.repliesCount,
-        repostsCount: post.repostsCount,
-        isLiked: post.isLiked,
-        isSaved: post.isSaved,
-        isReposted: post.isReposted,
-        pollData: post.pollData,
-      );
+      // Convert API Post → PostModel. 复用 _apiPostToModel 而不是手写构造，
+      // 否则会漏掉 quoteRepostId / quotePost 等字段，导致引用帖发布后被引用
+      // 区域不显示（必须刷新 Feed 才能看到）。
+      final newPost = _apiPostToModel(post);
 
       if (scheduledTime == null) {
         _feedlist ??= [];
