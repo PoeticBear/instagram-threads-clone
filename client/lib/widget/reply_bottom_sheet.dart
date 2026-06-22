@@ -383,6 +383,25 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
         child: CachedNetworkImage(
           imageUrl: profilePic,
           fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            color: appColors.surface,
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.2,
+                color: appColors.textSecondary,
+              ),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            decoration: BoxDecoration(
+              color: appColors.divider,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.person, size: 18, color: appColors.textSecondary),
+          ),
         ),
       ),
     );

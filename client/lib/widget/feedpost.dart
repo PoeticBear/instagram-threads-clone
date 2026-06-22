@@ -158,6 +158,25 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           child: CachedNetworkImage(
             imageUrl: url,
             fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              color: appColors.surface,
+              alignment: Alignment.center,
+              child: SizedBox(
+                width: size * 0.4,
+                height: size * 0.4,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: appColors.textSecondary,
+                ),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              decoration: BoxDecoration(
+                color: appColors.surface,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
+            ),
           ),
         ),
       );
