@@ -549,25 +549,48 @@ class _ProfilePageState extends State<ProfilePage>
       }
     }
 
-    if (allMedia.isEmpty) {
-      return Center(
-        child: Text(
-          AppLocalizations.of(context)!.noMediaYet,
-          style: TextStyle(color: appColors.textHint),
-        ),
-      );
-    }
-
-    // 同 _buildThreadsTab：padding 显式设置以避免默认消费 MediaQuery.padding，
+    // loading / empty 用 ListView（始终 scrollable + 居中文案/spinner）；
+    // data 用 3 列 GridView。两路径都让 RefreshIndicator 可下拉。
     // bottom: _listBottomPadding 预留底部导航栏遮挡高度。
-    return GridView.builder(
-      padding: EdgeInsets.only(bottom: _listBottomPadding),
-      physics: const AlwaysScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
+    final Widget body;
+    if (_isLoadingPosts) {
+      body = ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(bottom: _listBottomPadding),
+        children: [
+          SizedBox(
+            height: 200,
+            child: Center(
+              child: CircularProgressIndicator(color: appColors.textPrimary),
+            ),
+          ),
+        ],
+      );
+    } else if (allMedia.isEmpty) {
+      body = ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(bottom: _listBottomPadding),
+        children: [
+          SizedBox(
+            height: 200,
+            child: Center(
+              child: Text(
+                AppLocalizations.of(context)!.noMediaYet,
+                style: TextStyle(color: appColors.textHint),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      body = GridView.builder(
+        padding: EdgeInsets.only(bottom: _listBottomPadding),
+        physics: const AlwaysScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 2,
+          mainAxisSpacing: 2,
+        ),
         itemCount: allMedia.length,
         itemBuilder: (context, index) {
           final item = allMedia[index];
@@ -619,6 +642,16 @@ class _ProfilePageState extends State<ProfilePage>
           );
         },
       );
+    }
+
+    return RefreshIndicator(
+      color: appColors.textPrimary,
+      backgroundColor: appColors.background,
+      // 共用 _refreshUserPosts：Media 是 _userPosts 的派生视图，
+      // 重拉一次 _userPosts 自动覆盖 allMedia。
+      onRefresh: _refreshUserPosts,
+      child: body,
+    );
   }
 
   Widget _buildRepostsTab() {
