@@ -656,11 +656,29 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildRepostsTab() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    // 暂时不需要加载数据，仅显示空态占位
-    return Center(
-      child: Text(
-        AppLocalizations.of(context)!.noRepostsYet,
-        style: TextStyle(color: appColors.textHint),
+    // 当前没有「某用户转发列表」专用接口（openapi_docs/post.json 仅有
+    // /post/repost/{post_id} 转发动作接口），保持「暂无转发」占位文案。
+    // 包 RefreshIndicator + no-op 是为了与 Threads / Media Tab 的下拉手势
+    // 保持一致 —— 用户从其他 Tab 切过来会有同样的下拉期望。
+    // onRefresh 为空 Future，下拉后顶部指示器立即消失，体验上 = 占位 Tab 不响应刷新。
+    return RefreshIndicator(
+      color: appColors.textPrimary,
+      backgroundColor: appColors.background,
+      onRefresh: () async {}, // no-op：等待后续转发列表接口上线
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(bottom: _listBottomPadding),
+        children: [
+          SizedBox(
+            height: 200,
+            child: Center(
+              child: Text(
+                AppLocalizations.of(context)!.noRepostsYet,
+                style: TextStyle(color: appColors.textHint),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
