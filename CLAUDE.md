@@ -317,3 +317,43 @@ xcodebuild -exportArchive \
 - ❌ release 包**绝不**带 `--dart-define=APP_ENV=dev`
 - ❌ 不提交 `.claude/settings.json`、`*.ips`
 - ✅ build bump 的 commit 信息必须显式标注版本号
+
+## 变更日志（changelog）约定
+
+每次完成「**发布 TestFlight**」流水线后，Claude **必须**在 `docs/changelog/` 下记录本次发版。变更日志面向**人**（团队成员、TestFlight 测试员、未来的自己），与 `git log` 互为补充——commit 记录「改了哪些文件」，changelog 记录「用户能感知到什么」。
+
+### 文件命名
+
+| 类型 | 命名 | 何时使用 | 是否必填 |
+| --- | --- | --- | --- |
+| 摘要文件 | `v{主}.{次}.{修}.md`（如 `v1.0.0.md`） | SemVer 升级时对该版本做总览 | 可选 |
+| 构建文件 | `v{主}.{次}.{修}+{构建号}.md`（如 `v1.0.0+18.md`） | 每次 TestFlight 发布后新建 | **必填** |
+
+> SemVer 升级到 1.0.1 后，构建文件命名切换为 `v1.0.1+N.md`，同时建议新建一份 `v1.0.1.md` 摘要作为该 SemVer 的门面。
+
+### 写入内容
+
+按 Conventional Commits 分类（✨ 新增功能 / 🐛 修复 / ⚡ 性能优化 / 🎨 样式调整 / ♻️ 重构 / 📝 文档 / 🔧 构建），每条**简述用户可感知的改动**（不是 commit 标题的复述），并标注 commit hash 前 7 位。模板见 [`docs/changelog/template.md`](docs/changelog/template.md)。
+
+### 索引维护
+
+同步在 [`docs/changelog/README.md`](docs/changelog/README.md) 的「全部版本」表追加一行，**最新版本放最上方**；同时更新「当前版本」区的指向。
+
+### 与「发布 TestFlight」流程的衔接
+
+在原有流水线 6 步之后，**新增步骤 7**：
+
+1. 确认 API 指向生产环境
+2. 提交未发布代码
+3. 递增构建序号
+4. 推送到远程
+5. 构建 Release IPA
+6. 导出并上传到 App Store Connect
+7. **新增** — 在 `docs/changelog/v{主}.{次}.{修}+{新构建号}.md` 新建文件，按本次发版涉及的 commit 填写各分类；同时更新 `docs/changelog/README.md` 索引；`git add docs/changelog/` + commit `docs: 更新 changelog — v{主}.{次}.{修}+{新构建号}` + push。
+8. 回报结果（版本号、commit hash、上传状态）
+
+### 安全红线
+
+- ❌ 变更日志里**不要**写密钥、token、内部接口地址
+- ❌ 变更日志文件**不**参与 release 包构建（只在 `docs/` 下，不在 `client/` 下）
+- ✅ changelog commit 与发版 commit 分离，标题加 `docs:` 前缀
