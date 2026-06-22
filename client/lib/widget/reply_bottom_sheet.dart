@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
@@ -10,6 +9,7 @@ import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/services/post_service.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
+import 'package:threads/widget/circle_avatar.dart';
 
 class ReplyBottomSheet extends StatefulWidget {
   final String postId;
@@ -362,51 +362,6 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
     });
   }
 
-  Widget _buildAvatar(String? profilePic) {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    if (profilePic == null || profilePic.isEmpty) {
-      return Container(
-        height: 30,
-        width: 30,
-        decoration: BoxDecoration(
-          color: appColors.divider,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.person, size: 18, color: appColors.textSecondary),
-      );
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(100),
-      child: Container(
-        height: 30,
-        width: 30,
-        child: CachedNetworkImage(
-          imageUrl: profilePic,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            color: appColors.surface,
-            alignment: Alignment.center,
-            child: SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 1.2,
-                color: appColors.textSecondary,
-              ),
-            ),
-          ),
-          errorWidget: (context, url, error) => Container(
-            decoration: BoxDecoration(
-              color: appColors.divider,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.person, size: 18, color: appColors.textSecondary),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 嵌套回复场景下的「回复 @xxx」预览卡片。
   /// 显示在拖动条与 Title 之间,样式偏次要(灰底,无边框)。
   Widget _buildParentPreview() {
@@ -452,7 +407,7 @@ class _ReplyBottomSheetState extends State<ReplyBottomSheet> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildAvatar(reply.profilePic),
+            AppCircleAvatar(avatarUrl: reply.profilePic ?? '', size: 30),
             SizedBox(width: 10),
             Expanded(
               child: Column(

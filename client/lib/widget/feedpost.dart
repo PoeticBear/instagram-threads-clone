@@ -18,6 +18,7 @@ import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/media_layout_preferences.state.dart';
 import 'package:threads/theme/app_colors.dart';
+import 'package:threads/widget/circle_avatar.dart';
 import 'package:threads/widget/poll_widget.dart';
 import 'package:threads/widget/user_avatar_with_follow.dart';
 import 'package:threads/widget/video_player_pool.dart';
@@ -138,50 +139,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
 
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
 
-    Widget avatar(String url, double size) {
-      if (url.isEmpty) {
-        return Container(
-          height: size,
-          width: size,
-          decoration: BoxDecoration(
-            color: appColors.surface,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
-        );
-      }
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(100),
-        child: Container(
-          height: size,
-          width: size,
-          child: CachedNetworkImage(
-            imageUrl: url,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: appColors.surface,
-              alignment: Alignment.center,
-              child: SizedBox(
-                width: size * 0.4,
-                height: size * 0.4,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: appColors.textSecondary,
-                ),
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              decoration: BoxDecoration(
-                color: appColors.surface,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
-            ),
-          ),
-        ),
-      );
-    }
-
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -284,7 +241,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                   context: context,
                   quotePost: quotePost,
                   appColors: appColors,
-                  avatar: avatar,
                 ),
               ),
             ],
@@ -874,7 +830,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     required BuildContext context,
     required PostModel? quotePost,
     required AppColors appColors,
-    required Widget Function(String, double) avatar,
   }) {
     // 情况 1: 有完整的被引用帖子数据
     if (quotePost != null) {
@@ -906,9 +861,10 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               if (qDisplayName.isNotEmpty) ...[
                 Row(
                   children: [
-                    GestureDetector(
+                    AppCircleAvatar(
+                      avatarUrl: qAvatar,
+                      size: 20,
                       onTap: () => _navigateToQuotedUserProfile(context, quotePost),
-                      child: avatar(qAvatar, 20),
                     ),
                     Container(width: 6),
                     Expanded(

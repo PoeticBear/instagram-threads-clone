@@ -1,5 +1,4 @@
 // ignore_for_file: must_be_immutable
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
@@ -11,6 +10,7 @@ import 'package:threads/pages/message/message_page.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/theme/app_colors.dart';
+import 'package:threads/widget/circle_avatar.dart';
 import 'package:threads/widget/feedpost.dart';
 import 'package:threads/pages/composePost/post.dart';
 
@@ -203,39 +203,6 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
     final profilePic = userModel?.profilePic ?? '';
     final displayName = userModel?.displayName ?? userModel?.userName ?? '';
 
-    Widget avatar(String url, double size) {
-      if (url.isEmpty) {
-        return Container(
-          height: size,
-          width: size,
-          decoration: BoxDecoration(
-            color: appColors.surface,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.person, size: size * 0.6, color: appColors.textSecondary),
-        );
-      }
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(100),
-        child: Container(
-          height: size,
-          width: size,
-          child: CachedNetworkImage(
-            imageUrl: url,
-            fit: BoxFit.cover,
-            errorWidget: (context, url, error) => Container(
-              decoration: BoxDecoration(
-                color: appColors.surface,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.person,
-                  size: size * 0.6, color: appColors.textSecondary),
-            ),
-          ),
-        ),
-      );
-    }
-
     return GestureDetector(
       onTap: () {
         final postState = Provider.of<PostState>(context, listen: false);
@@ -261,7 +228,7 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            avatar(profilePic, 40),
+            AppCircleAvatar(avatarUrl: profilePic, size: 40),
             SizedBox(width: 12),
             Expanded(
               child: Column(
