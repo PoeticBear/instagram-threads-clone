@@ -97,10 +97,24 @@ class WsConfig {
   // ── 事件名常量(归一化后的小写形式) ─────────────────────────
   /// Handler 注册的 key 一律用这里的小写常量,避免散落字符串。
   /// 接收方向在 `WebSocketService._onData` 强制 `toLowerCase()` 归一化。
+  //
+  // 消息类(已实施)
   static const String evtMessageTyping = 'message_typing';
   static const String evtMessageRead = 'message_read';
   static const String evtMessageReaction = 'message_reaction';
   static const String evtGroupMessage = 'group_message';
+  //
+  // 通知类(12 个,文档 docs/event-types-doc.md 第一张表)
   static const String evtNotificationNew = 'notification_new';
   static const String evtPostLike = 'post_like';
+  static const String evtReplyLike = 'reply_like';
+  static const String evtPostMention = 'post_mention';
+  static const String evtReplyMention = 'reply_mention';
+  static const String evtPostReply = 'post_reply';
+  static const String evtPostRepost = 'post_repost';
+  static const String evtPostQuote = 'post_quote';
+  static const String evtFollowRequest = 'follow_request';
+  static const String evtFollowAccept = 'follow_accept';
+  static const String evtNewFollower = 'new_follower';
+  static const String evtFollowRequestDeclined = 'follow_request_declined';
 }

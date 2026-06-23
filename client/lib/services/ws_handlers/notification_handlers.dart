@@ -36,3 +36,24 @@ class PostLikeHandler {
     _state.handleWsEvent(event.type, event.payload);
   }
 }
+
+/// 通用通知事件 handler(供 10 个细粒度通知事件共用)。
+///
+/// 覆盖事件:`reply_like` / `post_mention` / `reply_mention` / `post_reply` /
+/// `post_repost` / `post_quote` / `follow_request` / `follow_accept` /
+/// `new_follower` / `follow_request_declined`。
+///
+/// 这些事件的载荷结构一致(`{actor_id, actor_name, <context_id>}`),
+/// 仅 event_type 与 context 字段名不同 —— 全部信息在 `WsNotificationMapping`
+/// 映射表里,handler 本身无需 event-type-specific 逻辑,共用此类即可。
+///
+/// 与 [NotificationNewHandler] / [PostLikeHandler] 行为完全一致,保留那两个
+/// 具名 class 仅因先期已注册,后续如需统一可全数替换为 GenericNotificationHandler。
+class GenericNotificationHandler {
+  final NotificationState _state;
+  GenericNotificationHandler(this._state);
+
+  void call(WsEvent event) {
+    _state.handleWsEvent(event.type, event.payload);
+  }
+}

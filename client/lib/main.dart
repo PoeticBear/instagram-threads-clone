@@ -138,21 +138,37 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-  /// 注册 6 个 WS event handler。
+  /// 注册 WS event handler(消息类 4 个 + 通知类 12 个 = 16 个)。
   /// handler 是 callable class(`void call(WsEvent)`),内部解析字段后调 State 类的公共方法。
   /// 异常由 WebSocketService._onData 兜住打 log,handler 内不需要 try/catch。
   void _wireupHandlers(WebSocketService ws, BuildContext ctx) {
     final msgState = ctx.read<MessageState>();
     final notifState = ctx.read<NotificationState>();
 
+    // 消息类(4 个)
     ws.registerHandler(WsConfig.evtMessageTyping, TypingHandler(msgState).call);
     ws.registerHandler(WsConfig.evtMessageRead, MessageReadHandler(msgState).call);
     ws.registerHandler(
         WsConfig.evtMessageReaction, MessageReactionHandler(msgState).call);
     ws.registerHandler(WsConfig.evtGroupMessage, GroupMessageHandler(msgState).call);
+
+    // 通知类(12 个)
+    // - 先期 2 个用具名 handler(已注册,保留)
     ws.registerHandler(
         WsConfig.evtNotificationNew, NotificationNewHandler(notifState).call);
     ws.registerHandler(WsConfig.evtPostLike, PostLikeHandler(notifState).call);
+    // - 其余 10 个共用 GenericNotificationHandler(行为一致,仅 event_type 不同)
+    final genericNotifHandler = GenericNotificationHandler(notifState).call;
+    ws.registerHandler(WsConfig.evtReplyLike, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtPostMention, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtReplyMention, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtPostReply, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtPostRepost, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtPostQuote, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtFollowRequest, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtFollowAccept, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtNewFollower, genericNotifHandler);
+    ws.registerHandler(WsConfig.evtFollowRequestDeclined, genericNotifHandler);
   }
 
   /// 把 ApiClient 与 Provider 树桥接起来：

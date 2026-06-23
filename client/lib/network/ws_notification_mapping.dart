@@ -30,15 +30,33 @@ class WsNotificationMapping {
   WsNotificationMapping._();
 
   /// event_type(已归一化为小写)→ Spec。
-  ///
-  /// Step 1 仅注册 `post_like` + `notification_new`,后续步骤增量补充:
-  /// - Step 3:reply_like
-  /// - Step 4:post_mention / reply_mention
-  /// - Step 5:post_reply
-  /// - Step 6:post_repost / post_quote
-  /// - Step 7:follow_request / follow_accept / new_follower / follow_request_declined
   static const Map<String, WsNotificationSpec> _table = {
+    // 点赞家族(type=1 'like')
     'post_like': WsNotificationSpec(typeCode: 'like', contextField: 'post_id'),
+    'reply_like': WsNotificationSpec(typeCode: 'like', contextField: 'reply_id'),
+    // 回复家族(type=2 'reply')
+    'post_reply': WsNotificationSpec(typeCode: 'reply', contextField: 'post_id'),
+    // 关注家族(type=3 'follow')
+    // ⚠️ user_id 字段语义(动作发起方 vs 接受方)待服务端确认,见 docs/event-types-doc.md
+    'follow_request':
+        WsNotificationSpec(typeCode: 'follow', contextField: 'user_id'),
+    'follow_accept':
+        WsNotificationSpec(typeCode: 'follow', contextField: 'user_id'),
+    'new_follower':
+        WsNotificationSpec(typeCode: 'follow', contextField: 'user_id'),
+    'follow_request_declined':
+        WsNotificationSpec(typeCode: 'follow', contextField: 'user_id'),
+    // 提及家族(type=4 'mention')
+    'post_mention':
+        WsNotificationSpec(typeCode: 'mention', contextField: 'post_id'),
+    'reply_mention':
+        WsNotificationSpec(typeCode: 'mention', contextField: 'reply_id'),
+    // 转发家族(type=5 'repost')
+    'post_repost':
+        WsNotificationSpec(typeCode: 'repost', contextField: 'post_id'),
+    // 引用家族(type=6 'quote')
+    'post_quote': WsNotificationSpec(typeCode: 'quote', contextField: 'post_id'),
+    // 通用 ping(无 actor,不本地插入)
     'notification_new': WsNotificationSpec(
       typeCode: '',
       contextField: '',
