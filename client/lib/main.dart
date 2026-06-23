@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -7,8 +9,14 @@ import 'package:threads/common/splash.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/network/api_client.dart';
 import 'package:threads/network/api_logger.dart';
+import 'package:threads/network/ws_config.dart';
+import 'package:threads/helper/enum.dart';
 import 'package:threads/helper/network_error.dart';
 import 'package:threads/services/deep_link_service.dart';
+import 'package:threads/services/websocket_service.dart';
+import 'package:threads/services/ws_handlers/message_handlers.dart';
+import 'package:threads/services/ws_handlers/notification_handlers.dart';
+import 'package:threads/services/ws_handlers/typing_handler.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/locale.state.dart';
@@ -50,6 +58,9 @@ void main() async {
   final apiClient = ApiClient();
   getIt.registerSingleton<ApiClient>(apiClient);
 
+  // Register WebSocket service (after ApiClient so it can read access token)
+  getIt.registerSingleton<WebSocketService>(WebSocketService());
+
   // Initialize file logger
   ApiLogger.init();
 
@@ -66,14 +77,82 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  WebSocketService? _ws;
+  StreamSubscription<AuthStatus>? _authStatusSub;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // App 级 paused/resumed 钩子
+    _ws = getIt<WebSocketService>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       DeepLinkService.instance.init();
       _wireupApiClientCallbacks();
+      _wireupWebSocket();
     });
+  }
+
+  /// App 生命周期:paused → 断开 WS(省电 + 避免弱网重连风暴);
+  /// resumed → 若已登录则重连。
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final ws = _ws;
+    if (ws == null) return;
+    if (state == AppLifecycleState.paused) {
+      ws.disconnect();
+    } else if (state == AppLifecycleState.resumed) {
+      final ctx = navigatorKey.currentContext;
+      if (ctx == null) return;
+      final auth = Provider.of<AuthState>(ctx, listen: false);
+      if (auth.authStatus == AuthStatus.LOGGED_IN) {
+        ws.connect();
+      }
+    }
+  }
+
+  /// 注册 WS event handler + 订阅 AuthState 变化驱动连接。
+  /// 必须在 postFrameCallback 里调,保证 navigatorKey.currentContext 可用。
+  void _wireupWebSocket() {
+    final ws = _ws;
+    final ctx = navigatorKey.currentContext;
+    if (ws == null || ctx == null) return;
+    final authState = Provider.of<AuthState>(ctx, listen: false);
+
+    _wireupHandlers(ws, ctx);
+
+    // 订阅 AuthState.authStatus:LOGGED_IN → connect;否则 disconnect。
+    // forceSessionExpired / logoutCallback 会先调 disableForAuth 把 _authDisabled=true,
+    // 这里随后调的 disconnect 是 no-op(已经断了);下次 connect() 入口会复位 _authDisabled。
+    _authStatusSub = authState.onAuthChanged.listen((status) {
+      if (status == AuthStatus.LOGGED_IN) {
+        ws.connect();
+      } else {
+        ws.disconnect();
+      }
+    });
+
+    // 启动时若是已登录态,主动连一次(Splash 恢复登录态的场景)
+    if (authState.authStatus == AuthStatus.LOGGED_IN) {
+      ws.connect();
+    }
+  }
+
+  /// 注册 6 个 WS event handler。
+  /// handler 是 callable class(`void call(WsEvent)`),内部解析字段后调 State 类的公共方法。
+  /// 异常由 WebSocketService._onData 兜住打 log,handler 内不需要 try/catch。
+  void _wireupHandlers(WebSocketService ws, BuildContext ctx) {
+    final msgState = ctx.read<MessageState>();
+    final notifState = ctx.read<NotificationState>();
+
+    ws.registerHandler(WsConfig.evtMessageTyping, TypingHandler(msgState).call);
+    ws.registerHandler(WsConfig.evtMessageRead, MessageReadHandler(msgState).call);
+    ws.registerHandler(
+        WsConfig.evtMessageReaction, MessageReactionHandler(msgState).call);
+    ws.registerHandler(WsConfig.evtGroupMessage, GroupMessageHandler(msgState).call);
+    ws.registerHandler(
+        WsConfig.evtNotificationNew, NotificationNewHandler(notifState).call);
+    ws.registerHandler(WsConfig.evtPostLike, PostLikeHandler(notifState).call);
   }
 
   /// 把 ApiClient 与 Provider 树桥接起来：
@@ -104,6 +183,9 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    _authStatusSub?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _ws?.disconnect();
     DeepLinkService.instance.dispose();
     super.dispose();
   }

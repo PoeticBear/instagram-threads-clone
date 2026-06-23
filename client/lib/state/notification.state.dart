@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:threads/services/notification_service.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/common/locator.dart';
+import 'package:threads/network/ws_notification_mapping.dart';
 import 'dart:developer' as developer;
 
 class NotificationState extends AppStates {
@@ -135,6 +138,7 @@ class NotificationState extends AppStates {
             postId: n.postId,
             isRead: true,
             createdAt: n.createdAt,
+            wsEventType: n.wsEventType,
           );
         }
       }
@@ -161,11 +165,68 @@ class NotificationState extends AppStates {
             postId: n.postId,
             isRead: true,
             createdAt: n.createdAt,
+            wsEventType: n.wsEventType,
           );
         }
       }
       _unreadCount = 0;
       notifyListeners();
     } catch (_) {}
+  }
+
+  // ============================================================
+  // WebSocket 事件入口(由 ws_handlers/notification_handlers.dart 调用)
+  // ============================================================
+
+  /// 防抖 Timer:WS 事件触发后 500ms 合并成一次 HTTP `loadNotifications(refresh: true)`。
+  /// 避免短时间多次 WS 事件(如点赞 + notification_new 并发推送)各自打一次 HTTP。
+  Timer? _refreshDebounce;
+
+  /// 未读数 +1。仅本地增量,不发 HTTP。
+  void incrementUnread() {
+    _unreadCount++;
+    notifyListeners();
+  }
+
+  /// 防抖触发 HTTP refresh。
+  /// 服务端权威数据回流后整体替换本地列表(简单可靠的对账策略)。
+  void _scheduleDebouncedRefresh() {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 500), () {
+      loadNotifications(refresh: true);
+    });
+  }
+
+  /// WS 通知事件统一入口(Step 1 基础设施,Step 2 起所有 handler 走这里)。
+  ///
+  /// 流程:
+  /// 1. 查 [WsNotificationMapping.specFor];未注册或 spec=null → 跳过本地插入
+  /// 2. `needsLocalInsert=true` → [NotificationItem.fromWsEvent] 本地构造 + 去重插入列表头
+  /// 3. [incrementUnread]
+  /// 4. [_scheduleDebouncedRefresh] 防抖触发 HTTP refresh
+  ///
+  /// `notification_new` 等 `needsLocalInsert=false` 的事件仅做 3、4 步。
+  void handleWsEvent(String eventType, Map<String, dynamic> json) {
+    final spec = WsNotificationMapping.specFor(eventType);
+    if (spec != null && spec.needsLocalInsert) {
+      try {
+        final item = NotificationItem.fromWsEvent(eventType, json, spec);
+        final exists = _notifications.any((n) => n.id == item.id);
+        if (!exists) {
+          _notifications.insert(0, item);
+        }
+      } catch (e) {
+        developer.log('handleWsEvent local insert failed for $eventType: $e',
+            name: 'NotificationState');
+      }
+    }
+    incrementUnread();
+    _scheduleDebouncedRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshDebounce?.cancel();
+    super.dispose();
   }
 }

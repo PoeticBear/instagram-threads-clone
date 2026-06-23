@@ -9,11 +9,34 @@ import 'package:threads/network/api_exception.dart';
 import 'package:threads/services/auth_service.dart';
 import 'package:threads/services/upload_service.dart';
 import 'package:threads/services/user_service.dart';
+import 'package:threads/services/websocket_service.dart';
 import 'package:threads/state/app.state.dart';
 import 'package:threads/common/locator.dart';
 
 class AuthState extends AppStates {
-  AuthStatus authStatus = AuthStatus.NOT_DETERMINED;
+  AuthState() {
+    // 构造期不做 WS 订阅 —— _MyAppState._wireupWebSocket 负责,
+    // 因为它需要 BuildContext 来读其他 Provider。
+  }
+
+  // ── authStatus:用 getter/setter 拦截赋值,自动广播到 onAuthChanged ──
+  // 类内和类外任何 `authStatus = X` 都会走 setter,无需逐处改成 _setAuthStatus()。
+  AuthStatus _authStatus = AuthStatus.NOT_DETERMINED;
+  AuthStatus get authStatus => _authStatus;
+  set authStatus(AuthStatus value) {
+    final prev = _authStatus;
+    _authStatus = value;
+    if (prev != value) {
+      _authStatusController.add(value);
+    }
+  }
+
+  /// authStatus 变化广播(仅 status 真正切换时才发,不受 isBusy 噪音影响)。
+  /// 由 `_MyAppState._wireupWebSocket` 订阅,驱动 WebSocketService connect/disconnect。
+  final StreamController<AuthStatus> _authStatusController =
+      StreamController<AuthStatus>.broadcast();
+  Stream<AuthStatus> get onAuthChanged => _authStatusController.stream;
+
   bool isSignInWithGoogle = false;
   // 默认空串，避免 late 未初始化访问抛 LateInitializationError。
   // 未登录时也允许被读取（结果为空串），上层据此决定是否渲染需登录态的页面。
@@ -62,6 +85,11 @@ class AuthState extends AppStates {
   }
 
   void logoutCallback() async {
+    // WS 兜底:失效 token 不应被重连机制拿去反复握手。
+    // 正常路径下 _MyAppState 的 onAuthChanged 监听已会 disconnect,这是防御性双保险。
+    if (getIt.isRegistered<WebSocketService>()) {
+      getIt<WebSocketService>().disableForAuth();
+    }
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;
@@ -77,6 +105,10 @@ class AuthState extends AppStates {
   /// 幂等：authStatus 已是 NOT_LOGGED_IN 时直接返回。
   void forceSessionExpired() {
     if (authStatus == AuthStatus.NOT_LOGGED_IN) return;
+    // WS 兜底:失效 token 不应被重连机制拿去反复握手
+    if (getIt.isRegistered<WebSocketService>()) {
+      getIt<WebSocketService>().disableForAuth();
+    }
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;

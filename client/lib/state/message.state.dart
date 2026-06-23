@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../model/message.module.dart';
 import '../services/message_service.dart';
@@ -618,5 +620,144 @@ class MessageState extends ChangeNotifier {
           await messageService.getHiddenConversations();
       notifyListeners();
     } catch (_) {}
+  }
+
+  // ============================================================
+  // WebSocket 事件入口(由 ws_handlers/ 调用)
+  // ============================================================
+
+  /// typing 状态:conversationId → 最近一次收到 typing event 的时间。
+  /// UI 据此渲染"正在输入..."。3 秒无新 event 自动清空(由 [_typingCleanupTimer] 驱动)。
+  final Map<int, DateTime> _typingByConversation = {};
+  Map<int, DateTime> get typingByConversation => _typingByConversation;
+  Timer? _typingCleanupTimer;
+
+  /// `message_typing` 事件入口。
+  /// 收到即刷新对应会话的 typing 时间戳;[expireAfter] 后无新 event 自动清空全部 typing。
+  void handleTypingEvent({
+    required int conversationId,
+    required int userId,
+    required Duration expireAfter,
+  }) {
+    _typingByConversation[conversationId] = DateTime.now();
+    notifyListeners();
+    _typingCleanupTimer?.cancel();
+    _typingCleanupTimer = Timer(expireAfter, () {
+      if (_typingByConversation.isEmpty) return;
+      _typingByConversation.clear();
+      notifyListeners();
+    });
+  }
+
+  /// `message_read` 事件入口:对端读了我们发的消息。
+  /// 把对应 message 的 isRead 置 true;会话未读数 -1(下限 0)。
+  void handleReadEvent({required int messageId, int? conversationId}) {
+    final idx = _currentMessages.indexWhere((m) => m.id == messageId);
+    if (idx != -1) {
+      final old = _currentMessages[idx];
+      if (!old.isRead) {
+        _currentMessages[idx] = ChatMessage(
+          id: old.id,
+          senderId: old.senderId,
+          receiverId: old.receiverId,
+          content: old.content,
+          mediaType: old.mediaType,
+          mediaUrl: old.mediaUrl,
+          isRead: true,
+          deliveryStatus: old.deliveryStatus,
+          readTime: DateTime.now().toIso8601String(),
+          quoteMessageId: old.quoteMessageId,
+          reactions: old.reactions,
+          createTime: old.createTime,
+        );
+      }
+    }
+    if (conversationId != null) {
+      final cIdx = _conversations.indexWhere((c) => c.id == conversationId);
+      if (cIdx != -1) {
+        final old = _conversations[cIdx];
+        if (old.unreadCount > 0) {
+          _conversations[cIdx] = Conversation(
+            id: old.id,
+            peerUserId: old.peerUserId,
+            peerUsername: old.peerUsername,
+            peerDisplayName: old.peerDisplayName,
+            peerAvatarUrl: old.peerAvatarUrl,
+            conversationType: old.conversationType,
+            lastMessageContent: old.lastMessageContent,
+            lastMessageTime: old.lastMessageTime,
+            unreadCount: old.unreadCount - 1,
+            isReplied: old.isReplied,
+            isVerified: old.isVerified,
+            isHidden: old.isHidden,
+            isPinned: old.isPinned,
+          );
+        }
+      }
+    }
+    notifyListeners();
+  }
+
+  /// `message_reaction` 事件入口:对端加减 emoji 反应。
+  /// action=='add' 时去重(同 user + 同 emoji 不重复加),其他情况视为 remove。
+  void handleReactionEvent({
+    required int messageId,
+    required String emoji,
+    required String action,
+    required int userId,
+  }) {
+    final idx = _currentMessages.indexWhere((m) => m.id == messageId);
+    if (idx == -1) return;
+    final old = _currentMessages[idx];
+    final reactions = List<MessageReaction>.from(old.reactions);
+    if (action == 'add') {
+      final exists =
+          reactions.any((r) => r.emoji == emoji && r.userId == userId);
+      if (!exists) {
+        reactions.add(MessageReaction(emoji: emoji, userId: userId));
+      }
+    } else {
+      reactions.removeWhere((r) => r.emoji == emoji && r.userId == userId);
+    }
+    _currentMessages[idx] = ChatMessage(
+      id: old.id,
+      senderId: old.senderId,
+      receiverId: old.receiverId,
+      content: old.content,
+      mediaType: old.mediaType,
+      mediaUrl: old.mediaUrl,
+      isRead: old.isRead,
+      deliveryStatus: old.deliveryStatus,
+      readTime: old.readTime,
+      quoteMessageId: old.quoteMessageId,
+      reactions: reactions,
+      createTime: old.createTime,
+    );
+    notifyListeners();
+  }
+
+  /// `group_message` 事件入口:群里来新消息。
+  ///
+  /// 当前打开的群会话 → insert 到列表头;否则暂不增量未读(GroupChat 无 unreadCount 字段,
+  /// TODO(ws): 等服务端给 GroupChat 加 unread_count,或本地维护 Map<int,int> groupIdToUnread)。
+  void handleGroupMessageEvent({
+    required int groupId,
+    required Map<String, dynamic> messageJson,
+  }) {
+    try {
+      final msg = ChatMessage.fromJson(messageJson);
+      if (_currentConversationId == groupId) {
+        _currentMessages.insert(0, msg);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('handleGroupMessageEvent parse failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _typingCleanupTimer?.cancel();
+    super.dispose();
   }
 }
