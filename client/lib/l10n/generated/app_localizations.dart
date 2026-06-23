@@ -146,6 +146,24 @@ abstract class AppLocalizations {
   /// **'No posts yet'**
   String get noPostsYet;
 
+  /// No description provided for @feedLoadFailedServer.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is temporarily unavailable. Please try again later.'**
+  String get feedLoadFailedServer;
+
+  /// No description provided for @feedLoadFailedNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network connection failed. Please check your network and retry.'**
+  String get feedLoadFailedNetwork;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
   /// No description provided for @anonymousUser.
   ///
   /// In en, this message translates to:

@@ -87,6 +87,43 @@ class MediaItemModel {
   }
 }
 
+/// 帖子正文中被 @提及的用户快照。
+///
+/// 用于「正文 @username 可点击跳转」：客户端按 [username] 匹配正文里的
+/// `@username` 文本片段，命中后用 [userId] 跳转该用户主页。
+/// 服务端应返回发帖时的 username 快照（与正文里的 @username 字面量严格一致），
+/// 这样即使被提及用户后续改名，跳转仍走原 userId，正文显示也不变。
+class MentionedUser {
+  final int userId;
+  final String username;
+  final String? displayName;
+  final String? avatarUrl;
+
+  const MentionedUser({
+    required this.userId,
+    required this.username,
+    this.displayName,
+    this.avatarUrl,
+  });
+
+  factory MentionedUser.fromJson(Map<String, dynamic> json) {
+    return MentionedUser(
+      userId: json['user_id'] ?? json['userId'] ?? json['id'] ?? 0,
+      username: json['username'] ?? '',
+      displayName: json['display_name'] ?? json['displayName'],
+      avatarUrl:
+          json['avatar_url'] ?? json['avatarUrl'] ?? json['profile_pic'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'user_id': userId,
+        'username': username,
+        if (displayName != null) 'display_name': displayName,
+        if (avatarUrl != null) 'avatar_url': avatarUrl,
+      };
+}
+
 class PostModel {
   String? key;
   String? imagePath;
@@ -140,6 +177,13 @@ class PostModel {
   // Sensitive content fields
   bool? isSensitive;
   String? contentWarning;
+  // ─── @mention 字段 ───
+  // 发帖提交时随帖子发送的被提及用户 userId 列表（需求 1：身份绑定）。
+  // 当前用户名是文本字面量，改名即失效；用 userId 持久化关联。
+  List<int>? mentionedUserIds;
+  // 帖子响应里附带的被提及用户快照（需求 2：正文点击跳转）。
+  // 服务端返回 `mentioned_users` 数组，客户端按 username 匹配正文 @ 片段渲染。
+  List<MentionedUser>? mentionedUsers;
 
   PostModel({
     this.key,
@@ -184,6 +228,8 @@ class PostModel {
     this.lastEditTime,
     this.isSensitive,
     this.contentWarning,
+    this.mentionedUserIds,
+    this.mentionedUsers,
   });
 
   static bool? _parseBool(dynamic value) {
@@ -295,6 +341,37 @@ class PostModel {
       isSensitive: _parseBool(map['is_sensitive'] ?? map['isSensitive']),
       contentWarning: map['content_warning']?.toString() ??
           map['contentWarning']?.toString(),
+      // @mention：优先从 mentioned_users 数组解析（含 username 快照），
+      // 同时从 mentioned_user_ids 兜底（仅 id 列表，无 username）。
+      mentionedUserIds: () {
+        final users = map['mentioned_users'] ?? map['mentionedUsers'];
+        if (users is List && users.isNotEmpty) {
+          return users
+              .whereType<Map>()
+              .map((e) => e['user_id'] ?? e['userId'] ?? e['id'])
+              .whereType<int>()
+              .toList();
+        }
+        final ids = map['mentioned_user_ids'] ?? map['mentionedUserIds'];
+        if (ids is List) {
+          return ids
+              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+              .where((v) => v > 0)
+              .toList();
+        }
+        return null;
+      }(),
+      mentionedUsers: () {
+        final raw = map['mentioned_users'] ?? map['mentionedUsers'];
+        if (raw is List && raw.isNotEmpty) {
+          return raw
+              .whereType<Map<dynamic, dynamic>>()
+              .map((e) => MentionedUser.fromJson(
+                  e.map((k, v) => MapEntry(k.toString(), v))))
+              .toList();
+        }
+        return null;
+      }(),
     );
   }
 
@@ -345,6 +422,11 @@ class PostModel {
       // Sensitive content fields
       'is_sensitive': isSensitive,
       'content_warning': contentWarning,
+      if (mentionedUserIds != null && mentionedUserIds!.isNotEmpty)
+        'mentioned_user_ids': mentionedUserIds,
+      if (mentionedUsers != null && mentionedUsers!.isNotEmpty)
+        'mentioned_users':
+            mentionedUsers!.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -391,6 +473,8 @@ class PostModel {
     DateTime? lastEditTime,
     bool? isSensitive,
     String? contentWarning,
+    List<int>? mentionedUserIds,
+    List<MentionedUser>? mentionedUsers,
   }) {
     return PostModel(
       key: key ?? this.key,
@@ -437,6 +521,8 @@ class PostModel {
       // Sensitive content fields
       isSensitive: isSensitive ?? this.isSensitive,
       contentWarning: contentWarning ?? this.contentWarning,
+      mentionedUserIds: mentionedUserIds ?? this.mentionedUserIds,
+      mentionedUsers: mentionedUsers ?? this.mentionedUsers,
     );
   }
 

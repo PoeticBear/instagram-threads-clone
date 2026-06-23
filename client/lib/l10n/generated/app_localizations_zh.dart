@@ -35,6 +35,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPostsYet => '暂无帖子';
 
   @override
+  String get feedLoadFailedServer => '服务器开小差了，请稍后重试';
+
+  @override
+  String get feedLoadFailedNetwork => '网络连接失败，请检查网络后重试';
+
+  @override
+  String get retry => '重试';
+
+  @override
   String get anonymousUser => '匿名用户';
 
   @override

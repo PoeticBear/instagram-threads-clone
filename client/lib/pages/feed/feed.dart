@@ -128,6 +128,60 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
           );
         }
 
+        // 加载失败：接口报错（ServerException / NetworkException）。
+        // feedErrorKey 由 PostState 在 getDataFromDatabase / refresh 的 catch 里赋值，
+        // 区分 server / network 两种文案，并提供「重试」入口（getDataFromDatabase）。
+        // 与下面「真的没帖子」分支区分开，避免用户看到误导性的「暂无帖子」。
+        final errorKey = state.feedErrorKey;
+        if (errorKey != null) {
+          final l10n = AppLocalizations.of(context)!;
+          final isNetwork = errorKey == 'network';
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isNetwork ? Icons.wifi_off : Icons.cloud_off,
+                    size: 44,
+                    color: appColors.textSecondary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    isNetwork
+                        ? l10n.feedLoadFailedNetwork
+                        : l10n.feedLoadFailedServer,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: appColors.textSecondary,
+                      fontSize: 15,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  CupertinoButton(
+                    color: appColors.surface,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 8),
+                    minimumSize: Size.zero,
+                    borderRadius: BorderRadius.circular(20),
+                    onPressed: () => state.getDataFromDatabase(),
+                    child: Text(
+                      l10n.retry,
+                      style: TextStyle(
+                        color: appColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final posts = state.getPostList(authState.userModel);
         if (posts == null || posts.isEmpty) {
           return Center(

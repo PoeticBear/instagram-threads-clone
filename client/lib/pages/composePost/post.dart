@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -23,6 +24,10 @@ import 'package:threads/widget/draft_list_sheet.dart';
 import 'package:threads/pages/composePost/compose_camera_page.dart';
 import 'package:threads/pages/composePost/location_picker_page.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:threads/common/locator.dart';
+import 'package:threads/services/auth_service.dart';
+import 'package:threads/services/search_service.dart';
+import 'package:threads/widget/mention_overlay.dart';
 
 class ComposePost extends StatefulWidget {
   final VoidCallback? onPostSuccess;
@@ -89,6 +94,21 @@ class ComposePostState extends State<ComposePost> {
   static const int _maxGifSizeBytes = 10 * 1024 * 1024; // 10MB
   static const int _maxImageSizeBytes = 10 * 1024 * 1024; // 10MB
 
+  // ─── @mention 用户选择面板 ───
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _mentionOverlay;
+  List<UserInfo> _filteredUsers = const [];
+  // 当前 @token（含 @）在文本中的起始 offset，-1 表示无激活 token
+  int _mentionTokenStart = -1;
+  // 防抖 Timer：用户连续输入时只发最后一次请求
+  Timer? _mentionDebounce;
+  // 已选中的 mention 用户：username → userId（需求 1：身份绑定）。
+  // 选中补全面板里的用户时写入；正文编辑时按 username 是否仍出现在文本里
+  // 自动同步过滤。提交帖子时把 values 写入 PostModel.mentionedUserIds。
+  // 注：键是 username 字符串而非区间，故同一 username 多次出现只保留一个 userId，
+  // 这与"@同一个用户多次提及只通知一次"的服务端语义一致。
+  final Map<String, int> _mentionUserIds = {};
+
   bool get _isEditing => widget.editingPostId != null;
 
   @override
@@ -100,6 +120,7 @@ class ComposePostState extends State<ComposePost> {
         TextEditingController(text: widget.initialContentWarning ?? '');
     _isSensitive = widget.initialIsSensitive ?? false;
     _initPollControllers();
+    _textEditingController.addListener(_onTextChanged);
   }
 
   void _initPollControllers() {
@@ -111,12 +132,173 @@ class ComposePostState extends State<ComposePost> {
 
   @override
   void dispose() {
+    _textEditingController.removeListener(_onTextChanged);
+    _mentionDebounce?.cancel();
+    _hideOverlay();
     _textEditingController.dispose();
     _contentWarningController.dispose();
     for (final c in _pollControllers) {
       c.dispose();
     }
     super.dispose();
+  }
+
+  // ─── @mention 用户选择面板 ────────────────────────────────
+
+  /// 文本变化监听：刷新字数统计 + 检测 @mention。
+  void _onTextChanged() {
+    setState(() {});
+    // 同步 mention userId 集合：正文里不再出现的 username 自动移除，
+    // 保证最终提交的 mentionedUserIds 与当前正文一致（需求 1）。
+    _syncMentionUserIds();
+    final token = _detectMentionToken();
+    if (token == null) {
+      _mentionTokenStart = -1;
+      _hideOverlay();
+      return;
+    }
+    _mentionTokenStart = token.start;
+    _filterAndShow(token.query);
+  }
+
+  /// 同步 [_mentionUserIds]：扫描当前正文里出现的所有 `@username` 字面量，
+  /// 把已记录但不再出现的 username 移除（用户删除/改名/覆盖时同步）。
+  ///
+  /// 不维护 token 区间，仅按 username 字符串过滤。代价是：如果用户在选中
+  /// @alice 之后又**手动**把 `@alice` 改成 `@bob`，bob 不会被识别为 mention
+  /// （因为没走补全 → 没有 bob 的 userId），这是符合「无补全即无 mention」语义的。
+  /// 同 username 多次出现的场景：只要 username 仍在文本里，对应 userId 就保留。
+  void _syncMentionUserIds() {
+    if (_mentionUserIds.isEmpty) return;
+    final text = _textEditingController.text;
+    final present = <String>{};
+    for (final m in RegExp(r'@[A-Za-z0-9_]+').allMatches(text)) {
+      // 排除邮箱：@ 前若是 word 字符则不算 mention（与 _detectMentionToken 一致）。
+      if (m.start > 0 &&
+          RegExp(r'[A-Za-z0-9_]').hasMatch(text[m.start - 1])) {
+        continue;
+      }
+      present.add(m[0]!.substring(1)); // 去掉 @
+    }
+    _mentionUserIds.removeWhere((username, _) => !present.contains(username));
+  }
+
+  /// 从光标位置向前查找最近的合法 @token。
+  ///
+  /// 支持：
+  /// - 光标在文本中间（如 `@alice 你好 @bo|b`）
+  /// - 多个 @ 共存（取光标前最近的那个）
+  /// - 排除邮箱（`@` 前是 word 字符则不算 mention）
+  ///
+  /// 返回 `(start, query)`：start 是含 @ 的起始 offset，query 是不含 @ 的查询串。
+  /// 只输了一个 @（query 为空）时返回 null —— 不弹面板。
+  ({int start, String query})? _detectMentionToken() {
+    final text = _textEditingController.text;
+    final selection = _textEditingController.selection;
+    if (!selection.isValid || !selection.isCollapsed) return null;
+    final cursor = selection.baseOffset;
+    if (cursor < 0 || cursor > text.length) return null;
+
+    // 1. 从光标向前找最近的 '@'
+    int i = cursor - 1;
+    while (i >= 0) {
+      final ch = text[i];
+      if (ch == '@') break;
+      // token 内部只允许字母 / 数字 / 下划线；遇到空格或标点 → 非 token
+      if (!RegExp(r'[A-Za-z0-9_]').hasMatch(ch)) return null;
+      i--;
+    }
+    if (i < 0) return null; // 没找到 @
+
+    // 2. @ 前必须是边界（排除 alice@bob 这种邮箱场景）
+    if (i > 0 && RegExp(r'[A-Za-z0-9_]').hasMatch(text[i - 1])) return null;
+
+    // 3. 提取 @ 和光标之间的字符作为 query
+    final query = text.substring(i + 1, cursor);
+    if (query.isEmpty) return null; // 只输了一个 @，不弹
+    if (!RegExp(r'^[A-Za-z0-9_]+$').hasMatch(query)) return null;
+    return (start: i, query: query);
+  }
+
+  /// 调用服务端接口搜索用户并显示面板（带 250ms 防抖）。
+  /// 用户连续输入时只发最后一次请求；接口失败 / 空结果 → 关闭面板。
+  void _filterAndShow(String query) {
+    _mentionDebounce?.cancel();
+    _mentionDebounce = Timer(const Duration(milliseconds: 250), () async {
+      if (!mounted) return;
+      try {
+        final users = await SearchService(apiClient: getIt())
+            .searchMentionUsers(query);
+        if (!mounted) return;
+        if (users.isEmpty) {
+          _hideOverlay();
+          return;
+        }
+        _filteredUsers = users;
+        _showOverlay();
+      } catch (_) {
+        if (!mounted) return;
+        _hideOverlay();
+      }
+    });
+  }
+
+  /// 创建并插入用户选择面板（通过 LayerLink 锚定到 TextField 下方）。
+  void _showOverlay() {
+    _mentionOverlay?.remove();
+    _mentionOverlay = null;
+
+    final overlay = OverlayEntry(
+      builder: (ctx) => Positioned(
+        width: MediaQuery.of(ctx).size.width - 28,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          targetAnchor: Alignment.bottomLeft,
+          followerAnchor: Alignment.topLeft,
+          offset: const Offset(0, 8),
+          child: MentionOverlay(
+            users: _filteredUsers,
+            onSelected: _onUserSelected,
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context, rootOverlay: true).insert(overlay);
+    _mentionOverlay = overlay;
+  }
+
+  /// 关闭用户选择面板。
+  void _hideOverlay() {
+    _mentionOverlay?.remove();
+    _mentionOverlay = null;
+    _filteredUsers = const [];
+  }
+
+  /// 选中某个用户后，把光标前的 @xxx 替换为 `@username `（含尾随空格），
+  /// 光标移到空格之后，关闭面板。
+  ///
+  /// 同时把 username → userId 写入 [_mentionUserIds]（需求 1：身份绑定），
+  /// 随帖子提交服务端，作为持久化的提及关系（防止改名即失效）。
+  void _onUserSelected(UserInfo user) {
+    if (_mentionTokenStart < 0) {
+      _hideOverlay();
+      return;
+    }
+    final text = _textEditingController.text;
+    final cursor = _textEditingController.selection.baseOffset;
+    final replacement = '@${user.username} ';
+    final newText = text.replaceRange(_mentionTokenStart, cursor, replacement);
+    _textEditingController.text = newText;
+    final newCursor = _mentionTokenStart + replacement.length;
+    _textEditingController.selection =
+        TextSelection.collapsed(offset: newCursor);
+    _mentionTokenStart = -1;
+    // 记录被提及用户 userId（仅当 username 非空时；user.userId 兜底 0 视为无效）。
+    if (user.username.isNotEmpty && user.userId > 0) {
+      _mentionUserIds[user.username] = user.userId;
+    }
+    _hideOverlay();
+    setState(() {});
   }
 
   // ─── Helpers ──────────────────────────────────────────────
@@ -727,6 +909,11 @@ class ComposePostState extends State<ComposePost> {
       bio: _textEditingController.text,
       createdAt: DateTime.now().toUtc().toIso8601String(),
       key: myUser.userId?.toString(),
+      // 提交前再做一次同步，确保删除/改名后不再残留无效 userId（防御性）。
+      mentionedUserIds: () {
+        _syncMentionUserIds();
+        return _mentionUserIds.values.toList();
+      }(),
     );
   }
 
@@ -1102,24 +1289,29 @@ class ComposePostState extends State<ComposePost> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            TextField(
-                              maxLength: _maxContentLength,
-                              maxLengthEnforcement:
-                                  MaxLengthEnforcement.enforced,
-                              keyboardAppearance: Theme.of(context).brightness,
-                              style: TextStyle(
-                                  color: appColors.textPrimary, fontSize: 16),
-                              controller: _textEditingController,
-                              onChanged: (_) => setState(() {}),
-                              maxLines: null,
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                counterText: '',
-                                hintText:
-                                    AppLocalizations.of(context)!.saySomething,
-                                hintStyle: TextStyle(
-                                  fontSize: 16,
-                                  color: appColors.textHint,
+                            CompositedTransformTarget(
+                              link: _layerLink,
+                              child: TextField(
+                                maxLength: _maxContentLength,
+                                maxLengthEnforcement:
+                                    MaxLengthEnforcement.enforced,
+                                keyboardAppearance:
+                                    Theme.of(context).brightness,
+                                style: TextStyle(
+                                    color: appColors.textPrimary,
+                                    fontSize: 16),
+                                controller: _textEditingController,
+                                onChanged: (_) => _onTextChanged(),
+                                maxLines: null,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  counterText: '',
+                                  hintText: AppLocalizations.of(context)!
+                                      .saySomething,
+                                  hintStyle: TextStyle(
+                                    fontSize: 16,
+                                    color: appColors.textHint,
+                                  ),
                                 ),
                               ),
                             ),

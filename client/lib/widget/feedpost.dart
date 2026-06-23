@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
@@ -72,6 +73,15 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   /// 收起时的最大行数。500 字 + 媒体时折叠到 5 行，媒体区域有空间显示。
   static const int _kCollapsedMaxLines = 5;
 
+  /// 正文里 @mention 点击手势识别器缓存：userId → recognizer。
+  ///
+  /// TapGestureRecognizer 注册到 native gesture binding 后必须显式 dispose，
+  /// 否则会泄漏。此处按 userId 复用：当帖子正文 build 时按需创建；当
+  /// [didUpdateWidget] 检测到 mentionedUsers 变化时清理过期项；[dispose] 时全部释放。
+  /// key 用 userId（int）而非 username 字符串：因为同一 userId 跳转目标是固定的，
+  /// username 即使被改名也不影响路由。
+  final Map<int, TapGestureRecognizer> _mentionRecognizers = {};
+
   /// 被引用帖子的有效数据：优先用已有 quotePost，否则用兜底拉取的
   PostModel? get _effectiveQuotePost =>
       widget.postModel.quotePost ?? _fetchedQuotePost;
@@ -85,9 +95,54 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant FeedPostWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 帖子数据变化时（编辑、刷新等），清理不在新 mentionedUsers 集合里的 recognizer。
+    final validIds = <int>{};
+    for (final p in [widget.postModel, widget.postModel.quotePost]) {
+      if (p?.mentionedUsers != null) {
+        for (final m in p!.mentionedUsers!) {
+          validIds.add(m.userId);
+        }
+      }
+    }
+    final expired = _mentionRecognizers.keys
+        .where((id) => !validIds.contains(id))
+        .toList();
+    for (final id in expired) {
+      _mentionRecognizers[id]?.dispose();
+      _mentionRecognizers.remove(id);
+    }
+  }
+
+  @override
   void dispose() {
     VideoPlayerPool.instance.version.removeListener(_onPoolChanged);
+    for (final r in _mentionRecognizers.values) {
+      r.dispose();
+    }
+    _mentionRecognizers.clear();
     super.dispose();
+  }
+
+  /// 获取或创建某个被提及用户的点击识别器（按 userId 缓存）。
+  TapGestureRecognizer _mentionRecognizerFor(MentionedUser user) {
+    return _mentionRecognizers.putIfAbsent(
+      user.userId,
+      () => TapGestureRecognizer()
+        ..onTap = () => _navigateToMentionedUser(user),
+    );
+  }
+
+  /// 跳转到被提及用户的主页（需求 2：走 userId，不走用户名）。
+  void _navigateToMentionedUser(MentionedUser user) {
+    Navigator.push(
+      context,
+      ProfilePage.getRoute(
+        profileId: user.userId.toString(),
+        username: user.username,
+      ),
+    );
   }
 
   void _onPoolChanged() {
@@ -376,11 +431,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       height: 1.3, // 行高收敛一点，500 字长文更紧凑
     );
 
+    // 切片：把正文里的 @username 高亮并挂点击（需求 2）。
+    // mentionedUsers 为空时退化为纯 TextSpan，性能与原实现一致。
+    final contentSpan = _buildMentionTextSpan(
+      text,
+      widget.postModel.mentionedUsers ?? const <MentionedUser>[],
+      textStyle,
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // 用 TextPainter 检测在 maxLines 限制下是否溢出
         final tp = TextPainter(
-          text: TextSpan(text: text, style: textStyle),
+          text: contentSpan,
           maxLines: _kCollapsedMaxLines,
           textDirection: TextDirection.ltr,
         )..layout(maxWidth: constraints.maxWidth);
@@ -389,12 +452,11 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              text,
+            Text.rich(
+              contentSpan,
               maxLines: _isTextExpanded ? null : _kCollapsedMaxLines,
               overflow:
                   _isTextExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-              style: textStyle,
             ),
             // 仅当文本真的被截断时才显示展开/收起按钮
             if (isOverflowing)
@@ -424,6 +486,60 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         );
       },
     );
+  }
+
+  /// 构建正文 TextSpan：按 `@username` 切片，命中的片段高亮 + 挂点击跳转。
+  ///
+  /// 仅当 [mentions] 非空且正文里出现对应 username 时才生成 TapGestureRecognizer；
+  /// 未命中 mention 集合的 @ 字面量当普通文本（避免误跳转）。
+  /// 邮箱场景（如 alice@bob.com）通过「@ 前是 word 字符则不当 mention」排除。
+  ///
+  /// Recognizer 由 [_mentionRecognizerFor] 按 userId 缓存管理，调用方无需 dispose。
+  TextSpan _buildMentionTextSpan(
+    String text,
+    List<MentionedUser> mentions,
+    TextStyle baseStyle,
+  ) {
+    if (mentions.isEmpty) {
+      return TextSpan(text: text, style: baseStyle);
+    }
+    final byUsername = <String, MentionedUser>{
+      for (final m in mentions) if (m.username.isNotEmpty) m.username: m,
+    };
+    final spans = <InlineSpan>[];
+    final pattern = RegExp(r'@[A-Za-z0-9_]+');
+    int last = 0;
+    for (final match in pattern.allMatches(text)) {
+      // 排除邮箱：@ 前若是 word 字符则不当 mention（与 ComposePost._detectMentionToken 一致）。
+      if (match.start > 0 &&
+          RegExp(r'[A-Za-z0-9_]').hasMatch(text[match.start - 1])) {
+        continue;
+      }
+      if (match.start > last) {
+        spans.add(TextSpan(text: text.substring(last, match.start)));
+      }
+      final token = match[0]!; // 含 @
+      final username = token.substring(1);
+      final mentioned = byUsername[username];
+      if (mentioned != null) {
+        spans.add(TextSpan(
+          text: token,
+          style: const TextStyle(
+            color: CupertinoColors.activeBlue,
+            fontWeight: FontWeight.w600,
+          ),
+          recognizer: _mentionRecognizerFor(mentioned),
+        ));
+      } else {
+        // @ 字面量但不在 mention 集合里：当普通文本，避免误跳转。
+        spans.add(TextSpan(text: token));
+      }
+      last = match.end;
+    }
+    if (last < text.length) {
+      spans.add(TextSpan(text: text.substring(last)));
+    }
+    return TextSpan(style: baseStyle, children: spans);
   }
 
   // ==================== Media Gallery (multi-image) ====================
@@ -888,11 +1004,14 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
               ],
               // 正文
               if (qContent.isNotEmpty)
-                Text(
-                  qContent,
-                  style: TextStyle(
-                    color: appColors.textSecondary,
-                    fontSize: 14,
+                Text.rich(
+                  _buildMentionTextSpan(
+                    qContent,
+                    quotePost.mentionedUsers ?? const <MentionedUser>[],
+                    TextStyle(
+                      color: appColors.textSecondary,
+                      fontSize: 14,
+                    ),
                   ),
                   maxLines: 4,
                   overflow: TextOverflow.ellipsis,

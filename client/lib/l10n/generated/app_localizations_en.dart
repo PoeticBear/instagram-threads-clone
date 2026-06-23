@@ -35,6 +35,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPostsYet => 'No posts yet';
 
   @override
+  String get feedLoadFailedServer =>
+      'The server is temporarily unavailable. Please try again later.';
+
+  @override
+  String get feedLoadFailedNetwork =>
+      'Network connection failed. Please check your network and retry.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
   String get anonymousUser => 'Anonymous user';
 
   @override

@@ -13,6 +13,9 @@
     }
   },
   "noPostsYet": "暂无帖子",
+  "feedLoadFailedServer": "服务器开小差了，请稍后重试",
+  "feedLoadFailedNetwork": "网络连接失败，请检查网络后重试",
+  "retry": "重试",
   "anonymousUser": "匿名用户",
   "whatsNew": "有什么新鲜事？",
   "whoCanReply": "谁可以回复",

@@ -32,6 +32,27 @@ class SearchService {
     }
   }
 
+  /// @mention 专用：模糊搜索用户（包含私密用户）。
+  ///
+  /// 用服务端最新签名 `type=2` + `include_private=1`，
+  /// 仅返回用户列表（不带帖子 / 话题）。
+  Future<List<UserInfo>> searchMentionUsers(String keyword, {int limit = 10}) async {
+    try {
+      final response = await _apiClient.get(
+        'search',
+        queryParameters: {
+          'type': '2',
+          'include_private': '1',
+          'keyword': keyword,
+          'limit': limit.toString(),
+        },
+      );
+      return SearchResult.fromJson(response['data']).users;
+    } on ApiException {
+      rethrow;
+    }
+  }
+
   Future<SearchHistoryResponse> getSearchHistory({int limit = 10}) async {
     try {
       final response = await _apiClient.get(

@@ -84,6 +84,15 @@ class PostState extends AppStates {
   }
 
   List<PostModel>? _feedlist;
+  /// Feed 加载错误类型 key：
+  /// - `null`：无错误（首次加载中 / 加载成功）
+  /// - `'server'`：服务端异常（ServerException / 其他 ApiException）
+  /// - `'network'`：网络异常（NetworkException，离线 / DNS 失败 / 连接超时）
+  ///
+  /// UI 据此区分『暂无帖子』和『加载失败 + 重试按钮』。
+  /// 在 [getDataFromDatabase] / [refresh] 的 catch 中赋值，成功路径清空。
+  String? _feedErrorKey;
+  String? get feedErrorKey => _feedErrorKey;
   List<PostModel>? _userPosts; // 当前用户帖子列表（用于个人中心）
   List<PostModel>? _postDetailModelList;
   int _currentPage = 1;
@@ -209,6 +218,13 @@ class PostState extends AppStates {
       // Sensitive content fields
       isSensitive: apiPost.isSensitive,
       contentWarning: apiPost.contentWarning,
+      // @mention 字段同步（服务端响应 → UI 模型）
+      mentionedUserIds: apiPost.mentionedUserIds.isEmpty
+          ? null
+          : apiPost.mentionedUserIds,
+      mentionedUsers: apiPost.mentionedUsers.isEmpty
+          ? null
+          : apiPost.mentionedUsers,
     );
   }
 
@@ -333,6 +349,8 @@ class PostState extends AppStates {
         communityId: communityId,
         quoteRepostId: quoteRepostId,
         scheduledTime: scheduledTime,
+        // 透传被提及用户 userId 列表（需求 1：身份绑定）。
+        mentionedUserIds: model.mentionedUserIds,
       );
 
       developer.log('✅ [完成] 帖子创建成功: postId=${post.id}', name: 'PostState');
@@ -428,6 +446,7 @@ class PostState extends AppStates {
     try {
       isBusy = true;
       _feedlist = null;
+      _feedErrorKey = null; // 重置错误标记，避免上次失败的状态残留
       _currentPage = 1;
       _hasMore = true;
       notifyListeners();
@@ -447,6 +466,7 @@ class PostState extends AppStates {
     } catch (error) {
       developer.log('>>> getDataFromDatabase FAILED: $error',
           name: 'PostState');
+      _feedErrorKey = _classifyFeedError(error);
       isBusy = false;
       notifyListeners();
     }
@@ -466,10 +486,21 @@ class PostState extends AppStates {
 
       _feedlist!.sort((x, y) =>
           DateTime.parse(y.createdAt).compareTo(DateTime.parse(x.createdAt)));
+      _feedErrorKey = null; // 刷新成功 → 清空错误标记
     } catch (error) {
       developer.log('>>> refresh FAILED: $error', name: 'PostState');
+      _feedErrorKey = _classifyFeedError(error);
     }
     notifyListeners();
+  }
+
+  /// 把 feed 拉取异常归类为 UI 可识别的错误类型 key。
+  /// - [NetworkException]（离线 / DNS / 连接超时）→ `'network'`
+  /// - 其他 API 异常（含 [ServerException] 业务码失败 / 5xx）→ `'server'`
+  /// - 未知异常保守按 `'server'` 处理（实际最常见）
+  String _classifyFeedError(Object error) {
+    if (error is NetworkException) return 'network';
+    return 'server';
   }
 
   Future<bool> voteOnPoll(String postId, int optionId) async {

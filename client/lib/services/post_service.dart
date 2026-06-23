@@ -36,6 +36,10 @@ class PostService {
     int? communityId,
     int? quoteRepostId,
     String? scheduledTime,
+    /// 被提及用户的 userId 列表（需求 1：身份绑定）。
+    /// 服务端字段名 `mentioned_user_ids`，提交后服务端做关联 + 通知。
+    /// 客户端在 [ComposePost] 中通过 @ 自动补全选中用户时收集。
+    List<int>? mentionedUserIds,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -69,6 +73,11 @@ class PostService {
       if (communityId != null) body['community_id'] = communityId;
       if (quoteRepostId != null) body['quote_post_id'] = quoteRepostId;
       if (scheduledTime != null) body['scheduled_publish_time'] = scheduledTime;
+      // mentioned_user_ids：被提及用户 userId 列表（需求 1：身份绑定）。
+      // 仅当非空时发送，避免给服务端发空数组引发歧义。
+      if (mentionedUserIds != null && mentionedUserIds.isNotEmpty) {
+        body['mentioned_user_ids'] = mentionedUserIds;
+      }
 
       final response = await _apiClient.post('post/create', body: body);
       return Post.fromJson(response['data']);
@@ -875,6 +884,12 @@ class Post {
   // Sensitive content fields
   final bool isSensitive;
   final String? contentWarning;
+  // ─── @mention 字段 ───
+  // 服务端返回的帖子响应里附带的被提及用户。
+  // 优先解析 `mentioned_users`（含 username 快照），其次从 `mentioned_user_ids`
+  // 兜底（仅 id，无 username → 正文点击渲染无法匹配，仅可用于后续反查）。
+  final List<int> mentionedUserIds;
+  final List<MentionedUser> mentionedUsers;
 
   Post({
     required this.id,
@@ -916,6 +931,8 @@ class Post {
     this.lastEditTime,
     this.isSensitive = false,
     this.contentWarning,
+    this.mentionedUserIds = const [],
+    this.mentionedUsers = const [],
   });
 
   /// First image URL from mediaList, or null
@@ -1086,6 +1103,36 @@ class Post {
       // Sensitive content fields
       isSensitive: json['is_sensitive'] ?? json['isSensitive'] ?? false,
       contentWarning: json['content_warning'] ?? json['contentWarning'],
+      // @mention：优先解析 mentioned_users 对象数组（带 username 快照），
+      // 其次从 mentioned_user_ids 兜底（仅 id 列表）。
+      mentionedUserIds: () {
+        final users = json['mentioned_users'] ?? json['mentionedUsers'];
+        if (users is List && users.isNotEmpty) {
+          return users
+              .whereType<Map>()
+              .map((e) => e['user_id'] ?? e['userId'] ?? e['id'])
+              .whereType<int>()
+              .toList();
+        }
+        final ids = json['mentioned_user_ids'] ?? json['mentionedUserIds'];
+        if (ids is List) {
+          return ids
+              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+              .where((v) => v > 0)
+              .toList();
+        }
+        return const <int>[];
+      }(),
+      mentionedUsers: () {
+        final raw = json['mentioned_users'] ?? json['mentionedUsers'];
+        if (raw is List && raw.isNotEmpty) {
+          return raw
+              .whereType<Map<String, dynamic>>()
+              .map((e) => MentionedUser.fromJson(e))
+              .toList();
+        }
+        return const <MentionedUser>[];
+      }(),
     );
   }
 
