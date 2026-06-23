@@ -108,11 +108,15 @@ class MentionedUser {
 
   factory MentionedUser.fromJson(Map<String, dynamic> json) {
     return MentionedUser(
+      // 服务端帖子响应里字段名是 `id`（不是 user_id），保留多别名兜底防御。
       userId: json['user_id'] ?? json['userId'] ?? json['id'] ?? 0,
       username: json['username'] ?? '',
       displayName: json['display_name'] ?? json['displayName'],
-      avatarUrl:
-          json['avatar_url'] ?? json['avatarUrl'] ?? json['profile_pic'],
+      // 服务端用 `avatar`（与 User DTO 一致），保留 avatar_url/profile_pic 兜底。
+      avatarUrl: json['avatar'] ??
+          json['avatar_url'] ??
+          json['avatarUrl'] ??
+          json['profile_pic'],
     );
   }
 
@@ -341,34 +345,58 @@ class PostModel {
       isSensitive: _parseBool(map['is_sensitive'] ?? map['isSensitive']),
       contentWarning: map['content_warning']?.toString() ??
           map['contentWarning']?.toString(),
-      // @mention：优先从 mentioned_users 数组解析（含 username 快照），
-      // 同时从 mentioned_user_ids 兜底（仅 id 列表，无 username）。
-      mentionedUserIds: () {
-        final users = map['mentioned_users'] ?? map['mentionedUsers'];
-        if (users is List && users.isNotEmpty) {
-          return users
-              .whereType<Map>()
-              .map((e) => e['user_id'] ?? e['userId'] ?? e['id'])
-              .whereType<int>()
-              .toList();
-        }
-        final ids = map['mentioned_user_ids'] ?? map['mentionedUserIds'];
-        if (ids is List) {
-          return ids
-              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
-              .where((v) => v > 0)
-              .toList();
-        }
-        return null;
-      }(),
+      // @mention：服务端契约（实测 /post/feed 响应）
+      //   mentioned_users: "1000287,1000290" — 逗号分隔的 userId 字符串
+      //   mentioned_users_info: [{id, username, avatar, display_name, is_verified}] — 对象数组（首选）
+      // 优先从 mentioned_users_info 解析（含 username 快照，渲染点击必需）；
+      // 退化路径：从 mentioned_users 字符串切出 userId 列表（仅 id 无 username）。
       mentionedUsers: () {
-        final raw = map['mentioned_users'] ?? map['mentionedUsers'];
+        final raw = map['mentioned_users_info'] ??
+            map['mentionedUsersInfo'] ??
+            map['mentioned_users'] ??
+            map['mentionedUsers'];
         if (raw is List && raw.isNotEmpty) {
           return raw
               .whereType<Map<dynamic, dynamic>>()
               .map((e) => MentionedUser.fromJson(
                   e.map((k, v) => MapEntry(k.toString(), v))))
               .toList();
+        }
+        return null;
+      }(),
+      mentionedUserIds: () {
+        // 1) 优先从 mentioned_users_info 派生（已有完整对象）
+        final info = map['mentioned_users_info'] ??
+            map['mentionedUsersInfo'];
+        if (info is List && info.isNotEmpty) {
+          final ids = info
+              .whereType<Map>()
+              .map((e) => e['id'] ?? e['user_id'] ?? e['userId'])
+              .whereType<int>()
+              .toList();
+          if (ids.isNotEmpty) return ids;
+        }
+        // 2) 退化：mentioned_users 是逗号分隔字符串（如 "1000287,1000290"）
+        final muStr = map['mentioned_users']?.toString() ??
+            map['mentionedUserIds']?.toString();
+        if (muStr != null && muStr.isNotEmpty && muStr != '0') {
+          final ids = muStr
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .map((s) => int.tryParse(s) ?? 0)
+              .where((id) => id > 0)
+              .toList();
+          if (ids.isNotEmpty) return ids;
+        }
+        // 3) 再退化：数组形式的 mentioned_user_ids（旧契约兼容）
+        final idsArr = map['mentioned_user_ids'] ?? map['mentionedUserIds'];
+        if (idsArr is List) {
+          final ids = idsArr
+              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+              .where((v) => v > 0)
+              .toList();
+          if (ids.isNotEmpty) return ids;
         }
         return null;
       }(),

@@ -1103,28 +1103,15 @@ class Post {
       // Sensitive content fields
       isSensitive: json['is_sensitive'] ?? json['isSensitive'] ?? false,
       contentWarning: json['content_warning'] ?? json['contentWarning'],
-      // @mention：优先解析 mentioned_users 对象数组（带 username 快照），
-      // 其次从 mentioned_user_ids 兜底（仅 id 列表）。
-      mentionedUserIds: () {
-        final users = json['mentioned_users'] ?? json['mentionedUsers'];
-        if (users is List && users.isNotEmpty) {
-          return users
-              .whereType<Map>()
-              .map((e) => e['user_id'] ?? e['userId'] ?? e['id'])
-              .whereType<int>()
-              .toList();
-        }
-        final ids = json['mentioned_user_ids'] ?? json['mentionedUserIds'];
-        if (ids is List) {
-          return ids
-              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
-              .where((v) => v > 0)
-              .toList();
-        }
-        return const <int>[];
-      }(),
+      // @mention：服务端契约（实测 /post/feed 响应）
+      //   mentioned_users: "1000287,1000290" — 逗号分隔 userId 字符串
+      //   mentioned_users_info: [{id, username, avatar, display_name, is_verified}] — 对象数组（首选）
+      // 优先从 mentioned_users_info 解析（含 username 快照，渲染点击必需）。
       mentionedUsers: () {
-        final raw = json['mentioned_users'] ?? json['mentionedUsers'];
+        final raw = json['mentioned_users_info'] ??
+            json['mentionedUsersInfo'] ??
+            json['mentioned_users'] ??
+            json['mentionedUsers'];
         if (raw is List && raw.isNotEmpty) {
           return raw
               .whereType<Map<String, dynamic>>()
@@ -1132,6 +1119,42 @@ class Post {
               .toList();
         }
         return const <MentionedUser>[];
+      }(),
+      mentionedUserIds: () {
+        // 1) 优先从 mentioned_users_info 派生
+        final info =
+            json['mentioned_users_info'] ?? json['mentionedUsersInfo'];
+        if (info is List && info.isNotEmpty) {
+          final ids = info
+              .whereType<Map>()
+              .map((e) => e['id'] ?? e['user_id'] ?? e['userId'])
+              .whereType<int>()
+              .toList();
+          if (ids.isNotEmpty) return ids;
+        }
+        // 2) 退化：mentioned_users 是逗号分隔字符串
+        final muStr = json['mentioned_users']?.toString() ??
+            json['mentionedUserIds']?.toString();
+        if (muStr != null && muStr.isNotEmpty && muStr != '0') {
+          final ids = muStr
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .map((s) => int.tryParse(s) ?? 0)
+              .where((id) => id > 0)
+              .toList();
+          if (ids.isNotEmpty) return ids;
+        }
+        // 3) 再退化：数组形式的 mentioned_user_ids
+        final idsArr = json['mentioned_user_ids'] ?? json['mentionedUserIds'];
+        if (idsArr is List) {
+          final ids = idsArr
+              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+              .where((v) => v > 0)
+              .toList();
+          if (ids.isNotEmpty) return ids;
+        }
+        return const <int>[];
       }(),
     );
   }
