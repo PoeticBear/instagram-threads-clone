@@ -61,7 +61,7 @@ class WsConfig {
 
   /// Query 参数名。默认 `token`;
   /// 服务端用 `access_token` 时改这里。
-  static const String authQueryKey = 'token';
+  static const String authQueryKey = 'access_token';
 
   // ── 心跳 ──────────────────────────────────────────────────────
   /// IOWebSocketChannel 自带的协议级 ping(RFC6455 control frame)。

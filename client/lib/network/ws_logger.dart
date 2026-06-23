@@ -51,6 +51,9 @@ class WsLogger {
   static void log(String message) {
     final line = '[${_now()}] $message';
     developer.log('[WS] $line', name: 'WsLogger');
+    // TEMP-DEBUG: 让 WS 日志在 `flutter run` 终端可见(developer.log 默认不显示)
+    // 服务端 WS 排障完成后移除此 print
+    print('[WS] $line');
     _writeToFile(line);
   }
 

@@ -238,7 +238,7 @@ class WebSocketService with ChangeNotifier {
       case WsAuthMode.both:
         return base.replace(queryParameters: {
           ...base.queryParameters,
-          WsConfig.authQueryKey: token,
+          WsConfig.authQueryKey: '${WsConfig.authHeaderPrefix}$token',
         });
     }
   }
