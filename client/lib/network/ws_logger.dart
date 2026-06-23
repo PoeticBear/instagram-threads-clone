@@ -20,6 +20,9 @@ class WsLogger {
   static bool _initFailed = false;
 
   /// 初始化日志文件。幂等,失败后不再重试。
+  ///
+  /// 由 `main.dart` 在 WS 连接前显式调用,避免 lazy init 在首条日志写入时
+  /// 与 WS 握手争抢资源导致丢日志。
   static Future<void> init() async {
     if (_initialized || _initFailed) return;
     try {
@@ -30,11 +33,19 @@ class WsLogger {
       }
       _logFile = File('${logDir.path}/ws_${_dateTag()}.log');
       _initialized = true;
+      // 启动时打印一次完整路径,便于在 iOS 沙箱里定位日志文件
+      developer.log(
+        '[WsLogger] log file: ${_logFile!.path}',
+        name: 'WsLogger',
+      );
     } catch (e) {
       _initFailed = true;
       developer.log('[WsLogger] init failed: $e', name: 'WsLogger');
     }
   }
+
+  /// 当前日志文件完整路径(供 UI 层做"导出日志"等功能;debug 也可直接打印)。
+  static String? get logFilePath => _logFile?.path;
 
   /// 普通文本日志(连接状态变化、心跳、重连、错误等)。
   static void log(String message) {

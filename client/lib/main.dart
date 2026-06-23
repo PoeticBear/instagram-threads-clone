@@ -10,6 +10,7 @@ import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/network/api_client.dart';
 import 'package:threads/network/api_logger.dart';
 import 'package:threads/network/ws_config.dart';
+import 'package:threads/network/ws_logger.dart';
 import 'package:threads/helper/enum.dart';
 import 'package:threads/helper/network_error.dart';
 import 'package:threads/services/deep_link_service.dart';
@@ -61,8 +62,11 @@ void main() async {
   // Register WebSocket service (after ApiClient so it can read access token)
   getIt.registerSingleton<WebSocketService>(WebSocketService());
 
-  // Initialize file logger
+  // Initialize file loggers
   ApiLogger.init();
+  // WsLogger.init 是 async,不 await —— 它内部幂等 + 失败兜底,
+  // 不阻塞 app 启动。连接前还没初始化完成时,前几条日志走 _initAndWrite 兜底。
+  WsLogger.init();
 
   runApp(MyApp(
     sharedPreferences: sharedPreferences,
