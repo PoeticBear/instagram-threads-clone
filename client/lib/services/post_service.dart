@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart';
+
 import '../model/draft.module.dart';
 import '../model/post.module.dart';
 import '../network/api_client.dart';
@@ -79,7 +81,34 @@ class PostService {
         body['mentioned_user_ids'] = mentionedUserIds;
       }
 
+      // ===== 调试日志：打印完整请求体，验证 mentioned_user_ids 是否发出 =====
+      final String bodyJson =
+          const JsonEncoder.withIndent('  ').convert(body);
+      debugPrint('🚨🚨🚨 [MENTION-DEBUG] ═══ createPost 请求 ═══');
+      debugPrint('🚨 [MENTION-DEBUG] endpoint: POST post/create');
+      debugPrint('🚨 [MENTION-DEBUG] 完整 body:\n$bodyJson');
+      debugPrint(
+          '🚨 [MENTION-DEBUG] mentioned_user_ids 函数入参 = $mentionedUserIds');
+      debugPrint(
+          '🚨 [MENTION-DEBUG] body 是否含 mentioned_user_ids 字段 = ${body.containsKey('mentioned_user_ids')}');
+      if (body['mentioned_user_ids'] != null) {
+        debugPrint(
+            '🚨 [MENTION-DEBUG] body[mentioned_user_ids] = ${body['mentioned_user_ids']}');
+      } else {
+        debugPrint('🚨 [MENTION-DEBUG] ⚠️ body 里没有 mentioned_user_ids！（字段被跳过或入参为空）');
+      }
+      debugPrint('🚨🚨🚨 [MENTION-DEBUG] ═══ 请求结束 ═══');
+      // ==================================================================
+
       final response = await _apiClient.post('post/create', body: body);
+
+      // ===== 调试日志：打印服务端响应，便于排查是否回带 mention 字段 =====
+      final String respJson =
+          const JsonEncoder.withIndent('  ').convert(response);
+      debugPrint('✅✅✅ [MENTION-DEBUG] ═══ createPost 响应 ═══');
+      debugPrint('✅ [MENTION-DEBUG] 响应体:\n$respJson');
+      debugPrint('✅✅✅ [MENTION-DEBUG] ═══ 响应结束 ═══');
+      // ==================================================================
       return Post.fromJson(response['data']);
     } on ApiException catch (e) {
       developer.log(

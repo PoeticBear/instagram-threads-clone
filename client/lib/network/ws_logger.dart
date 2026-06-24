@@ -58,7 +58,11 @@ class WsLogger {
   }
 
   /// 事件日志:打印 type + 完整 raw JSON(pretty)。
+  ///
+  /// 事件帧前插一行醒目分割线,便于在 `flutter run` 终端的噪音日志里
+  /// 一眼定位到「服务端推了什么事件」(排障 WS 推送时尤其有用)。
   static void logEvent(WsEvent event) {
+    log('━━━━━━━━ WS EVENT (${event.type}) ━━━━━━━━');
     final String pretty;
     try {
       pretty = const JsonEncoder.withIndent('  ').convert(event.raw);

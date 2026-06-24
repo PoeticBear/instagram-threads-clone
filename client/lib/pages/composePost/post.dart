@@ -161,26 +161,42 @@ class ComposePostState extends State<ComposePost> {
     _filterAndShow(token.query);
   }
 
-  /// 同步 [_mentionUserIds]：扫描当前正文里出现的所有 `@username` 字面量，
-  /// 把已记录但不再出现的 username 移除（用户删除/改名/覆盖时同步）。
+  /// 同步 [_mentionUserIds]：检查已记录的每个 username 是否仍以
+  /// `@username` 形式出现在正文中，把不再出现的移除（用户删除/改名/覆盖时同步）。
   ///
-  /// 不维护 token 区间，仅按 username 字符串过滤。代价是：如果用户在选中
-  /// @alice 之后又**手动**把 `@alice` 改成 `@bob`，bob 不会被识别为 mention
-  /// （因为没走补全 → 没有 bob 的 userId），这是符合「无补全即无 mention」语义的。
+  /// **不使用固定字符集的正则**——历史上用 `@[A-Za-z0-9_]+` 会把 `dev-12`
+  /// 这种含 `-` 的用户名截断成 `dev`，从而误判 `dev-12` 已被删除（线上 Bug）。
+  /// 改为对每个已知 username 做精确字符串匹配 + 左右边界检查，可匹配任何
+  /// 服务端允许的用户名字符集（`.` / `-` / `_` 等）。
+  ///
   /// 同 username 多次出现的场景：只要 username 仍在文本里，对应 userId 就保留。
   void _syncMentionUserIds() {
     if (_mentionUserIds.isEmpty) return;
     final text = _textEditingController.text;
-    final present = <String>{};
-    for (final m in RegExp(r'@[A-Za-z0-9_]+').allMatches(text)) {
-      // 排除邮箱：@ 前若是 word 字符则不算 mention（与 _detectMentionToken 一致）。
-      if (m.start > 0 &&
-          RegExp(r'[A-Za-z0-9_]').hasMatch(text[m.start - 1])) {
-        continue;
+    final toRemove = <String>[];
+    _mentionUserIds.forEach((username, _) {
+      final atUsername = '@$username';
+      final idx = text.indexOf(atUsername);
+      if (idx < 0) {
+        toRemove.add(username);
+        return;
       }
-      present.add(m[0]!.substring(1)); // 去掉 @
+      // 排除邮箱：@ 前若是 word 字符则不算 mention（与 _detectMentionToken 一致）。
+      if (idx > 0 && RegExp(r'[A-Za-z0-9_]').hasMatch(text[idx - 1])) {
+        toRemove.add(username);
+        return;
+      }
+      // 右边界：@username 后若仍是用户名字符，则它只是更长 username 的前缀
+      // （例如 username=dev 而 text=@dev-12，dev 不应被保留）。
+      final after = idx + atUsername.length;
+      if (after < text.length &&
+          RegExp(r'[A-Za-z0-9_.\-]').hasMatch(text[after])) {
+        toRemove.add(username);
+      }
+    });
+    for (final u in toRemove) {
+      _mentionUserIds.remove(u);
     }
-    _mentionUserIds.removeWhere((username, _) => !present.contains(username));
   }
 
   /// 从光标位置向前查找最近的合法 @token。

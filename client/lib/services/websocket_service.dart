@@ -7,6 +7,7 @@ import 'package:web_socket_channel/io.dart';
 
 import '../common/locator.dart';
 import '../network/api_client.dart';
+import '../network/api_config.dart';
 import '../network/ws_config.dart';
 import '../network/ws_event.dart';
 import '../network/ws_logger.dart';
@@ -196,7 +197,13 @@ class WebSocketService with ChangeNotifier {
 
     _setState(WsConnectionState.connecting);
     final uri = _buildAuthUri(token);
-    WsLogger.log('connecting → ${_maskUrl(uri)} (token masked)');
+    // dev 排障:打印完整连接 URL(含 token),便于核对鉴权参数;
+    // prod 仍脱敏,避免长期凭证写进日志文件泄露。
+    final connectUrl = ApiConfig.environment == 'dev'
+        ? uri.toString()
+        : _maskUrl(uri);
+    WsLogger.log('connecting → $connectUrl'
+        '${ApiConfig.environment == 'dev' ? '' : ' (token masked)'}');
 
     try {
       _channel = IOWebSocketChannel.connect(
@@ -267,6 +274,7 @@ class WebSocketService with ChangeNotifier {
     // 应用层 pong 检测:收到即取消 watchdog(连接健康)
     if (raw is String && _maybePong(raw)) {
       _cancelPongWatchdog();
+      WsLogger.log('pong received — heartbeat ok');
       return;
     }
 
@@ -341,6 +349,7 @@ class WebSocketService with ChangeNotifier {
         WsLogger.log('app-layer ping send failed: $e');
         return;
       }
+      WsLogger.log('app-layer ping sent');
       _startPongWatchdog();
     });
   }

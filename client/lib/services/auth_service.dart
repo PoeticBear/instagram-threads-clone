@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../network/api_client.dart';
@@ -60,6 +62,13 @@ class AuthService {
           if (deviceName != null) 'device-name': deviceName,
         },
       );
+
+      // dev 环境打印完整登录响应，便于调试接口字段；prod 不打印以免泄露 token
+      if (ApiConfig.environment == 'dev') {
+        debugPrint('═══════════ [signIn] 服务端返回 ═══════════');
+        debugPrint(const JsonEncoder.withIndent('  ').convert(response));
+        debugPrint('═══════════════════════════════════════════');
+      }
 
       final data = response['data'];
       await _saveTokens(

@@ -3,10 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/common/locator.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/user.module.dart';
 import 'package:threads/pages/community/community_list_page.dart';
 import 'package:threads/pages/message/message_page.dart';
+import 'package:threads/services/websocket_service.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/theme/app_colors.dart';
@@ -100,7 +102,31 @@ class _FeedPageState extends State<FeedPage> with TickerProviderStateMixin {
                           _scrollToTop();
                         }
                       },
-                      child: const SizedBox(height: 36),
+                      child: SizedBox(
+                        height: 36,
+                        child: Center(
+                          // WS 连接状态指示器（调试用）：
+                          // connected → 绿；其他（connecting/reconnecting/disconnected/disabled）→ 红
+                          child: ListenableBuilder(
+                            listenable: getIt<WebSocketService>(),
+                            builder: (context, _) {
+                              final isConnected =
+                                  getIt<WebSocketService>().state ==
+                                      WsConnectionState.connected;
+                              return Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isConnected
+                                      ? appColors.repost
+                                      : appColors.destructive,
+                                  shape: BoxShape.circle,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   GestureDetector(
