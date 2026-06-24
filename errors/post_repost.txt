@@ -1,0 +1,34 @@
+sihangpeng@SihangdeMac-mini instagram-threads-clone % python3 wstest/send_notify.py post_repost
+
+════════════════════════════════════════════════════════════════
+ 场景: post_repost
+ 14dev 转发 12dev 的帖子 → 12dev 应收到 post_repost
+ 期望 WS 事件: post_repost
+════════════════════════════════════════════════════════════════
+[login 14dev] HTTP 200  uid=1000382  token=OK
+[login 12dev] HTTP 200  uid=1000383  token=OK
+→ 14dev=触发方   12dev=接收方 id=1000383
+[接收方建目标] post_id=2000151
+[接收方未读基线] unread=36
+[接收方 WS] 连接监听 post_repost …
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+>>> 触发方 14dev 执行动作: 转发帖子 post_id=2000151
+>>> 完整 HTTP 请求:
+    POST http://192.168.1.27:8005/post/repost/2000151
+    Headers:
+      Content-Type: application/json
+      Authorization: Bearer eyJhbGciOiJIUzI1…（已脱敏）
+    Body: {"repost_type": 1}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[trigger] HTTP 200
+  响应 = {"code": 0, "msg": "success", "data": {}}
+[接收方未读] 36 → 37   Δ=1  ← 服务端建了通知
+[接收方通知列表] 是否有 post_repost 对应条目(type=5/repost, obj=post): ✓ 有
+[接收方 WS] 收到总帧数=1
+    · raw='pong'
+[接收方 WS] 期望 post_repost 帧: ✗ 未收到
+════════════════════════════════════════════════════════════════
+ 结论: ⚠️ 服务端建了【post_repost】通知(列表有/Δ=1) 但【没推 WS 帧】—— post_mention 同款 bug
+ ── 以上日志可直接复制发给后端排障 ──
+ （真机 app 登录 12dev 时，同步看 flutter run 是否出现 [WS] event type=post_repost）
+════════════════════════════════════════════════════════════════

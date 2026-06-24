@@ -1,0 +1,34 @@
+sihangpeng@SihangdeMac-mini instagram-threads-clone % python3 wstest/send_notify.py post_quote
+
+════════════════════════════════════════════════════════════════
+ 场景: post_quote
+ 14dev 引用 12dev 的帖子 → 12dev 应收到 post_quote
+ 期望 WS 事件: post_quote
+════════════════════════════════════════════════════════════════
+[login 14dev] HTTP 200  uid=1000382  token=OK
+[login 12dev] HTTP 200  uid=1000383  token=OK
+→ 14dev=触发方   12dev=接收方 id=1000383
+[接收方建目标] post_id=2000158
+[接收方未读基线] unread=38
+[接收方 WS] 连接监听 post_quote …
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+>>> 触发方 14dev 执行动作: 引用发帖 quote_post_id=2000158
+>>> 完整 HTTP 请求:
+    POST http://192.168.1.27:8005/post/create
+    Headers:
+      Content-Type: application/json
+      Authorization: Bearer eyJhbGciOiJIUzI1…（已脱敏）
+    Body: {"content": "probe quote from 14dev 15:40:02", "quote_post_id": 2000158}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[trigger] HTTP 200
+  响应 = {"code": 0, "msg": "success", "data": {"id": 2000159, "user": {"id": 1000382, "username": "14dev", "avatar": "https://cdn.tweetcaht.com/static/default/avatar.png", "display_name": "14dev", "is_verified": 0}, "content": "probe quote from 14dev 15:40:02", "media_list": [], "media_count": 0, "content_character_count": 31, "content_remaining_chars": 469, "reply_type": 1, "need_review": false, "is_guest_post": 0, "is_archived": 0, "location": "", "latitude": null, "longitude": null, "quote_post_id":
+[接收方未读] 38 → 38   Δ=0
+[接收方通知列表] 是否有 post_quote 对应条目(type=6/quote, obj=post): ✗ 无
+[接收方 WS] 收到总帧数=1
+    · raw='pong'
+[接收方 WS] 期望 post_quote 帧: ✗ 未收到
+════════════════════════════════════════════════════════════════
+ 结论: ❌ 服务端没建通知 (Δ=0) —— 触发动作字段未被识别或未实现该通知
+ ── 以上日志可直接复制发给后端排障 ──
+ （真机 app 登录 12dev 时，同步看 flutter run 是否出现 [WS] event type=post_quote）
+════════════════════════════════════════════════════════════════

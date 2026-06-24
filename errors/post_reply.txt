@@ -1,0 +1,35 @@
+sihangpeng@SihangdeMac-mini instagram-threads-clone % python3 wstest/send_notify.py post_reply
+
+════════════════════════════════════════════════════════════════
+ 场景: post_reply
+ 14dev 回复 12dev 的帖子 → 12dev 应收到 post_reply
+ 期望 WS 事件: post_reply
+════════════════════════════════════════════════════════════════
+[login 14dev] HTTP 200  uid=1000382  token=OK
+[login 12dev] HTTP 200  uid=1000383  token=OK
+→ 14dev=触发方   12dev=接收方 id=1000383
+[接收方建目标] post_id=2000148
+[接收方未读基线] unread=35
+[接收方 WS] 连接监听 post_reply …
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+>>> 触发方 14dev 执行动作: 回复帖子 post_id=2000148
+>>> 完整 HTTP 请求:
+    POST http://192.168.1.27:8005/post/reply
+    Headers:
+      Content-Type: application/json
+      Authorization: Bearer eyJhbGciOiJIUzI1…（已脱敏）
+    Body: {"post_id": 2000148, "content": "probe reply from 14dev 15:39:00"}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[trigger] HTTP 200
+  响应 = {"code": 0, "msg": "success", "data": {"id": 2000149, "user": {"id": 1000382, "username": "14dev", "avatar": "https://cdn.tweetcaht.com/static/default/avatar.png", "display_name": "14dev", "is_verified": 0}, "content": "probe reply from 14dev 15:39:00", "media_list": [], "is_private": false, "is_pinned": false, "likes_count": 0, "replies_count": 0, "is_edited": false, "edit_count": 0, "last_edit_time": null, "review_status": 1, "is_liked": false, "parent_id": null, "mentioned_users": "", "mentio
+[接收方未读] 35 → 36   Δ=1  ← 服务端建了通知
+[接收方通知列表] 是否有 post_reply 对应条目(type=2/reply, obj=post): ✓ 有
+[接收方 WS] 收到总帧数=2
+    · raw='pong'
+    · event_type='reply_create', post_id=2000148, reply_id=2000149, user_id=1000382
+[接收方 WS] 期望 post_reply 帧: ✗ 未收到
+════════════════════════════════════════════════════════════════
+ 结论: ⚠️ 服务端建了【post_reply】通知(列表有/Δ=1) 但【没推 WS 帧】—— post_mention 同款 bug
+ ── 以上日志可直接复制发给后端排障 ──
+ （真机 app 登录 12dev 时，同步看 flutter run 是否出现 [WS] event type=post_reply）
+════════════════════════════════════════════════════════════════

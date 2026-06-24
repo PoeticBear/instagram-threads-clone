@@ -1,0 +1,35 @@
+sihangpeng@SihangdeMac-mini instagram-threads-clone % python3 wstest/send_notify.py reply_mention
+
+════════════════════════════════════════════════════════════════
+ 场景: reply_mention
+ 14dev 在回复中 @ 12dev → 12dev 应收到 reply_mention
+ 期望 WS 事件: reply_mention
+════════════════════════════════════════════════════════════════
+[login 14dev] HTTP 200  uid=1000382  token=OK
+[login 12dev] HTTP 200  uid=1000383  token=OK
+→ 14dev=触发方   12dev=接收方 id=1000383
+[接收方建目标] post_id=2000160
+[接收方未读基线] unread=38
+[接收方 WS] 连接监听 reply_mention …
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+>>> 触发方 14dev 执行动作: 回复帖子并 @ 接收方 post_id=2000160 mentioned_user_ids=[1000383]
+>>> 完整 HTTP 请求:
+    POST http://192.168.1.27:8005/post/reply
+    Headers:
+      Content-Type: application/json
+      Authorization: Bearer eyJhbGciOiJIUzI1…（已脱敏）
+    Body: {"post_id": 2000160, "content": "@12dev probe reply mention 15:40:21", "mentioned_user_ids": [1000383]}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[trigger] HTTP 200
+  响应 = {"code": 0, "msg": "success", "data": {"id": 2000161, "user": {"id": 1000382, "username": "14dev", "avatar": "https://cdn.tweetcaht.com/static/default/avatar.png", "display_name": "14dev", "is_verified": 0}, "content": "@12dev probe reply mention 15:40:21", "media_list": [], "is_private": false, "is_pinned": false, "likes_count": 0, "replies_count": 0, "is_edited": false, "edit_count": 0, "last_edit_time": null, "review_status": 1, "is_liked": false, "parent_id": null, "mentioned_users": "100038
+[接收方未读] 38 → 39   Δ=1  ← 服务端建了通知
+[接收方通知列表] 是否有 reply_mention 对应条目(type=4/mention, obj=reply): ✗ 无
+[接收方 WS] 收到总帧数=2
+    · raw='pong'
+    · event_type='reply_create', post_id=2000160, reply_id=2000161, user_id=1000382
+[接收方 WS] 期望 reply_mention 帧: ✗ 未收到
+════════════════════════════════════════════════════════════════
+ 结论: ⚠️ 未建【reply_mention】通知：未读 Δ=1 但列表无对应条目（Δ 来自联动事件，如回复动作自带的 post_reply）
+ ── 以上日志可直接复制发给后端排障 ──
+ （真机 app 登录 12dev 时，同步看 flutter run 是否出现 [WS] event type=reply_mention）
+════════════════════════════════════════════════════════════════

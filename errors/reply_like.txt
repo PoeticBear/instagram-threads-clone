@@ -1,0 +1,34 @@
+sihangpeng@SihangdeMac-mini instagram-threads-clone % python3 wstest/send_notify.py reply_like
+
+════════════════════════════════════════════════════════════════
+ 场景: reply_like
+ 14dev 赞 12dev 的回复 → 12dev 应收到 reply_like
+ 期望 WS 事件: reply_like
+════════════════════════════════════════════════════════════════
+[login 14dev] HTTP 200  uid=1000382  token=OK
+[login 12dev] HTTP 200  uid=1000383  token=OK
+→ 14dev=触发方   12dev=接收方 id=1000383
+[接收方建目标] post_id=2000154  reply_id=2000155
+[接收方未读基线] unread=37
+[接收方 WS] 连接监听 reply_like …
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+>>> 触发方 14dev 执行动作: 点赞回复 reply_id=2000155
+>>> 完整 HTTP 请求:
+    POST http://192.168.1.27:8005/post/reply/like/2000155
+    Headers:
+      Content-Type: application/json
+      Authorization: Bearer eyJhbGciOiJIUzI1…（已脱敏）
+    Body: （无）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[trigger] HTTP 200
+  响应 = {"code": 0, "msg": "success", "data": {}}
+[接收方未读] 37 → 38   Δ=1  ← 服务端建了通知
+[接收方通知列表] 是否有 reply_like 对应条目(type=1/like, obj=reply): ✓ 有
+[接收方 WS] 收到总帧数=1
+    · raw='pong'
+[接收方 WS] 期望 reply_like 帧: ✗ 未收到
+════════════════════════════════════════════════════════════════
+ 结论: ⚠️ 服务端建了【reply_like】通知(列表有/Δ=1) 但【没推 WS 帧】—— post_mention 同款 bug
+ ── 以上日志可直接复制发给后端排障 ──
+ （真机 app 登录 12dev 时，同步看 flutter run 是否出现 [WS] event type=reply_like）
+════════════════════════════════════════════════════════════════
