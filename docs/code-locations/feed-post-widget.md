@@ -103,11 +103,30 @@
 
 ### 3.4 引用帖子卡片 `_buildQuoteCard`
 
-- **行号**：`feedpost.dart:724-864`
+- **行号**：`feedpost.dart:952-1088`
 - **三种渲染**：
-  - **情况 1**：有完整 `quotePost` 数据 → 渲染作者信息行 + 正文（`maxLines: 4`）+ 首图（高度 150，cover）。
+  - **情况 1**：有完整 `quotePost` 数据 → 渲染作者信息行 + 正文（`maxLines: 4`）+ 首图/首段视频（高度 150，cover）。媒体按 `qFirstMedia.isVideo` 分流：
+    - **视频** → `_buildQuoteVideoPoster`（`feedpost.dart:1138-1239`）：三态渲染
+      - **A1 有缩略图**：缩略图作 poster + 居中黑色圆形播放按钮（size 40）+ 右下角时长标签（与 `_buildMediaImage` 风格一致）。
+      - **A2 缩略图为 null 但有 video URL**（线上后端常见：video post 只回 url 不回 thumb_url）：**不再把 .mp4 当图加载**（之前会触发 broken_image），改为「视频占位卡」—— `surface` 色背景 + 居中大播放图标（`Icons.play_circle_filled` size 56）+ 时长标签。
+      - **A3 完全无 URL**：`videocam_off_outlined` 占位。
+      - 点击复用外层 `GestureDetector → _navigateToQuotedPostDetail` 进入被引用帖详情查看完整视频。
+    - **图片** → `_buildQuoteImage`（`feedpost.dart:1093-1118`）：`CachedNetworkImage`，`errorWidget` 显示 `Icon(broken_image)`（修复前是 `SizedBox.shrink()`，加载失败时整块消失）。
   - **情况 2**：`_isFetchingQuote == true` → 渲染 16×16 loading + "Loading..."。
   - **情况 3**：加载失败 / 原帖不可用 → "This post is unavailable"。
+
+### 3.5 引用帖数据懒加载 `_maybeFetchQuotePost` / `_effectiveQuotePost`
+
+- **行号**：
+  - `_effectiveQuotePost`（`feedpost.dart:85-87`）— **优先 `_fetchedQuotePost`**（完整版），后用 `widget.postModel.quotePost`（feed 嵌入版）。
+  - `_maybeFetchQuotePost`（`feedpost.dart:152-188`）— 懒加载入口。
+- **触发条件**（任一）：
+  - `quoteRepostId == null` → 直接跳过
+  - `quotePost != null && quotePost.hasMedia` → 已有完整数据，跳过
+  - 其余情况（`quotePost == null` 或 `quotePost` 存在但**没有 media**）→ 调 `PostState.fetchQuotePostDetail(quoteRepostId)` 拿完整数据。
+- **关键线上坑**（2026-06-24 修复）：Feed API 返回的嵌套 `quote_post` 只带 `content / user`，**不带 `media_list`**——必须用 `/post/detail/{id}` 才能拿到视频。如果 `quotePost != null` 就早返回，会导致引用卡永远只显示文字。
+
+> 调试日志：`_buildQuoteCard` 在 `quotePost != null` 分支会 `print('[QuoteCard] postId=... hasMedia=... mediaCount=...')`，用于排查后端是否回填了 `media_list`。验证修复时可直接看控制台。
 
 ---
 
@@ -243,7 +262,10 @@ bool canEdit = isOwnPost
 | 修改正文展开 / 收起 | `_buildPostContent` / `_kCollapsedMaxLines` | `feedpost.dart:364-423` |
 | 修改媒体九宫格 | `_buildMediaGallery` / `_buildSingleMedia` / `_buildGridMedia` | `feedpost.dart:433-593` |
 | 修改视频播放 / 音频开关 | `VideoPlayerPool` / `VisibilityDetector` | `feedpost.dart:482-503, 563-578, 649-700` |
-| 修改引用卡片 | `_buildQuoteCard` | `feedpost.dart:724-864` |
+| 修改引用卡片 | `_buildQuoteCard` | `feedpost.dart:952-1088` |
+| 修改引用卡内视频 poster | `_buildQuoteVideoPoster` | `feedpost.dart:1138-1239` |
+| 修改引用卡内图片渲染 | `_buildQuoteImage` | `feedpost.dart:1093-1118` |
+| 修改引用帖懒加载逻辑 | `_maybeFetchQuotePost` / `_effectiveQuotePost` | `feedpost.dart:85-87, 152-188` |
 | 修改点赞 / 回复 / 转发 / 分享按钮 | 互动按钮 `Row` | `feedpost.dart:268-343` |
 | 修改「更多」菜单 | `_showMoreMenu` | `feedpost.dart:1191-1414` |
 | 修改举报菜单 | `_showReportMenu` | `feedpost.dart:1447-1533` |

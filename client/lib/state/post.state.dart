@@ -686,6 +686,13 @@ class PostState extends AppStates {
   Future<PostModel?> fetchQuotePostDetail(int quotePostId) async {
     try {
       final apiPost = await postService.getPostDetail(quotePostId.toString());
+      // [debug] service Post 关键字段
+      // ignore: avoid_print
+      print('[fetchQuotePostDetail] id=$quotePostId '
+          'content="${apiPost.content}" '
+          'imageUrl=${apiPost.imageUrl} '
+          'mediaList.len=${apiPost.mediaList.length} '
+          'mediaList=${apiPost.mediaList.map((m) => "{type=${m.mediaType} url=${m.url} thumb=${m.thumbUrl} duration=${m.duration}").toList()}');
       return _apiPostToModel(apiPost);
     } catch (error) {
       developer.log('fetchQuotePostDetail failed for id=$quotePostId: $error',

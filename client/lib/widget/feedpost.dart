@@ -82,9 +82,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   /// username 即使被改名也不影响路由。
   final Map<int, TapGestureRecognizer> _mentionRecognizers = {};
 
-  /// 被引用帖子的有效数据：优先用已有 quotePost，否则用兜底拉取的
-  PostModel? get _effectiveQuotePost =>
-      widget.postModel.quotePost ?? _fetchedQuotePost;
+  /// 被引用帖子的有效数据：
+  /// - 选有 media 的那个；都没有 media 时用 _fetchedQuotePost（更新，更可信）
+  /// - 关键是**不能**让一个空数据的 _fetchedQuotePost 永远盖住 post.quotePost（即便后者也空），
+  ///   因为我们还要靠 post.quotePost 的存在性来决定要不要再 fetch 一次。
+  /// 因此 getter 不直接返回 _fetchedQuotePost，而是让调用方自己选。
+  PostModel? get _effectiveQuotePost {
+    final fp = _fetchedQuotePost;
+    final pp = widget.postModel.quotePost;
+    if (fp != null && fp.hasMedia) return fp;
+    if (pp != null && pp.hasMedia) return pp;
+    if (fp != null) return fp;
+    return pp;
+  }
 
   @override
   void initState() {
@@ -149,13 +159,29 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     if (mounted) setState(() {});
   }
 
-  /// 当 quote_post_id 有值但 quotePost 为空时，拉取被引用帖子的详情
+  /// 当 quote_post_id 有值但 quotePost 缺少媒体时，拉取被引用帖子的详情
+  ///
+  /// 触发条件（任一）：
+  /// - `quotePost` 完全为 null（feed API 不返回嵌套数据）
+  /// - `quotePost` 存在但 `!hasMedia`（feed API 嵌入了最小版，缺 media_list —— 当前线上后端就是这种情况）
+  ///
+  /// 不论哪种情况，都需要用 /post/detail/{id} 拿完整数据，否则引用卡只能显示文字。
   void _maybeFetchQuotePost() {
     final post = widget.postModel;
-    if (post.quotePost != null) return; // 已有数据，无需拉取
     final qid = post.quoteRepostId;
+    // [debug] 打印决策路径
+    // ignore: avoid_print
+    print('[MaybeFetch] postId=${post.id} qid=$qid '
+        'embedded=${post.quotePost == null ? "null" : "hasMedia=${post.quotePost!.hasMedia}"} '
+        'fetched=${_fetchedQuotePost == null ? "null" : "hasMedia=${_fetchedQuotePost!.hasMedia}"} '
+        'isFetching=$_isFetchingQuote');
     if (qid == null) return;
     if (_isFetchingQuote) return;
+    // 任意一个来源已经有媒体就跳过
+    if ((post.quotePost != null && post.quotePost!.hasMedia) ||
+        (_fetchedQuotePost != null && _fetchedQuotePost!.hasMedia)) {
+      return;
+    }
 
     _isFetchingQuote = true;
     final postState = Provider.of<PostState>(context, listen: false);
@@ -957,9 +983,17 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
       final qContent = quotePost.bio ?? '';
       final qHasImage = quotePost.hasMedia;
       final qFirstMedia = qHasImage ? quotePost.effectiveMediaItems.first : null;
-      final qImageUrl = qFirstMedia == null
-          ? null
-          : (qFirstMedia.thumbUrl ?? qFirstMedia.url);
+      final pp = widget.postModel.quotePost;
+      // [debug] 引用帖媒体命中情况，便于排查后端是否回填了 media_list
+      // ignore: avoid_print
+      print('[QuoteCard] postId=${quotePost.id} '
+          'hasMedia=$qHasImage '
+          'mediaCount=${quotePost.effectiveMediaItems.length} '
+          'imagePath=${quotePost.imagePath} '
+          'firstMedia=${qFirstMedia == null ? "null" : "type=${qFirstMedia.isVideo ? "video" : (qFirstMedia.isImage ? "image" : "other")} thumb=${qFirstMedia.thumbUrl} url=${qFirstMedia.url}"} '
+          'embedded=${pp == null ? "null" : "hasMedia=${pp.hasMedia}"} '
+          'fetched=${_fetchedQuotePost == null ? "null" : "hasMedia=${_fetchedQuotePost!.hasMedia}"}'
+          '${!qHasImage ? " ⚠️" : ""}');
 
       return GestureDetector(
         onTap: () => _navigateToQuotedPostDetail(context, quotePost),
@@ -1016,27 +1050,19 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                   maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
-              // 图片（仅取首图，引用卡保持单图卡片尺寸约束）
-              if (qHasImage && qImageUrl != null) ...[
+              // 首图 / 首段视频（引用卡保持单 tile 尺寸约束）
+              // 视频：缩略图 + 居中播放按钮 + 时长（与 _buildMediaImage 风格一致）
+              // 图片：CachedNetworkImage + 错误占位（之前用 SizedBox.shrink 会整块消失）
+              if (qHasImage && qFirstMedia != null) ...[
                 Container(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: CachedNetworkImage(
+                  child: SizedBox(
                     height: 150,
                     width: double.infinity,
-                    fit: BoxFit.cover,
-                    imageUrl: qImageUrl,
-                    placeholder: (context, url) => Container(
-                      height: 150,
-                      color: appColors.surface,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: appColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => SizedBox.shrink(),
+                    child: qFirstMedia.isVideo
+                        ? _buildQuoteVideoPoster(appColors, qFirstMedia)
+                        : _buildQuoteImage(appColors, qFirstMedia),
                   ),
                 ),
               ],
@@ -1084,6 +1110,153 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         'This post is unavailable',
         style: TextStyle(color: appColors.textMuted, fontSize: 13),
       ),
+    );
+  }
+
+  /// 引用卡内首图（普通图片 / GIF）渲染
+  /// - 使用 [qFirstMedia.thumbUrl] ?? [qFirstMedia.url] 作为源
+  /// - 错误占位统一为 `Icon(broken_image)`（修复前是 `SizedBox.shrink()`，图片加载失败时整块消失）
+  Widget _buildQuoteImage(AppColors appColors, MediaItemModel item) {
+    final url = item.thumbUrl ?? item.url;
+    if (url == null || url.isEmpty) {
+      return Container(
+        color: appColors.surface,
+        child: Icon(Icons.broken_image, color: appColors.textSecondary),
+      );
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => Container(
+        color: appColors.surface,
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: appColors.textSecondary,
+          ),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: appColors.surface,
+        child: Icon(Icons.broken_image, color: appColors.textSecondary),
+      ),
+    );
+  }
+
+  /// 引用卡内首段视频渲染
+  /// - 有缩略图 → 缩略图作 poster + 居中播放按钮 + 时长
+  /// - 缩略图为 null（线上后端常见，video post 只回 url 不回 thumb_url）→ 不再用 .mp4 当图加载，
+  ///   改为「视频占位卡」（深色 surface + 大播放图标 + 时长），视觉明确告诉用户这是视频
+  /// - 完全没 URL → videocam_off 占位
+  /// - 真正播放由外层 GestureDetector → _navigateToQuotedPostDetail 跳到帖子详情页触发
+  Widget _buildQuoteVideoPoster(AppColors appColors, MediaItemModel item) {
+    final thumbUrl = item.thumbUrl;
+    final videoUrl = item.url;
+    final hasThumb = thumbUrl != null && thumbUrl.isNotEmpty;
+
+    // Case A2: 连视频 URL 都没有 → 直接显示「视频不可用」占位
+    if (!hasThumb && (videoUrl == null || videoUrl.isEmpty)) {
+      return Container(
+        color: appColors.surface,
+        child: Center(
+          child: Icon(
+            Icons.videocam_off_outlined,
+            color: appColors.textSecondary,
+            size: 32,
+          ),
+        ),
+      );
+    }
+
+    // Case A1: 有视频 URL 但缩略图为 null → 视频占位卡（不再把 .mp4 当图加载）
+    if (!hasThumb) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(color: appColors.surface),
+          // 居中大播放图标 —— 视觉上明确这是视频
+          const Center(
+            child: Icon(
+              Icons.play_circle_filled,
+              color: Colors.white70,
+              size: 56,
+            ),
+          ),
+          if (item.durationLabel.isNotEmpty)
+            Positioned(
+              right: 6,
+              bottom: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  item.durationLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
+    // Case A3: 有缩略图 → 原方案：缩略图作 poster + 播放按钮 + 时长
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        CachedNetworkImage(
+          imageUrl: thumbUrl,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(color: appColors.surface),
+          errorWidget: (context, url, error) => Container(
+            color: appColors.surface,
+            child: Icon(Icons.broken_image, color: appColors.textSecondary),
+          ),
+        ),
+        // 居中播放按钮 —— 视觉上明确告诉用户这是视频（修复前的 bug）
+        Center(
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.play_arrow,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+        ),
+        // 右下角时长标签 —— 与 _buildMediaImage 风格一致
+        if (item.durationLabel.isNotEmpty)
+          Positioned(
+            right: 6,
+            bottom: 6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                item.durationLabel,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
