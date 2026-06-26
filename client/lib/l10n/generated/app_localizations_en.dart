@@ -1602,4 +1602,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appIconPrimaryHint => 'Currently using the primary app icon.';
+
+  @override
+  String get usernameSetupTitle => 'Choose your username';
+
+  @override
+  String get usernameSetupWarning =>
+      'Your username cannot be changed once it is set. Please choose carefully.';
+
+  @override
+  String get usernameSetupEmptyError => 'Please enter a username';
+
+  @override
+  String get usernameSetupTooShortError =>
+      'Username must be at least 2 characters';
+
+  @override
+  String get usernameSetupFailed => 'Failed to set username, please try again';
 }

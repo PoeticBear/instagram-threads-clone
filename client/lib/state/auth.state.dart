@@ -41,6 +41,11 @@ class AuthState extends AppStates {
   // 默认空串，避免 late 未初始化访问抛 LateInitializationError。
   // 未登录时也允许被读取（结果为空串），上层据此决定是否渲染需登录态的页面。
   String userId = '';
+
+  /// 登录后若 username 为空，需强制补填。getProfileUser 判空置位，
+  /// 各「进入应用」出口据此弹出 UsernameSetupDialog。
+  bool needsUsernameSetup = false;
+
   late AuthState authRepository;
   UserModel? _userModel;
 
@@ -93,6 +98,7 @@ class AuthState extends AppStates {
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;
+    needsUsernameSetup = false;
     await authService.logout();
     notifyListeners();
     await getIt<SharedPreferenceHelper>().clearPreferenceValues();
@@ -112,6 +118,7 @@ class AuthState extends AppStates {
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;
+    needsUsernameSetup = false;
     isBusy = false; // 复位脏状态（getProfileUser 的 try 块可能已把 isBusy 设为 true）
     authService.clearLocalSession(); // 不 await
     getIt<SharedPreferenceHelper>().clearPreferenceValues();
@@ -184,12 +191,16 @@ class AuthState extends AppStates {
       notifyListeners();
 
       final response = await authService.signInWithApple(code: code);
+      debugPrint('[AppleLogin] auth.state: /auth/apple/login 返回 userId=${response.userId}');
 
       userId = response.userId?.toString() ?? '';
       authStatus = AuthStatus.LOGGED_IN;
 
       // Load user profile（与 signIn 行为一致，后续 getProfileUser 会拉 /user/me + /user/profile/{id}）
+      debugPrint('[AppleLogin] auth.state: 调用 getProfileUser 拉取资料并判空...');
       await getProfileUser();
+      debugPrint('[AppleLogin] auth.state: getProfileUser 完成 → '
+          'needsUsernameSetup=$needsUsernameSetup, _userModel.userName="${_userModel?.userName}", userId=$userId');
 
       if (userId.isEmpty) {
         authStatus = AuthStatus.NOT_LOGGED_IN;
@@ -488,17 +499,48 @@ class AuthState extends AppStates {
 
       getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
 
+      // username 为空 → 标记需强制补填，各「进入应用」出口据此弹窗。
+      needsUsernameSetup = (_userModel?.userName ?? '').isEmpty;
+      debugPrint('[AppleLogin] getProfileUser 判空: '
+          'userName="${_userModel?.userName}", '
+          'isEmpty=${(_userModel?.userName ?? '').isEmpty}, '
+          'needsUsernameSetup=$needsUsernameSetup');
+
       isBusy = false;
       notifyListeners();
     } on AuthException {
       // 会话失效：ApiClient 已尝试 refresh 且失败，forceSessionExpired 会通过
       // onSessionExpired 回调异步触发导航。这里不重置 isBusy，避免 UI 闪烁
       //（forceSessionExpired 内部的 notifyListeners 会覆盖）。
+      debugPrint('[AppleLogin] getProfileUser: 捕获 AuthException（会话失效）→ '
+          'needsUsernameSetup 未被设置，当前=$needsUsernameSetup');
       debugPrint('getProfileUser - session expired, waiting for forceSessionExpired');
     } catch (error) {
       isBusy = false;
       notifyListeners();
+      debugPrint('[AppleLogin] getProfileUser: 捕获异常 → $error '
+          '（needsUsernameSetup 未被设置，当前=$needsUsernameSetup）');
       debugPrint('getProfileUser error: $error');
+    }
+  }
+
+  /// 强制补填 username：调 PUT /user/username 存到服务端 → 刷新本地 _userModel → 清除标志。
+  /// 失败时抛出异常（ApiException 携带后端原因）；调用方负责 catch 并向用户展示，
+  /// 这样「username 已被占用」等后端错误能直接反馈给用户，而非笼统的「设置失败」。
+  Future<void> setUsername(String username) async {
+    isBusy = true;
+    notifyListeners();
+    try {
+      await userService.setUsername(username);
+
+      if (_userModel != null) {
+        _userModel = _userModel!.copyWith(userName: username);
+        getIt<SharedPreferenceHelper>().saveUserProfile(_userModel!);
+      }
+      needsUsernameSetup = false;
+    } finally {
+      isBusy = false;
+      notifyListeners();
     }
   }
 

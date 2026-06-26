@@ -11,8 +11,10 @@ class UserService {
   Future<UserInfo> getUserProfile(int userId) async {
     try {
       final response = await _apiClient.get('user/profile/$userId');
-      debugPrint('user_service.getUserProfile raw response: $response');
-      return UserInfo.fromJson(response['data']);
+      debugPrint('[AppleLogin] /user/profile/$userId 完整响应: $response');
+      final info = UserInfo.fromJson(response['data']);
+      debugPrint('[AppleLogin] /user/profile/$userId 解析: userId=${info.userId}, username="${info.username}"');
+      return info;
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -21,6 +23,7 @@ class UserService {
   }
 
   Future<UserInfo> updateProfile({
+    String? username,
     String? displayName,
     String? bio,
     String? websiteUrl,
@@ -33,6 +36,7 @@ class UserService {
   }) async {
     try {
       final body = <String, dynamic>{};
+      if (username != null) body['username'] = username;
       if (displayName != null) body['display_name'] = displayName;
       if (bio != null) body['bio'] = bio;
       if (websiteUrl != null) body['website_url'] = websiteUrl;
@@ -45,6 +49,17 @@ class UserService {
 
       final response = await _apiClient.put('user/profile', body: body);
       return UserInfo.fromJson(response['data']);
+    } on ApiException {
+      rethrow;
+    }
+  }
+
+  /// 首次设置用户名：`PUT /user/username`。
+  /// 服务端仅允许未设置过 username 的用户调用，并在写入时同步显示名称。
+  /// 失败时抛出 `ApiException`（携带后端原因，如「用户名已被占用」）。
+  Future<void> setUsername(String username) async {
+    try {
+      await _apiClient.put('user/username', body: {'username': username});
     } on ApiException {
       rethrow;
     }

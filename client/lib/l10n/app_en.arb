@@ -678,5 +678,10 @@
   "appIcon": "App Icon",
   "appIconChangeHint": "The icon will change the next time you leave the app.",
   "appIconNotSupportedAndroid": "Changing the app icon is only supported on iOS.",
-  "appIconPrimaryHint": "Currently using the primary app icon."
+  "appIconPrimaryHint": "Currently using the primary app icon.",
+  "usernameSetupTitle": "Choose your username",
+  "usernameSetupWarning": "Your username cannot be changed once it is set. Please choose carefully.",
+  "usernameSetupEmptyError": "Please enter a username",
+  "usernameSetupTooShortError": "Username must be at least 2 characters",
+  "usernameSetupFailed": "Failed to set username, please try again"
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:threads/auth/signup/register.dart';
+import 'package:threads/auth/username_setup_dialog.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/pages/home.dart';
 import 'package:threads/state/auth.state.dart';
@@ -55,6 +56,13 @@ class _NamePageState extends State<NamePage> {
     setState(() => _isLoading = false);
 
     if (result != null) {
+      debugPrint('[SignIn] name.dart 出口: result=$result, '
+          'needsUsernameSetup=${authState.needsUsernameSetup} → '
+          '${authState.needsUsernameSetup ? "弹窗" : "直接进首页"}');
+      // username 兜底：登录后若服务端 username 为空，强制补填才放行进首页
+      if (authState.needsUsernameSetup) {
+        await UsernameSetupDialog.show(context, authState);
+      }
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
@@ -128,6 +136,13 @@ class _NamePageState extends State<NamePage> {
     if (!mounted) return;
 
     if (result != null) {
+      debugPrint('[AppleLogin] name.dart 出口: result=$result, '
+          'needsUsernameSetup=${authState.needsUsernameSetup} → '
+          '${authState.needsUsernameSetup ? "弹窗" : "直接进首页"}');
+      // username 兜底：Apple 登录后若服务端 username 为空，强制补填才放行进首页
+      if (authState.needsUsernameSetup) {
+        await UsernameSetupDialog.show(context, authState);
+      }
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/auth/signup/name.dart';
+import 'package:threads/auth/username_setup_dialog.dart';
 import 'package:threads/helper/enum.dart';
 import 'package:threads/pages/home.dart';
 import 'package:threads/services/deep_link_service.dart';
@@ -36,6 +37,10 @@ class _SplashPageState extends State<SplashPage> {
         debugPrint('timer - after getProfileUser, userModel: ${state.userModel?.displayName}');
         // Process any pending deep link after login
         if (state.authStatus == AuthStatus.LOGGED_IN) {
+          // username 兜底：自动登录恢复后若 username 为空，同样强制补填
+          if (state.needsUsernameSetup) {
+            await UsernameSetupDialog.show(context, state);
+          }
           DeepLinkService.instance.processPendingLink();
         }
       } catch (e) {

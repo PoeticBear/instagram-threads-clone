@@ -3097,6 +3097,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Currently using the primary app icon.'**
   String get appIconPrimaryHint;
+
+  /// No description provided for @usernameSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your username'**
+  String get usernameSetupTitle;
+
+  /// No description provided for @usernameSetupWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Your username cannot be changed once it is set. Please choose carefully.'**
+  String get usernameSetupWarning;
+
+  /// No description provided for @usernameSetupEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a username'**
+  String get usernameSetupEmptyError;
+
+  /// No description provided for @usernameSetupTooShortError.
+  ///
+  /// In en, this message translates to:
+  /// **'Username must be at least 2 characters'**
+  String get usernameSetupTooShortError;
+
+  /// No description provided for @usernameSetupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to set username, please try again'**
+  String get usernameSetupFailed;
 }
 
 class _AppLocalizationsDelegate

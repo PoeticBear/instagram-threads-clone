@@ -169,12 +169,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Username (@handle)
+                            // Username (@handle) —— 唯一身份标识，设定后不可修改
                             _fieldSection(
                               label: AppLocalizations.of(context)!.username,
                               controller: _userName,
                               placeholder: AppLocalizations.of(context)!.usernameHint,
                               leadingIcon: Icons.alternate_email,
+                              readOnly: true,
                             ),
                             // Name + Avatar row
                             Row(
@@ -264,14 +265,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required TextEditingController controller,
     required String placeholder,
     IconData? leadingIcon,
+    bool readOnly = false,
   }) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
+        Row(
+          children: [
+            Text(label, style: TextStyle(color: appColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
+            if (readOnly) ...[
+              const SizedBox(width: 6),
+              Icon(Icons.lock_outline, size: 14, color: appColors.textSecondary),
+            ],
+          ],
+        ),
         CupertinoTextField(
           controller: controller,
+          readOnly: readOnly,
           prefix: Icon(leadingIcon ?? Icons.add, size: 15, color: appColors.textPrimary),
           style: TextStyle(color: appColors.textPrimary, fontSize: 18),
           placeholder: placeholder,

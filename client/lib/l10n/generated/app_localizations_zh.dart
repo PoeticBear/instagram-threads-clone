@@ -1575,4 +1575,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get appIconPrimaryHint => '当前为主图标。';
+
+  @override
+  String get usernameSetupTitle => '设置你的用户名';
+
+  @override
+  String get usernameSetupWarning => '用户名一旦设定将无法修改，请谨慎填写。';
+
+  @override
+  String get usernameSetupEmptyError => '请输入用户名';
+
+  @override
+  String get usernameSetupTooShortError => '用户名至少需要 2 个字符';
+
+  @override
+  String get usernameSetupFailed => '设置用户名失败，请重试';
 }

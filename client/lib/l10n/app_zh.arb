@@ -678,5 +678,10 @@
   "appIcon": "应用图标",
   "appIconChangeHint": "下次将应用切到后台时图标会自动更新。",
   "appIconNotSupportedAndroid": "更换桌面图标仅在 iOS 上可用。",
-  "appIconPrimaryHint": "当前为主图标。"
+  "appIconPrimaryHint": "当前为主图标。",
+  "usernameSetupTitle": "设置你的用户名",
+  "usernameSetupWarning": "用户名一旦设定将无法修改，请谨慎填写。",
+  "usernameSetupEmptyError": "请输入用户名",
+  "usernameSetupTooShortError": "用户名至少需要 2 个字符",
+  "usernameSetupFailed": "设置用户名失败，请重试"
 }

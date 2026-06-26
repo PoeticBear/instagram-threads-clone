@@ -101,6 +101,19 @@ class AuthService {
       );
 
       final data = response['data'];
+
+      // dev 环境打印完整 Apple 登录响应，便于调试 username 是否为空；prod 不打印
+      if (ApiConfig.environment == 'dev') {
+        debugPrint('═══════════ [signInWithApple] 服务端返回 ═══════════');
+        debugPrint(const JsonEncoder.withIndent('  ').convert(response));
+        debugPrint('═══════════════════════════════════════════════════');
+        // 显式提取 username 字段，一眼看出是否为空 / 字段名是否匹配
+        debugPrint('[AppleLogin] /auth/apple/login → '
+            'data.username="${data['username']}" (${data['username'].runtimeType}), '
+            'id=${data['id']}, user_id=${data['user_id']}, '
+            'hasAccessToken=${data['access_token'] != null}');
+      }
+
       await _saveTokens(
         accessToken: data['access_token'],
         refreshToken: data['refresh_token'],
@@ -176,8 +189,11 @@ class AuthService {
   Future<UserInfo> getCurrentUser() async {
     try {
       final response = await _apiClient.get('user/me');
-      debugPrint('auth_service.getCurrentUser raw response: $response');
-      return UserInfo.fromJson(response['data']);
+      debugPrint('[AppleLogin] /user/me 完整响应: $response');
+      final info = UserInfo.fromJson(response['data']);
+      debugPrint('[AppleLogin] /user/me 解析: userId=${info.userId}, '
+          'username="${info.username}" (len=${info.username.length})');
+      return info;
     } on ApiException {
       rethrow;
     } catch (e) {

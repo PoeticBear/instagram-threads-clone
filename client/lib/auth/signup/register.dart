@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/auth/username_setup_dialog.dart';
 import 'package:threads/pages/home.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/theme/app_colors.dart';
@@ -76,6 +77,10 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() => _isLoading = false);
 
       if (result != null) {
+        // 防御性：账号密码注册已填 username，正常不触发；保持一致拦截
+        if (authState.needsUsernameSetup) {
+          await UsernameSetupDialog.show(context, authState);
+        }
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),
