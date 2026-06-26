@@ -38,8 +38,8 @@ class WsConfig {
 
   // ── URL ──────────────────────────────────────────────────────
   // 与 ApiConfig.baseUrl 对齐:prod 走 wss,dev 走 ws。
-  // 服务端确认实际路径后(可能是 /ws/v1 或 /chat),改这两行。
-  static const String _prodWsUrl = 'wss://api.tweetcaht.com/ws';
+  // 路径两端保持一致(/websocket/ws);服务端若调整路由再同步改这两行。
+  static const String _prodWsUrl = 'wss://api.tweetcaht.com/websocket/ws';
   static const String _devWsUrl = 'ws://192.168.1.27:8005/websocket/ws';
 
   /// 运行时根据 [ApiConfig.environment] 选择,与 HTTP 同环境。
