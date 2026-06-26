@@ -706,14 +706,35 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         children: [
                           GestureDetector(
                             onTap: () async {
-                              try {
-                                if (reply.isLiked) {
-                                  await postService.unlikeReply(reply.id);
-                                } else {
-                                  await postService.likeReply(reply.id);
+                              final old = reply;
+                              final newLiked = !old.isLiked;
+                              // 乐观更新：先翻转本地 isLiked / likesCount，让心形即时变红。
+                              setState(() {
+                                final idx = _replies.indexWhere((r) => r.id == old.id);
+                                if (idx != -1) {
+                                  _replies[idx] = old.copyWith(
+                                    isLiked: newLiked,
+                                    likesCount: newLiked
+                                        ? old.likesCount + 1
+                                        : (old.likesCount > 0 ? old.likesCount - 1 : 0),
+                                  );
                                 }
-                                if (mounted) setState(() {});
-                              } catch (_) {}
+                              });
+                              try {
+                                if (old.isLiked) {
+                                  await postService.unlikeReply(old.id);
+                                } else {
+                                  await postService.likeReply(old.id);
+                                }
+                              } catch (_) {
+                                // 接口失败：回滚到点赞前状态。
+                                if (mounted) {
+                                  setState(() {
+                                    final idx = _replies.indexWhere((r) => r.id == old.id);
+                                    if (idx != -1) _replies[idx] = old;
+                                  });
+                                }
+                              }
                             },
                             child: Icon(
                               reply.isLiked ? Icons.favorite : Icons.favorite_border,
@@ -974,14 +995,27 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 const SizedBox(height: 6),
                 GestureDetector(
                   onTap: () async {
+                    final postState = Provider.of<PostState>(context, listen: false);
+                    final old = child;
+                    final newLiked = !old.isLiked;
+                    // 乐观更新：二级回复数据源在 PostState，复用 updateReplyInLists
+                    // 同步翻转 isLiked / likesCount，Consumer 自动 rebuild 让心形即时变红。
+                    postState.updateReplyInLists(old.copyWith(
+                      isLiked: newLiked,
+                      likesCount: newLiked
+                          ? old.likesCount + 1
+                          : (old.likesCount > 0 ? old.likesCount - 1 : 0),
+                    ));
                     try {
-                      if (child.isLiked) {
-                        await postService.unlikeReply(child.id);
+                      if (old.isLiked) {
+                        await postService.unlikeReply(old.id);
                       } else {
-                        await postService.likeReply(child.id);
+                        await postService.likeReply(old.id);
                       }
-                      if (mounted) setState(() {});
-                    } catch (_) {}
+                    } catch (_) {
+                      // 接口失败：回滚到点赞前状态。
+                      postState.updateReplyInLists(old);
+                    }
                   },
                   child: Row(
                     children: [
