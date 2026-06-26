@@ -13,6 +13,7 @@
     }
   },
   "noPostsYet": "No posts yet",
+  "quotedPostUnavailable": "This post is unavailable",
   "feedLoadFailedServer": "The server is temporarily unavailable. Please try again later.",
   "feedLoadFailedNetwork": "Network connection failed. Please check your network and retry.",
   "retry": "Retry",

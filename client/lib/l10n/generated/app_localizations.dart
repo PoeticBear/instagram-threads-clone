@@ -146,6 +146,12 @@ abstract class AppLocalizations {
   /// **'No posts yet'**
   String get noPostsYet;
 
+  /// No description provided for @quotedPostUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This post is unavailable'**
+  String get quotedPostUnavailable;
+
   /// No description provided for @feedLoadFailedServer.
   ///
   /// In en, this message translates to:

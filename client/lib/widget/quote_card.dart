@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/pages/post/post_detail_page.dart';
 import 'package:threads/pages/profile/profile.dart';
@@ -277,7 +278,7 @@ class _QuoteCardState extends State<QuoteCard> {
         border: Border.all(color: appColors.border, width: 0.5),
       ),
       child: Text(
-        'This post is unavailable',
+        AppLocalizations.of(context)!.quotedPostUnavailable,
         style: TextStyle(color: appColors.textMuted, fontSize: 13),
       ),
     );

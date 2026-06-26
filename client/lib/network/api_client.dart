@@ -51,40 +51,50 @@ class ApiClient {
   Future<dynamic> get(
     String path, {
     Map<String, dynamic>? queryParameters,
+    bool silent = false,
   }) async {
-    return _request('GET', path, queryParameters: queryParameters);
+    return _request('GET', path,
+        queryParameters: queryParameters, silent: silent);
   }
 
   Future<dynamic> post(
     String path, {
     dynamic body,
     Map<String, dynamic>? queryParameters,
+    bool silent = false,
   }) async {
-    return _request('POST', path, body: body, queryParameters: queryParameters);
+    return _request('POST', path,
+        body: body, queryParameters: queryParameters, silent: silent);
   }
 
   Future<dynamic> put(
     String path, {
     dynamic body,
     Map<String, dynamic>? queryParameters,
+    bool silent = false,
   }) async {
-    return _request('PUT', path, body: body, queryParameters: queryParameters);
+    return _request('PUT', path,
+        body: body, queryParameters: queryParameters, silent: silent);
   }
 
   Future<dynamic> patch(
     String path, {
     dynamic body,
     Map<String, dynamic>? queryParameters,
+    bool silent = false,
   }) async {
-    return _request('PATCH', path, body: body, queryParameters: queryParameters);
+    return _request('PATCH', path,
+        body: body, queryParameters: queryParameters, silent: silent);
   }
 
   Future<dynamic> delete(
     String path, {
     dynamic body,
     Map<String, dynamic>? queryParameters,
+    bool silent = false,
   }) async {
-    return _request('DELETE', path, body: body, queryParameters: queryParameters);
+    return _request('DELETE', path,
+        body: body, queryParameters: queryParameters, silent: silent);
   }
 
   /// 外层请求编排：401 → refresh → 重试一次。
@@ -97,10 +107,11 @@ class ApiClient {
     dynamic body,
     Map<String, dynamic>? queryParameters,
     bool isRetry = false,
+    bool silent = false,
   }) async {
     try {
       return await _sendOnce(method, path,
-          body: body, queryParameters: queryParameters);
+          body: body, queryParameters: queryParameters, silent: silent);
     } on AuthException catch (e) {
       const skipPaths = [
         'auth/token/refresh',
@@ -130,7 +141,8 @@ class ApiClient {
       return _request(method, path,
           body: body,
           queryParameters: queryParameters,
-          isRetry: true);
+          isRetry: true,
+          silent: silent);
     }
   }
 
@@ -169,6 +181,7 @@ class ApiClient {
     String path, {
     dynamic body,
     Map<String, dynamic>? queryParameters,
+    bool silent = false,
   }) async {
     final stopwatch = Stopwatch()..start();
 
@@ -268,7 +281,8 @@ class ApiClient {
         error: e.message,
         elapsedMs: stopwatch.elapsedMilliseconds,
       );
-      if (e is ServerException) {
+      // silent=true 时（如引用帖后台预取）抑制全局 SnackBar；ApiLogger 日志照打。
+      if (e is ServerException && !silent) {
         NetworkErrorNotifier.showServerError(e);
       }
       rethrow;

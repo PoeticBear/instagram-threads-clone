@@ -685,7 +685,10 @@ class PostState extends AppStates {
   /// Fetch a single post by ID (used when list API omits quote_post).
   Future<PostModel?> fetchQuotePostDetail(int quotePostId) async {
     try {
-      final apiPost = await postService.getPostDetail(quotePostId.toString());
+      // silent: 引用帖补抓属于后台预取，失败时引用卡会用占位文案兜底，
+      // 无需再弹全局 SnackBar（避免「服务暂时不可用 [code=101100]」重复打扰）。
+      final apiPost = await postService.getPostDetail(quotePostId.toString(),
+          silent: true);
       // [debug] service Post 关键字段
       // ignore: avoid_print
       print('[fetchQuotePostDetail] id=$quotePostId '

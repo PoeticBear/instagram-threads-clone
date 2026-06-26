@@ -13,6 +13,7 @@
     }
   },
   "noPostsYet": "暂无帖子",
+  "quotedPostUnavailable": "这条帖子已无法显示",
   "feedLoadFailedServer": "服务器开小差了，请稍后重试",
   "feedLoadFailedNetwork": "网络连接失败，请检查网络后重试",
   "retry": "重试",

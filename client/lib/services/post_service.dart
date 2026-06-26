@@ -121,9 +121,10 @@ class PostService {
     }
   }
 
-  Future<Post> getPostDetail(String postId) async {
+  Future<Post> getPostDetail(String postId, {bool silent = false}) async {
     try {
-      final response = await _apiClient.get('post/detail/$postId');
+      final response =
+          await _apiClient.get('post/detail/$postId', silent: silent);
       // [debug] 原始 JSON（仅引用帖 fetch 触发，体积可控）
       // ignore: avoid_print
       print('[getPostDetail] id=$postId RAW=${response['data']}');

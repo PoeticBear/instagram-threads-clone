@@ -35,6 +35,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPostsYet => 'No posts yet';
 
   @override
+  String get quotedPostUnavailable => 'This post is unavailable';
+
+  @override
   String get feedLoadFailedServer =>
       'The server is temporarily unavailable. Please try again later.';
 

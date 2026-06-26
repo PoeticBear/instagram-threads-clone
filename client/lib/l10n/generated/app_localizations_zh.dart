@@ -35,6 +35,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPostsYet => '暂无帖子';
 
   @override
+  String get quotedPostUnavailable => '这条帖子已无法显示';
+
+  @override
   String get feedLoadFailedServer => '服务器开小差了，请稍后重试';
 
   @override
