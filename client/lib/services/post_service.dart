@@ -414,6 +414,9 @@ class PostService {
     /// 嵌套回复的父回复 ID（OpenAPI 字段 parent_id）。
     /// 为 null 时表示创建帖子的一级回复,非 null 时表示创建某条回复的子回复。
     int? parentId,
+    /// 被提及用户的 userId 列表（@提及，服务端字段 mentioned_user_ids）。
+    /// 回复输入框通过 @ 自动补全选中用户时收集；服务端据此关联 + 发通知。
+    List<int>? mentionedUserIds,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -422,6 +425,10 @@ class PostService {
       };
       if (imageUrl != null) body['image_url'] = imageUrl;
       if (parentId != null) body['parent_id'] = parentId;
+      // mentioned_user_ids：仅非空时发送，避免空数组歧义（与 createPost 一致）。
+      if (mentionedUserIds != null && mentionedUserIds.isNotEmpty) {
+        body['mentioned_user_ids'] = mentionedUserIds;
+      }
 
       print('📤 createReply 请求体: ${json.encode(body)}');
       final response = await _apiClient.post('post/reply', body: body);

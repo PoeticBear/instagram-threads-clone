@@ -1194,6 +1194,7 @@ class PostState extends AppStates {
     required String postId,
     required Reply parentReply,
     required String content,
+    List<int>? mentionedUserIds,
   }) async {
     try {
       final parentIdInt = int.tryParse(parentReply.id);
@@ -1201,6 +1202,7 @@ class PostState extends AppStates {
         postId: postId,
         content: content,
         parentId: parentIdInt,
+        mentionedUserIds: mentionedUserIds,
       );
       // 1. 插入子回复列表(若父级未展开,先建立列表并展开)
       final children = _childRepliesByParent.putIfAbsent(

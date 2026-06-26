@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,9 @@ import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/helper/network_error.dart';
 import 'package:threads/model/post.module.dart';
 import 'package:threads/model/user.module.dart';
+import 'package:threads/services/auth_service.dart';
 import 'package:threads/services/post_service.dart';
+import 'package:threads/services/search_service.dart';
 import 'package:threads/common/locator.dart';
 import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:threads/theme/app_colors.dart';
@@ -16,6 +19,7 @@ import 'package:threads/state/post.state.dart';
 import 'package:threads/widget/poll_widget.dart';
 import 'package:threads/widget/quote_card.dart';
 import 'package:threads/widget/inline_video_player.dart';
+import 'package:threads/widget/mention_overlay.dart';
 import 'package:threads/widget/reply_bottom_sheet.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -46,8 +50,24 @@ class _PostDetailPageState extends State<PostDetailPage> {
   final FocusNode _replyFocusNode = FocusNode();
   bool _isPosting = false;
 
+  // ─── @mention 用户选择面板 ───
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _mentionOverlay;
+  List<UserInfo> _filteredUsers = const [];
+  // 当前 @token（含 @）在文本中的起始 offset，-1 表示无激活 token
+  int _mentionTokenStart = -1;
+  // 防抖 Timer：用户连续输入时只发最后一次请求
+  Timer? _mentionDebounce;
+  // 已选中的 mention 用户：username → userId。
+  // 选中补全面板里的用户时写入；正文编辑时按 username 是否仍出现在文本里
+  // 自动同步过滤。提交回复时把 values 作为 mentionedUserIds 传给服务端。
+  final Map<String, int> _mentionUserIds = {};
+
   @override
   void dispose() {
+    _replyController.removeListener(_onTextChanged);
+    _mentionDebounce?.cancel();
+    _hideOverlay();
     _replyController.dispose();
     _replyFocusNode.dispose();
     super.dispose();
@@ -56,8 +76,161 @@ class _PostDetailPageState extends State<PostDetailPage> {
   @override
   void initState() {
     super.initState();
+    _replyController.addListener(_onTextChanged);
     _post = widget.postModel;
     _loadData();
+  }
+
+  // ─── @mention 用户选择面板 ────────────────────────────────
+
+  /// 文本变化监听：检测 @mention 并刷新浮层。
+  void _onTextChanged() {
+    // 同步 mention userId 集合：正文里不再出现的 username 自动移除。
+    _syncMentionUserIds();
+    final token = _detectMentionToken();
+    if (token == null) {
+      _mentionTokenStart = -1;
+      _hideOverlay();
+      return;
+    }
+    _mentionTokenStart = token.start;
+    _filterAndShow(token.query);
+  }
+
+  /// 同步 [_mentionUserIds]：检查已记录的每个 username 是否仍以
+  /// `@username` 形式出现在正文中，把不再出现的移除（用户删除/改名/覆盖时同步）。
+  void _syncMentionUserIds() {
+    if (_mentionUserIds.isEmpty) return;
+    final text = _replyController.text;
+    final toRemove = <String>[];
+    _mentionUserIds.forEach((username, _) {
+      final atUsername = '@$username';
+      final idx = text.indexOf(atUsername);
+      if (idx < 0) {
+        toRemove.add(username);
+        return;
+      }
+      // 排除邮箱：@ 前若是 word 字符则不算 mention。
+      if (idx > 0 && RegExp(r'[A-Za-z0-9_]').hasMatch(text[idx - 1])) {
+        toRemove.add(username);
+        return;
+      }
+      // 右边界：@username 后若仍是用户名字符，则它只是更长 username 的前缀。
+      final after = idx + atUsername.length;
+      if (after < text.length &&
+          RegExp(r'[A-Za-z0-9_.\-]').hasMatch(text[after])) {
+        toRemove.add(username);
+      }
+    });
+    for (final u in toRemove) {
+      _mentionUserIds.remove(u);
+    }
+  }
+
+  /// 从光标位置向前查找最近的合法 @token。
+  /// 返回 (start, query)：start 是含 @ 的起始 offset，query 是不含 @ 的查询串。
+  /// 只输了一个 @（query 为空）时返回 null —— 不弹面板。
+  ({int start, String query})? _detectMentionToken() {
+    final text = _replyController.text;
+    final selection = _replyController.selection;
+    if (!selection.isValid || !selection.isCollapsed) return null;
+    final cursor = selection.baseOffset;
+    if (cursor < 0 || cursor > text.length) return null;
+
+    // 1. 从光标向前找最近的 '@'
+    int i = cursor - 1;
+    while (i >= 0) {
+      final ch = text[i];
+      if (ch == '@') break;
+      // token 内部只允许字母 / 数字 / 下划线；遇到空格或标点 → 非 token
+      if (!RegExp(r'[A-Za-z0-9_]').hasMatch(ch)) return null;
+      i--;
+    }
+    if (i < 0) return null; // 没找到 @
+
+    // 2. @ 前必须是边界（排除 alice@bob 这种邮箱场景）
+    if (i > 0 && RegExp(r'[A-Za-z0-9_]').hasMatch(text[i - 1])) return null;
+
+    // 3. 提取 @ 和光标之间的字符作为 query
+    final query = text.substring(i + 1, cursor);
+    if (query.isEmpty) return null; // 只输了一个 @，不弹
+    if (!RegExp(r'^[A-Za-z0-9_]+$').hasMatch(query)) return null;
+    return (start: i, query: query);
+  }
+
+  /// 调用服务端接口搜索用户并显示面板（带 250ms 防抖）。
+  /// 用户连续输入时只发最后一次请求；接口失败 / 空结果 → 关闭面板。
+  void _filterAndShow(String query) {
+    _mentionDebounce?.cancel();
+    _mentionDebounce = Timer(const Duration(milliseconds: 250), () async {
+      if (!mounted) return;
+      try {
+        final users = await SearchService(apiClient: getIt())
+            .searchMentionUsers(query);
+        if (!mounted) return;
+        if (users.isEmpty) {
+          _hideOverlay();
+          return;
+        }
+        _filteredUsers = users;
+        _showOverlay();
+      } catch (_) {
+        if (!mounted) return;
+        _hideOverlay();
+      }
+    });
+  }
+
+  /// 创建并插入用户选择面板（通过 LayerLink 锚定到 TextField 下方）。
+  void _showOverlay() {
+    _mentionOverlay?.remove();
+    _mentionOverlay = null;
+
+    final overlay = OverlayEntry(
+      builder: (ctx) => Positioned(
+        width: MediaQuery.of(ctx).size.width - 28,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          targetAnchor: Alignment.bottomLeft,
+          followerAnchor: Alignment.topLeft,
+          offset: const Offset(0, 8),
+          child: MentionOverlay(
+            users: _filteredUsers,
+            onSelected: _onUserSelected,
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context, rootOverlay: true).insert(overlay);
+    _mentionOverlay = overlay;
+  }
+
+  /// 关闭用户选择面板。
+  void _hideOverlay() {
+    _mentionOverlay?.remove();
+    _mentionOverlay = null;
+    _filteredUsers = const [];
+  }
+
+  /// 选中某个用户后，把光标前的 @xxx 替换为 `@username `（含尾随空格），
+  /// 光标移到空格之后，关闭面板；同时记录 username → userId。
+  void _onUserSelected(UserInfo user) {
+    if (_mentionTokenStart < 0) {
+      _hideOverlay();
+      return;
+    }
+    final text = _replyController.text;
+    final cursor = _replyController.selection.baseOffset;
+    final replacement = '@${user.username} ';
+    final newText = text.replaceRange(_mentionTokenStart, cursor, replacement);
+    _replyController.text = newText;
+    final newCursor = _mentionTokenStart + replacement.length;
+    _replyController.selection = TextSelection.collapsed(offset: newCursor);
+    _mentionTokenStart = -1;
+    if (user.username.isNotEmpty && user.userId > 0) {
+      _mentionUserIds[user.username] = user.userId;
+    }
+    _hideOverlay();
   }
 
   Future<void> _loadData() async {
@@ -1017,24 +1190,28 @@ class _PostDetailPageState extends State<PostDetailPage> {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _replyController,
-              focusNode: _replyFocusNode,
-              style: TextStyle(color: appColors.textPrimary, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context)!.writeAReply,
-                hintStyle: TextStyle(color: appColors.textSecondary),
-                filled: true,
-                fillColor: appColors.surface,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
+            child: CompositedTransformTarget(
+              link: _layerLink,
+              child: TextField(
+                controller: _replyController,
+                focusNode: _replyFocusNode,
+                style: TextStyle(color: appColors.textPrimary, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context)!.writeAReply,
+                  hintStyle: TextStyle(color: appColors.textSecondary),
+                  filled: true,
+                  fillColor: appColors.surface,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  isDense: true,
                 ),
-                isDense: true,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _postReply(),
               ),
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _postReply(),
             ),
           ),
           SizedBox(width: 8),
@@ -1074,11 +1251,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final content = _replyController.text.trim();
     if (content.isEmpty) return;
 
+    // 先同步一次 mention 集合（用户可能直接点发送而未触发最后一次文本变化），
+    // 再把被提及用户的 userId 列表随回复一起提交（服务端字段 mentioned_user_ids）。
+    _syncMentionUserIds();
+    final mentionedUserIds = _mentionUserIds.values.toList();
+
     setState(() => _isPosting = true);
     try {
       final newReply = await postService.createReply(
         postId: widget.postId,
         content: content,
+        mentionedUserIds: mentionedUserIds,
       );
       if (mounted) {
         Provider.of<PostState>(context, listen: false)
