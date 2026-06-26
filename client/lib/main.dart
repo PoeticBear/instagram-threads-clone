@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:threads/auth/signup/name.dart';
 import 'package:threads/common/locator.dart';
@@ -41,6 +42,12 @@ List<CameraDescription> cameras = [];
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 全局锁竖屏：Info.plist 已放开横屏（供 MediaViewerPage 手动切横屏用），
+  // 这里默认把整个 App 锁回竖屏，避免首页 / 发帖页等跟着设备旋转。
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
 
   // Initialize cameras
   try {
