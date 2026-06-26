@@ -19,9 +19,9 @@ import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/media_layout_preferences.state.dart';
 import 'package:threads/theme/app_colors.dart';
-import 'package:threads/widget/circle_avatar.dart';
 import 'package:threads/widget/poll_widget.dart';
 import 'package:threads/widget/user_avatar_with_follow.dart';
+import 'package:threads/widget/quote_card.dart';
 import 'package:threads/widget/video_player_pool.dart';
 import 'package:threads/pages/media/media_viewer_page.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -63,9 +63,6 @@ class FeedPostWidget extends StatefulWidget {
 }
 
 class _FeedPostWidgetState extends State<FeedPostWidget> {
-  PostModel? _fetchedQuotePost;
-  bool _isFetchingQuote = false;
-
   /// 帖子正文展开/收起状态：默认收起，超过 [kCollapsedMaxLines] 行时显示"展开全文"按钮。
   /// 每个帖子的展开状态是独立的（一个帖子展开不会影响其他帖子）。
   bool _isTextExpanded = false;
@@ -82,25 +79,10 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
   /// username 即使被改名也不影响路由。
   final Map<int, TapGestureRecognizer> _mentionRecognizers = {};
 
-  /// 被引用帖子的有效数据：
-  /// - 选有 media 的那个；都没有 media 时用 _fetchedQuotePost（更新，更可信）
-  /// - 关键是**不能**让一个空数据的 _fetchedQuotePost 永远盖住 post.quotePost（即便后者也空），
-  ///   因为我们还要靠 post.quotePost 的存在性来决定要不要再 fetch 一次。
-  /// 因此 getter 不直接返回 _fetchedQuotePost，而是让调用方自己选。
-  PostModel? get _effectiveQuotePost {
-    final fp = _fetchedQuotePost;
-    final pp = widget.postModel.quotePost;
-    if (fp != null && fp.hasMedia) return fp;
-    if (pp != null && pp.hasMedia) return pp;
-    if (fp != null) return fp;
-    return pp;
-  }
-
   @override
   void initState() {
     super.initState();
-    _maybeFetchQuotePost();
-    // 订阅 VideoPlayerPool 变更：池内 controller ready 后触发重建
+    // 订阅 VideoPlayerPool 变更：池内 controller ready 后触发重建（主帖视频用）
     VideoPlayerPool.instance.version.addListener(_onPoolChanged);
   }
 
@@ -109,11 +91,9 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     super.didUpdateWidget(oldWidget);
     // 帖子数据变化时（编辑、刷新等），清理不在新 mentionedUsers 集合里的 recognizer。
     final validIds = <int>{};
-    for (final p in [widget.postModel, widget.postModel.quotePost]) {
-      if (p?.mentionedUsers != null) {
-        for (final m in p!.mentionedUsers!) {
-          validIds.add(m.userId);
-        }
+    if (widget.postModel.mentionedUsers != null) {
+      for (final m in widget.postModel.mentionedUsers!) {
+        validIds.add(m.userId);
       }
     }
     final expired = _mentionRecognizers.keys
@@ -159,49 +139,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     if (mounted) setState(() {});
   }
 
-  /// 当 quote_post_id 有值但 quotePost 缺少媒体时，拉取被引用帖子的详情
-  ///
-  /// 触发条件（任一）：
-  /// - `quotePost` 完全为 null（feed API 不返回嵌套数据）
-  /// - `quotePost` 存在但 `!hasMedia`（feed API 嵌入了最小版，缺 media_list —— 当前线上后端就是这种情况）
-  ///
-  /// 不论哪种情况，都需要用 /post/detail/{id} 拿完整数据，否则引用卡只能显示文字。
-  void _maybeFetchQuotePost() {
-    final post = widget.postModel;
-    final qid = post.quoteRepostId;
-    // [debug] 打印决策路径
-    // ignore: avoid_print
-    print('[MaybeFetch] postId=${post.id} qid=$qid '
-        'embedded=${post.quotePost == null ? "null" : "hasMedia=${post.quotePost!.hasMedia}"} '
-        'fetched=${_fetchedQuotePost == null ? "null" : "hasMedia=${_fetchedQuotePost!.hasMedia}"} '
-        'isFetching=$_isFetchingQuote');
-    if (qid == null) return;
-    if (_isFetchingQuote) return;
-    // 任意一个来源已经有媒体就跳过
-    if ((post.quotePost != null && post.quotePost!.hasMedia) ||
-        (_fetchedQuotePost != null && _fetchedQuotePost!.hasMedia)) {
-      return;
-    }
-
-    _isFetchingQuote = true;
-    final postState = Provider.of<PostState>(context, listen: false);
-    postState.fetchQuotePostDetail(qid).then((quotePost) {
-      if (!mounted) return;
-      setState(() {
-        if (quotePost != null) {
-          _fetchedQuotePost = quotePost;
-        }
-        _isFetchingQuote = false;
-      });
-    }).catchError((_) {
-      if (mounted) {
-        setState(() {
-          _isFetchingQuote = false;
-        });
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = widget.postModel.user;
@@ -212,7 +149,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     final hasMedia = widget.postModel.hasMedia;
     final hasPoll = widget.postModel.pollData != null;
     final hasQuoteId = widget.postModel.quoteRepostId != null;
-    final quotePost = _effectiveQuotePost;
     // 当前登录用户 ID（用于「加号」组件判断是否显示自己帖子的加号）
     final currentUserId = int.tryParse(
       Provider.of<AuthState>(context, listen: false).userId,
@@ -313,16 +249,12 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                 child: _buildPostContent(appColors),
               ),
             ),
-            // ── 引用帖子预览卡片 ──
+            // ── 引用帖子预览卡片 ──（抽成 QuoteCard 共享组件，详情页复用）
             if (hasQuoteId) ...[
               Container(height: 8),
               Padding(
                 padding: EdgeInsets.only(left: 40, right: 10),
-                child: _buildQuoteCard(
-                  context: context,
-                  quotePost: quotePost,
-                  appColors: appColors,
-                ),
+                child: QuoteCard(parentPost: widget.postModel),
               ),
             ],
             if (hasPoll)
@@ -966,300 +898,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
     );
   }
 
-  // ────────────────── 引用帖子卡片 ──────────────────
-
-  Widget _buildQuoteCard({
-    required BuildContext context,
-    required PostModel? quotePost,
-    required AppColors appColors,
-  }) {
-    // 情况 1: 有完整的被引用帖子数据
-    if (quotePost != null) {
-      final qUser = quotePost.user;
-      final qDisplayName = qUser?.displayName?.isNotEmpty == true
-          ? qUser!.displayName!
-          : (qUser?.userName?.isNotEmpty == true ? qUser!.userName! : '');
-      final qAvatar = qUser?.profilePic ?? '';
-      final qContent = quotePost.bio ?? '';
-      final qHasImage = quotePost.hasMedia;
-      final qFirstMedia = qHasImage ? quotePost.effectiveMediaItems.first : null;
-      final pp = widget.postModel.quotePost;
-      // [debug] 引用帖媒体命中情况，便于排查后端是否回填了 media_list
-      // ignore: avoid_print
-      print('[QuoteCard] postId=${quotePost.id} '
-          'hasMedia=$qHasImage '
-          'mediaCount=${quotePost.effectiveMediaItems.length} '
-          'imagePath=${quotePost.imagePath} '
-          'firstMedia=${qFirstMedia == null ? "null" : "type=${qFirstMedia.isVideo ? "video" : (qFirstMedia.isImage ? "image" : "other")} thumb=${qFirstMedia.thumbUrl} url=${qFirstMedia.url}"} '
-          'embedded=${pp == null ? "null" : "hasMedia=${pp.hasMedia}"} '
-          'fetched=${_fetchedQuotePost == null ? "null" : "hasMedia=${_fetchedQuotePost!.hasMedia}"}'
-          '${!qHasImage ? " ⚠️" : ""}');
-
-      return GestureDetector(
-        onTap: () => _navigateToQuotedPostDetail(context, quotePost),
-        child: Container(
-          padding: EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: appColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: appColors.border, width: 0.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 作者信息行
-              if (qDisplayName.isNotEmpty) ...[
-                Row(
-                  children: [
-                    AppCircleAvatar(
-                      avatarUrl: qAvatar,
-                      size: 20,
-                      onTap: () => _navigateToQuotedUserProfile(context, quotePost),
-                    ),
-                    Container(width: 6),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _navigateToQuotedUserProfile(context, quotePost),
-                        child: Text(
-                          qDisplayName,
-                          style: TextStyle(
-                            color: appColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(height: 6),
-              ],
-              // 正文
-              if (qContent.isNotEmpty)
-                Text.rich(
-                  _buildMentionTextSpan(
-                    qContent,
-                    quotePost.mentionedUsers ?? const <MentionedUser>[],
-                    TextStyle(
-                      color: appColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              // 首图 / 首段视频（引用卡保持单 tile 尺寸约束）
-              // 视频：缩略图 + 居中播放按钮 + 时长（与 _buildMediaImage 风格一致）
-              // 图片：CachedNetworkImage + 错误占位（之前用 SizedBox.shrink 会整块消失）
-              if (qHasImage && qFirstMedia != null) ...[
-                Container(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    height: 150,
-                    width: double.infinity,
-                    child: qFirstMedia.isVideo
-                        ? _buildQuoteVideoPoster(appColors, qFirstMedia)
-                        : _buildQuoteImage(appColors, qFirstMedia),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      );
-    }
-
-    // 情况 2: 正在加载
-    if (_isFetchingQuote) {
-      return Container(
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: appColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: appColors.border, width: 0.5),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: appColors.textSecondary),
-            ),
-            Container(width: 10),
-            Text(
-              'Loading...',
-              style: TextStyle(color: appColors.textMuted, fontSize: 13),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 情况 3: 加载失败或原帖不可用
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: appColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: appColors.border, width: 0.5),
-      ),
-      child: Text(
-        'This post is unavailable',
-        style: TextStyle(color: appColors.textMuted, fontSize: 13),
-      ),
-    );
-  }
-
-  /// 引用卡内首图（普通图片 / GIF）渲染
-  /// - 使用 [qFirstMedia.thumbUrl] ?? [qFirstMedia.url] 作为源
-  /// - 错误占位统一为 `Icon(broken_image)`（修复前是 `SizedBox.shrink()`，图片加载失败时整块消失）
-  Widget _buildQuoteImage(AppColors appColors, MediaItemModel item) {
-    final url = item.thumbUrl ?? item.url;
-    if (url == null || url.isEmpty) {
-      return Container(
-        color: appColors.surface,
-        child: Icon(Icons.broken_image, color: appColors.textSecondary),
-      );
-    }
-    return CachedNetworkImage(
-      imageUrl: url,
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Container(
-        color: appColors.surface,
-        child: Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: appColors.textSecondary,
-          ),
-        ),
-      ),
-      errorWidget: (context, url, error) => Container(
-        color: appColors.surface,
-        child: Icon(Icons.broken_image, color: appColors.textSecondary),
-      ),
-    );
-  }
-
-  /// 引用卡内首段视频渲染
-  /// - 有缩略图 → 缩略图作 poster + 居中播放按钮 + 时长
-  /// - 缩略图为 null（线上后端常见，video post 只回 url 不回 thumb_url）→ 不再用 .mp4 当图加载，
-  ///   改为「视频占位卡」（深色 surface + 大播放图标 + 时长），视觉明确告诉用户这是视频
-  /// - 完全没 URL → videocam_off 占位
-  /// - 真正播放由外层 GestureDetector → _navigateToQuotedPostDetail 跳到帖子详情页触发
-  Widget _buildQuoteVideoPoster(AppColors appColors, MediaItemModel item) {
-    final thumbUrl = item.thumbUrl;
-    final videoUrl = item.url;
-    final hasThumb = thumbUrl != null && thumbUrl.isNotEmpty;
-
-    // Case A2: 连视频 URL 都没有 → 直接显示「视频不可用」占位
-    if (!hasThumb && (videoUrl == null || videoUrl.isEmpty)) {
-      return Container(
-        color: appColors.surface,
-        child: Center(
-          child: Icon(
-            Icons.videocam_off_outlined,
-            color: appColors.textSecondary,
-            size: 32,
-          ),
-        ),
-      );
-    }
-
-    // Case A1: 有视频 URL 但缩略图为 null → 视频占位卡（不再把 .mp4 当图加载）
-    if (!hasThumb) {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Container(color: appColors.surface),
-          // 居中大播放图标 —— 视觉上明确这是视频
-          const Center(
-            child: Icon(
-              Icons.play_circle_filled,
-              color: Colors.white70,
-              size: 56,
-            ),
-          ),
-          if (item.durationLabel.isNotEmpty)
-            Positioned(
-              right: 6,
-              bottom: 6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.65),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  item.durationLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      );
-    }
-
-    // Case A3: 有缩略图 → 原方案：缩略图作 poster + 播放按钮 + 时长
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        CachedNetworkImage(
-          imageUrl: thumbUrl,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Container(color: appColors.surface),
-          errorWidget: (context, url, error) => Container(
-            color: appColors.surface,
-            child: Icon(Icons.broken_image, color: appColors.textSecondary),
-          ),
-        ),
-        // 居中播放按钮 —— 视觉上明确告诉用户这是视频（修复前的 bug）
-        Center(
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.play_arrow,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-        ),
-        // 右下角时长标签 —— 与 _buildMediaImage 风格一致
-        if (item.durationLabel.isNotEmpty)
-          Positioned(
-            right: 6,
-            bottom: 6,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.65),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                item.durationLabel,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   // ==================== Navigation ====================
 
   void _navigateToProfile(BuildContext context) {
@@ -1280,29 +918,6 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
           postId: widget.postModel.id,
           postModel: widget.postModel,
         ),
-      ),
-    );
-  }
-
-  void _navigateToQuotedPostDetail(BuildContext context, PostModel quotePost) {
-    Navigator.push(
-      context,
-      CupertinoPageRoute(
-        builder: (context) => PostDetailPage(
-          postId: quotePost.id,
-          postModel: quotePost,
-        ),
-      ),
-    );
-  }
-
-  void _navigateToQuotedUserProfile(BuildContext context, PostModel quotePost) {
-    if (quotePost.user == null) return;
-    Navigator.push(
-      context,
-      ProfilePage.getRoute(
-        profileId: quotePost.user!.userId.toString(),
-        username: quotePost.user!.userName,
       ),
     );
   }

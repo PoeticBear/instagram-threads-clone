@@ -14,6 +14,8 @@ import 'package:threads/theme/app_colors.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/widget/poll_widget.dart';
+import 'package:threads/widget/quote_card.dart';
+import 'package:threads/widget/inline_video_player.dart';
 import 'package:threads/widget/reply_bottom_sheet.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -287,6 +289,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
             SizedBox(height: 12),
             _buildMediaGallery(context, appColors, mediaItems),
           ],
+          // 引用区（被引用的原帖）—— 与信息流共用 QuoteCard，视频支持内联播放
+          if (post.quoteRepostId != null) ...[
+            SizedBox(height: 12),
+            QuoteCard(parentPost: post),
+          ],
           if (post.location != null && post.location!.isNotEmpty) ...[
             SizedBox(height: 8),
             Row(
@@ -348,16 +355,43 @@ class _PostDetailPageState extends State<PostDetailPage> {
     int index,
     List<MediaItemModel> all,
   ) {
+    // 视频：接入 InlineVideoPlayer 内联播放（与信息流一致），点击进全屏预览。
+    // 不再用 thumb_url 当海报 —— 后端 video 帖 thumb_url 常为空串，会导致 broken_image。
+    if (item.isVideo) {
+      final videoUrl = item.url;
+      return GestureDetector(
+        onTap: () => _openMediaViewer(context, all, index),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            height: 220,
+            width: double.infinity,
+            child: (videoUrl == null || videoUrl.isEmpty)
+                ? Container(
+                    color: appColors.surface,
+                    child: Center(
+                      child: Icon(Icons.videocam_off_outlined,
+                          color: appColors.textSecondary, size: 32),
+                    ),
+                  )
+                : InlineVideoPlayer(
+                    mediaKey: 'detail_video_${widget.postId}_$index',
+                    videoUrl: videoUrl,
+                    thumbUrl: item.thumbUrl,
+                    durationLabel: item.durationLabel,
+                  ),
+          ),
+        ),
+      );
+    }
+    // 图片
     final url = item.thumbUrl ?? item.url;
     return GestureDetector(
       onTap: () => _openMediaViewer(context, all, index),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: [
-            if (url != null && url.isNotEmpty)
-              CachedNetworkImage(
+        child: (url != null && url.isNotEmpty)
+            ? CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.cover,
                 width: double.infinity,
@@ -367,40 +401,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   child: Icon(Icons.broken_image, color: appColors.textSecondary),
                 ),
               )
-            else
-              Container(
+            : Container(
                 height: 200,
                 color: appColors.surface,
                 child: Icon(Icons.broken_image, color: appColors.textSecondary),
               ),
-            if (item.isVideo) ...[
-              Container(color: Colors.black.withValues(alpha: 0.18)),
-              const Center(
-                child: Icon(Icons.play_circle_filled, color: Colors.white, size: 56),
-              ),
-              if (item.durationLabel.isNotEmpty)
-                Positioned(
-                  right: 8,
-                  bottom: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.65),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      item.durationLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ],
-        ),
       ),
     );
   }
@@ -412,56 +417,52 @@ class _PostDetailPageState extends State<PostDetailPage> {
     int index,
     List<MediaItemModel> all,
   ) {
+    // 视频：InlineVideoPlayer 内联播放（网格小图关掉静音开关）
+    if (item.isVideo) {
+      final videoUrl = item.url;
+      return GestureDetector(
+        onTap: () => _openMediaViewer(context, all, index),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: (videoUrl == null || videoUrl.isEmpty)
+              ? Container(
+                  color: appColors.surface,
+                  child: Center(
+                    child: Icon(Icons.videocam_off_outlined,
+                        color: appColors.textSecondary, size: 20),
+                  ),
+                )
+              : InlineVideoPlayer(
+                  mediaKey: 'detail_video_${widget.postId}_$index',
+                  videoUrl: videoUrl,
+                  thumbUrl: item.thumbUrl,
+                  durationLabel: item.durationLabel,
+                  showMuteToggle: false,
+                ),
+        ),
+      );
+    }
+    // 图片
     final url = item.thumbUrl ?? item.url;
     return GestureDetector(
       onTap: () => _openMediaViewer(context, all, index),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (url != null && url.isNotEmpty)
-              CachedNetworkImage(
+        child: (url != null && url.isNotEmpty)
+            ? CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.cover,
                 errorWidget: (_, __, ___) => Container(
                   color: appColors.surface,
-                  child: Icon(Icons.broken_image, color: appColors.textSecondary, size: 16),
+                  child: Icon(Icons.broken_image,
+                      color: appColors.textSecondary, size: 16),
                 ),
               )
-            else
-              Container(
+            : Container(
                 color: appColors.surface,
-                child: Icon(Icons.broken_image, color: appColors.textSecondary, size: 16),
+                child: Icon(Icons.broken_image,
+                    color: appColors.textSecondary, size: 16),
               ),
-            if (item.isVideo) ...[
-              Container(color: Colors.black.withValues(alpha: 0.2)),
-              const Center(
-                child: Icon(Icons.play_circle_filled, color: Colors.white, size: 24),
-              ),
-              if (item.durationLabel.isNotEmpty)
-                Positioned(
-                  right: 2,
-                  bottom: 2,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: Text(
-                      item.durationLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ],
-        ),
       ),
     );
   }
