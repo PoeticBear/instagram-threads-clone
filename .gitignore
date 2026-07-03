@@ -30,5 +30,8 @@ key.properties
 # iOS 崩溃日志（可能含设备 / 用户信息）
 *.ips
 
+# Google OAuth 凭据文件（从 Google Cloud 下载、含 client_id；按官方不放工程）
+client/ios/Runner/client_*.plist
+
 # WS 联调脚本（含本地测试账号，仅本地使用，不入库）
 wstest/

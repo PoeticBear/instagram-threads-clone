@@ -169,6 +169,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appleSignInFailed => 'Apple 登录失败';
 
   @override
+  String get googleSignInFailed => 'Google 登录失败';
+
+  @override
   String get createNewAccount => '创建新账号';
 
   @override

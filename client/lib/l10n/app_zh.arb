@@ -78,6 +78,7 @@
   "loginWithGoogle": "通过 Google 继续",
   "appleSignInSuccess": "已获取 Apple 凭据，等待后端对接",
   "appleSignInFailed": "Apple 登录失败",
+  "googleSignInFailed": "Google 登录失败",
   "createNewAccount": "创建新账号",
   "pleaseEnterUsernameAndPassword": "请输入用户名和密码",
   "loginFailedCheckCredentials": "登录失败，请检查用户名和密码",

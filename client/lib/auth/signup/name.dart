@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:threads/auth/signup/register.dart';
 import 'package:threads/auth/username_setup_dialog.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/pages/home.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/theme/app_colors.dart';
+import 'package:threads/services/google_oauth_config.dart';
+import 'package:threads/network/api_config.dart';
 
 class NamePage extends StatefulWidget {
   final VoidCallback? loginCallback;
@@ -140,6 +143,111 @@ class _NamePageState extends State<NamePage> {
           'needsUsernameSetup=${authState.needsUsernameSetup} → '
           '${authState.needsUsernameSetup ? "弹窗" : "直接进首页"}');
       // username 兜底：Apple 登录后若服务端 username 为空，强制补填才放行进首页
+      if (authState.needsUsernameSetup) {
+        await UsernameSetupDialog.show(context, authState);
+      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+    String? result;
+
+    try {
+      // 前置检查：GoogleSignIn 7.x 必须先 initialize（main.dart 启动时已尝试）。
+      // 占位凭据 / 缺 GoogleService-Info.plist 时 isInitialized=false，这里兜底提示。
+      if (!GoogleOAuth.isInitialized) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.googleSignInFailed),
+          ),
+        );
+        return;
+      }
+
+      // 唤起 Google 登录面板（interactive sign-in），失败抛 GoogleSignInException
+      final account = await GoogleSignIn.instance.authenticate();
+
+      if (!mounted) return;
+
+      final idToken = account.authentication.idToken;
+
+      // dev 环境:打印联调日志(含 idToken 等凭证),便于整段复制发给服务端联调。
+      // prod 不打印(idToken 是敏感凭证,泄露可被冒用)。
+      if (ApiConfig.environment == 'dev') {
+        debugPrint('╔═══════════════════════════════════════════════════════════');
+        debugPrint('║ [Google 登录 · 客户端联调日志 · 可直接发给服务端]');
+        debugPrint('╠═══════════════════════════════════════════════════════════');
+        debugPrint('║ [idToken] ← 服务端用此向 Google 验签(约 1 小时过期,尽快验)');
+        debugPrint('║   $idToken');
+        debugPrint('║ [Google 用户信息]');
+        debugPrint('║   id (sub)    : ${account.id}');
+        debugPrint('║   email       : ${account.email}');
+        debugPrint('║   displayName : ${account.displayName}');
+        debugPrint('║   photoUrl    : ${account.photoUrl}');
+        debugPrint('║ [即将发往后端]');
+        debugPrint('║   POST auth/google/login');
+        debugPrint('║   body: { "id_token": "<上面的 idToken>" }');
+        debugPrint('╚═══════════════════════════════════════════════════════════');
+      }
+
+      if (idToken == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.googleSignInFailed),
+          ),
+        );
+        return;
+      }
+
+      result = await authState.signInWithGoogle(
+        idToken,
+        context,
+        scaffoldKey: scaffoldKey,
+      );
+    } on GoogleSignInException catch (e) {
+      if (!mounted) return;
+      // 用户取消登录不弹错误（与 Apple 登录取消一致）
+      debugPrint('[Google SignIn] exception: ${e.code}');
+      if (e.code != GoogleSignInExceptionCode.canceled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${AppLocalizations.of(context)!.googleSignInFailed}: ${e.code}',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${AppLocalizations.of(context)!.googleSignInFailed}: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+
+    if (!mounted) return;
+
+    if (result != null) {
+      debugPrint('[GoogleLogin] name.dart 出口: result=$result, '
+          'needsUsernameSetup=${authState.needsUsernameSetup} → '
+          '${authState.needsUsernameSetup ? "弹窗" : "直接进首页"}');
+      // username 兜底：Google 登录后若服务端 username 为空，强制补填才放行进首页
       if (authState.needsUsernameSetup) {
         await UsernameSetupDialog.show(context, authState);
       }
@@ -292,6 +400,8 @@ class _NamePageState extends State<NamePage> {
               ),
               const SizedBox(height: 12),
               GestureDetector(
+                onTap: _isLoading ? null : _handleGoogleSignIn,
+                behavior: HitTestBehavior.opaque,
                 child: Container(
                   height: 50,
                   decoration: BoxDecoration(

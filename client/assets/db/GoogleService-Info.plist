@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>799971967226-o5aopjq8frt063ng2pjbbq62ltrqcdgg.apps.googleusercontent.com</string>
+	<string>818599281759-s267l2ou3maiaa2vj9vr19d77bap3jec.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.799971967226-o5aopjq8frt063ng2pjbbq62ltrqcdgg</string>
+	<string>com.googleusercontent.apps.818599281759-s267l2ou3maiaa2vj9vr19d77bap3jec</string>
 	<key>API_KEY</key>
 	<string>AIzaSyCZFltdMveP1R1YKlo5F2WTPtjuIssGycI</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.antoine-gonthier.threads</string>
+	<string>com.yt.threads</string>
 	<key>PROJECT_ID</key>
 	<string>threads-instagram</string>
 	<key>STORAGE_BUCKET</key>

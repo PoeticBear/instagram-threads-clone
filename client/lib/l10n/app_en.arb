@@ -78,6 +78,7 @@
   "loginWithGoogle": "Continue with Google",
   "appleSignInSuccess": "Apple credential obtained. Backend integration pending.",
   "appleSignInFailed": "Apple Sign In failed",
+  "googleSignInFailed": "Google Sign In failed",
   "createNewAccount": "Create new account",
   "pleaseEnterUsernameAndPassword": "Please enter username and password",
   "loginFailedCheckCredentials": "Login failed, please check username and password",

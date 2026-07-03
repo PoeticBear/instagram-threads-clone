@@ -178,6 +178,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appleSignInFailed => 'Apple Sign In failed';
 
   @override
+  String get googleSignInFailed => 'Google Sign In failed';
+
+  @override
   String get createNewAccount => 'Create new account';
 
   @override

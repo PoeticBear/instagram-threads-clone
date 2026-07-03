@@ -129,6 +129,54 @@ class AuthService {
     }
   }
 
+  /// Google 登录：客户端插件拿到 Google 签发的 idToken（JWT）后交给后端兑换。
+  /// 后端向 Google 校验 idToken 的签名 + audience（即 webClientId），验签通过
+  /// 后创建或查找账号，返回本应用的 token + 用户信息。客户端只持有短期 Google
+  /// idToken，不接触 Google 的 access/refresh token。
+  ///
+  /// 响应结构与 signIn / signInWithApple 兼容，复用 LoginResponse.fromJson。
+  ///
+  /// TODO(后端对齐): 路径 / 请求字段名 / 响应字段均为假设，与服务端联调时调整：
+  ///   - 路径假设 auth/google/login
+  ///   - 请求体假设 {id_token: <jwt>}
+  ///   - 响应假设 {access_token, refresh_token, id|user_id}
+  Future<LoginResponse> signInWithGoogle({required String idToken}) async {
+    try {
+      // dev 环境:打印发往后端的请求(含 idToken),便于联调。prod 不打印。
+      if (ApiConfig.environment == 'dev') {
+        debugPrint('═══════════ [signInWithGoogle] 发往后端 ═══════════');
+        debugPrint('  POST auth/google/login');
+        debugPrint('  body: ${const JsonEncoder.withIndent('  ').convert({'id_token': idToken})}');
+        debugPrint('═══════════════════════════════════════════════════');
+      }
+      final response = await _apiClient.post(
+        'auth/google/login',
+        body: {'id_token': idToken},
+      );
+
+      final data = response['data'];
+
+      // dev 环境打印完整响应便于调试；prod 不打印以免泄露 token
+      if (ApiConfig.environment == 'dev') {
+        debugPrint('═══════════ [signInWithGoogle] 服务端返回 ═══════════');
+        debugPrint(const JsonEncoder.withIndent('  ').convert(response));
+        debugPrint('═══════════════════════════════════════════════════');
+      }
+
+      await _saveTokens(
+        accessToken: data['access_token'],
+        refreshToken: data['refresh_token'],
+        userId: (data['user_id'] ?? data['id'])?.toString(),
+      );
+
+      return LoginResponse.fromJson(data);
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException(message: 'Google 登录失败: $e');
+    }
+  }
+
   Future<RegisterResponse> register({
     required String username,
     required String password,
