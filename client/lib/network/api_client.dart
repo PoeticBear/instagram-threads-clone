@@ -118,6 +118,8 @@ class ApiClient {
         'auth/logout',
         'auth/username/signin',
         'auth/apple/login',
+        'auth/google/login',
+        'auth/sms/signin',
       ];
       final shouldSkip = isRetry ||
           refreshTokensProvider == null ||

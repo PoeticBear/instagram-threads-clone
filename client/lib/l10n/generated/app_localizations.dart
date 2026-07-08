@@ -3133,6 +3133,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to set username, please try again'**
   String get usernameSetupFailed;
+
+  /// No description provided for @loginWithPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in with phone number'**
+  String get loginWithPhone;
+
+  /// No description provided for @phoneLoginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone login'**
+  String get phoneLoginTitle;
+
+  /// No description provided for @phoneLoginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your phone number to get a verification code'**
+  String get phoneLoginSubtitle;
+
+  /// No description provided for @selectCountryCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Select country code'**
+  String get selectCountryCode;
+
+  /// No description provided for @searchCountryCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Search country or code'**
+  String get searchCountryCode;
+
+  /// No description provided for @customCountryCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom code'**
+  String get customCountryCode;
+
+  /// No description provided for @customCodeDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom country code'**
+  String get customCodeDialogTitle;
+
+  /// No description provided for @customCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. +852'**
+  String get customCodeHint;
+
+  /// No description provided for @countryCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Country code must start with + and be 2–10 characters'**
+  String get countryCodeInvalid;
+
+  /// No description provided for @phoneNumberHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get phoneNumberHint;
+
+  /// No description provided for @verificationCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code'**
+  String get verificationCodeHint;
+
+  /// No description provided for @sendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get sendCode;
+
+  /// No description provided for @resendCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String resendCountdown(int seconds);
+
+  /// No description provided for @smsCodeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code sent'**
+  String get smsCodeSent;
+
+  /// No description provided for @pleaseEnterPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your phone number'**
+  String get pleaseEnterPhoneNumber;
+
+  /// No description provided for @pleaseEnterVerificationCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the verification code'**
+  String get pleaseEnterVerificationCode;
+
+  /// No description provided for @smsLoginFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Login failed'**
+  String get smsLoginFailed;
+
+  /// No description provided for @googleAuthFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Google authorization failed, please try again'**
+  String get googleAuthFailedRetry;
 }
 
 class _AppLocalizationsDelegate

@@ -157,10 +157,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get or => '或';
 
   @override
-  String get loginWithApple => '通过 Apple 继续';
+  String get loginWithApple => '通过 Apple 登录';
 
   @override
-  String get loginWithGoogle => '通过 Google 继续';
+  String get loginWithGoogle => '通过 Google 登录';
 
   @override
   String get appleSignInSuccess => '已获取 Apple 凭据，等待后端对接';
@@ -1593,4 +1593,60 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get usernameSetupFailed => '设置用户名失败，请重试';
+
+  @override
+  String get loginWithPhone => '使用手机号登录';
+
+  @override
+  String get phoneLoginTitle => '手机号登录';
+
+  @override
+  String get phoneLoginSubtitle => '输入手机号获取验证码';
+
+  @override
+  String get selectCountryCode => '选择国家/地区区号';
+
+  @override
+  String get searchCountryCode => '搜索国家或区号';
+
+  @override
+  String get customCountryCode => '自定义区号';
+
+  @override
+  String get customCodeDialogTitle => '自定义区号';
+
+  @override
+  String get customCodeHint => '如 +852';
+
+  @override
+  String get countryCodeInvalid => '区号须以 + 开头，长度 2–10';
+
+  @override
+  String get phoneNumberHint => '手机号';
+
+  @override
+  String get verificationCodeHint => '验证码';
+
+  @override
+  String get sendCode => '获取验证码';
+
+  @override
+  String resendCountdown(int seconds) {
+    return '${seconds}s 后可重发';
+  }
+
+  @override
+  String get smsCodeSent => '验证码已发送';
+
+  @override
+  String get pleaseEnterPhoneNumber => '请输入手机号';
+
+  @override
+  String get pleaseEnterVerificationCode => '请输入验证码';
+
+  @override
+  String get smsLoginFailed => '登录失败';
+
+  @override
+  String get googleAuthFailedRetry => 'Google 授权失败，请重试';
 }

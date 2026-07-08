@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:threads/auth/signup/register.dart';
+import 'package:threads/auth/signup/phone.dart';
 import 'package:threads/auth/username_setup_dialog.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
 import 'package:threads/pages/home.dart';
@@ -179,32 +180,33 @@ class _NamePageState extends State<NamePage> {
 
       if (!mounted) return;
 
-      final idToken = account.authentication.idToken;
+      // 服务端按「直接验签 idToken」工作（见 google-oauth-login-guide.md）：
+      // 客户端取 Google 签发的 idToken（JWT），以 {code: idToken} 发给 /auth/google/login，
+      // 后端用 Google 公钥验签后读取用户信息，不做授权码换取。
+      // 注意：契约字段名仍叫 code（历史命名），内容实为 idToken JWT——这是本次修复
+      // 从 serverAuthCode 回退到 idToken 的关键（原先发授权码、非 JWT，被后端当 JWT
+      // 解码 → 101115 id_token decode error）。
+      // idToken 由 authenticate() 返回，前提是 initialize() 传了 serverClientId
+      // （GoogleOAuth 已配 Web clientId），否则 idToken 为 null。
+      final String? idToken = account.authentication.idToken;
 
-      // dev 环境:打印联调日志(含 idToken 等凭证),便于整段复制发给服务端联调。
-      // prod 不打印(idToken 是敏感凭证,泄露可被冒用)。
+      // dev 环境仅打印 idToken 长度与前缀，不打印完整 JWT（携带用户身份+签名，泄露可被冒用）。
       if (ApiConfig.environment == 'dev') {
-        debugPrint('╔═══════════════════════════════════════════════════════════');
-        debugPrint('║ [Google 登录 · 客户端联调日志 · 可直接发给服务端]');
-        debugPrint('╠═══════════════════════════════════════════════════════════');
-        debugPrint('║ [idToken] ← 服务端用此向 Google 验签(约 1 小时过期,尽快验)');
-        debugPrint('║   $idToken');
-        debugPrint('║ [Google 用户信息]');
-        debugPrint('║   id (sub)    : ${account.id}');
-        debugPrint('║   email       : ${account.email}');
-        debugPrint('║   displayName : ${account.displayName}');
-        debugPrint('║   photoUrl    : ${account.photoUrl}');
-        debugPrint('║ [即将发往后端]');
-        debugPrint('║   POST auth/google/login');
-        debugPrint('║   body: { "id_token": "<上面的 idToken>" }');
-        debugPrint('╚═══════════════════════════════════════════════════════════');
+        final preview = (idToken == null || idToken.isEmpty)
+            ? 'null'
+            : (idToken.length <= 8
+                ? '${idToken.length} chars'
+                : '${idToken.substring(0, 8)}... (${idToken.length} chars)');
+        debugPrint('[Google SignIn] account=${account.id}, idToken=$preview');
       }
 
-      if (idToken == null) {
+      // idToken 可能为 null（initialize 未传 serverClientId / 极端平台异常）。
+      // 此时不能发空（服务端 minLength:1 会 422），本地提示重试。
+      if (idToken == null || idToken.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.googleSignInFailed),
+            content: Text(AppLocalizations.of(context)!.googleAuthFailedRetry),
           ),
         );
         return;
@@ -344,6 +346,31 @@ class _NamePageState extends State<NamePage> {
                           style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600),
                         ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 使用手机号登录（置于登录按钮下方，与账号密码登录同组）
+              GestureDetector(
+                onTap: _isLoading
+                    ? null
+                    : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const PhoneLoginPage()),
+                        ),
+                behavior: HitTestBehavior.opaque,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      AppLocalizations.of(context)!.loginWithPhone,
+                      style: TextStyle(
+                        color: appColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 32),

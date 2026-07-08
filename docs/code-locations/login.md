@@ -185,8 +185,8 @@
   | `usernameHint` | Username | 用户名 |
   | `passwordHint` | Password | 密码 |
   | `loginButton` | Login | 登录 |
-  | `loginWithApple` | Continue with Apple | 通过 Apple 继续 |
-  | `loginWithGoogle` | Continue with Google | 通过 Google 继续 |
+  | `loginWithApple` | Continue with Apple | 通过 Apple 登录 |
+  | `loginWithGoogle` | Continue with Google | 通过 Google 登录 |
   | `createNewAccount` | Create new account | 创建新账号 |
   | `pleaseEnterUsernameAndPassword` | Please enter username and password | 请输入用户名和密码 |
   | `loginFailedCheckCredentials` | Login failed, please check username and password | 登录失败，请检查用户名和密码 |

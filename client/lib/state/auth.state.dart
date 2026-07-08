@@ -221,8 +221,9 @@ class AuthState extends AppStates {
   }
 
   /// Google 登录流程：客户端拿到 Google idToken（在 name.dart 完成） →
-  /// /auth/google/login → 保存 token → 加载用户资料 → 设置 LOGGED_IN。失败一律走
-  /// scaffoldKey snackbar，与 signIn / signInWithApple 行为一致。
+  /// /auth/google/login（请求体 {code: idToken}，后端直接验签 idToken） → 保存 token →
+  /// 加载用户资料 → 设置 LOGGED_IN。
+  /// 失败一律走 scaffoldKey snackbar，与 signIn / signInWithApple 行为一致。
   ///
   /// 状态机顺序（与 signInWithApple 严格一致，避免状态错乱）：
   ///   1) isBusy = true
@@ -232,9 +233,8 @@ class AuthState extends AppStates {
   ///   5) 防御：userId 为空则回退到 NOT_LOGGED_IN
   ///   6) notifyListeners(); return userId
   ///
-  /// TODO(后端对齐): 首次 Google 登录的 username 由后端自动生成（假设）。
-  /// 若后端不自动生成，getProfileUser 会置位 needsUsernameSetup，name.dart
-  /// 出口据此弹 UsernameSetupDialog（与 Apple 登录一致）。
+  /// 首次 Google 登录若 username 为空，getProfileUser 会置位 needsUsernameSetup，
+  /// name.dart 出口据此弹 UsernameSetupDialog（与 Apple 登录一致）。
   Future<String?> signInWithGoogle(
     String idToken,
     BuildContext context, {
@@ -254,6 +254,56 @@ class AuthState extends AppStates {
       await getProfileUser();
       debugPrint('[GoogleLogin] auth.state: getProfileUser 完成 → '
           'needsUsernameSetup=$needsUsernameSetup, _userModel.userName="${_userModel?.userName}", userId=$userId');
+
+      if (userId.isEmpty) {
+        authStatus = AuthStatus.NOT_LOGGED_IN;
+        return null;
+      }
+
+      return userId;
+    } on AuthException catch (error) {
+      Utility.customSnackBar(scaffoldKey, error.message, context);
+      return null;
+    } catch (error) {
+      Utility.customSnackBar(scaffoldKey, error.toString(), context);
+      return null;
+    } finally {
+      isBusy = false;
+      notifyListeners();
+    }
+  }
+
+  /// 短信验证码登录 / 注册流程：区号 + 手机号 + 验证码 → /auth/sms/signin →
+  /// 保存 token → 加载用户资料 → 设置 LOGGED_IN。失败一律走 scaffoldKey snackbar，
+  /// 与 signIn / signInWithGoogle 行为一致。状态机顺序与其它登录方式严格一致：
+  ///   1) isBusy = true
+  ///   2) 调 authService.signInWithSms(...)
+  ///   3) userId = ...; authStatus = LOGGED_IN
+  ///   4) await getProfileUser()
+  ///   5) 防御：userId 为空则回退到 NOT_LOGGED_IN
+  ///   6) notifyListeners(); return userId
+  Future<String?> signInWithSms(
+    String phoneCountryCode,
+    String phone,
+    String code,
+    BuildContext context, {
+    required GlobalKey<ScaffoldState> scaffoldKey,
+  }) async {
+    try {
+      isBusy = true;
+      notifyListeners();
+
+      final response = await authService.signInWithSms(
+        phoneCountryCode: phoneCountryCode,
+        phone: phone,
+        code: code,
+      );
+      debugPrint('[SmsLogin] auth.state: /auth/sms/signin 返回 userId=${response.userId}');
+
+      userId = response.userId?.toString() ?? '';
+      authStatus = AuthStatus.LOGGED_IN;
+
+      await getProfileUser();
 
       if (userId.isEmpty) {
         authStatus = AuthStatus.NOT_LOGGED_IN;

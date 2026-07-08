@@ -129,29 +129,32 @@ class AuthService {
     }
   }
 
-  /// Google 登录：客户端插件拿到 Google 签发的 idToken（JWT）后交给后端兑换。
-  /// 后端向 Google 校验 idToken 的签名 + audience（即 webClientId），验签通过
-  /// 后创建或查找账号，返回本应用的 token + 用户信息。客户端只持有短期 Google
-  /// idToken，不接触 Google 的 access/refresh token。
+  /// Google 登录：客户端取 Google 签发的 idToken（JWT），以 {code: idToken} 交给后端。
+  /// 后端用 Google 公钥验签 idToken、读取用户信息后创建或查找账号，返回本应用 token。
+  /// 客户端不持有可长期复用的 Google 凭据（idToken 短时、可由 Google 验真）。
+  ///
+  /// ⚠️ 流程口径（见 google-oauth-login-guide.md）：后端是「直接验签 idToken」，**不是**
+  /// 「授权码换取」。契约字段名仍叫 code（历史命名），内容实为 idToken JWT——原先发
+  /// serverAuthCode（授权码、非 JWT）会被后端当 JWT 解码，报 101115 id_token decode error。
+  ///
+  /// 契约（openapi_docs/versions/openapi_20260708.json，POST /auth/google/login）：
+  ///   - 请求体 {code: <idToken>}，code minLength 1
+  ///   - 响应 SigninResponse：{id, username, avatar, access_token, refresh_token, display_name}
   ///
   /// 响应结构与 signIn / signInWithApple 兼容，复用 LoginResponse.fromJson。
-  ///
-  /// TODO(后端对齐): 路径 / 请求字段名 / 响应字段均为假设，与服务端联调时调整：
-  ///   - 路径假设 auth/google/login
-  ///   - 请求体假设 {id_token: <jwt>}
-  ///   - 响应假设 {access_token, refresh_token, id|user_id}
   Future<LoginResponse> signInWithGoogle({required String idToken}) async {
     try {
-      // dev 环境:打印发往后端的请求(含 idToken),便于联调。prod 不打印。
+      // dev 环境:打印请求 + idToken 长度(DEV ONLY)。不打印完整 JWT（携带身份+签名）。
       if (ApiConfig.environment == 'dev') {
         debugPrint('═══════════ [signInWithGoogle] 发往后端 ═══════════');
         debugPrint('  POST auth/google/login');
-        debugPrint('  body: ${const JsonEncoder.withIndent('  ').convert({'id_token': idToken})}');
+        debugPrint('  idToken 长度: ${idToken.length} chars');
         debugPrint('═══════════════════════════════════════════════════');
       }
+      // 字段名 code 是契约历史命名；内容为 idToken JWT，后端按 idToken 验签。
       final response = await _apiClient.post(
         'auth/google/login',
-        body: {'id_token': idToken},
+        body: {'code': idToken},
       );
 
       final data = response['data'];
@@ -170,10 +173,76 @@ class AuthService {
       );
 
       return LoginResponse.fromJson(data);
-    } on ApiException {
+    } on ApiException catch (e) {
+      _logDevApiError('signInWithGoogle', e);
       rethrow;
     } catch (e) {
+      debugPrint('[signInWithGoogle] 非 ApiException: ${e.runtimeType} → $e');
       throw ApiException(message: 'Google 登录失败: $e');
+    }
+  }
+
+  /// 发送短信验证码。
+  /// 契约（POST /auth/sms/send）：请求体 {phone_country_code(2–10), phone(1–20)}，
+  /// 成功 data 为空对象 OKResponse，结果以顶层 code 判定（code == 0 成功）。
+  /// 返回 true 表示发送成功；业务失败（code != 0）由 ApiClient 抛 ServerException
+  /// 携带 msg，调用方 catch 后向用户展示。
+  Future<bool> sendSmsCode({
+    required String phoneCountryCode,
+    required String phone,
+  }) async {
+    try {
+      await _apiClient.post(
+        'auth/sms/send',
+        body: {
+          'phone_country_code': phoneCountryCode,
+          'phone': phone,
+        },
+      );
+      return true;
+    } on ApiException catch (e) {
+      _logDevApiError('sendSmsCode', e);
+      rethrow;
+    } catch (e) {
+      debugPrint('[sendSmsCode] 非 ApiException: ${e.runtimeType} → $e');
+      throw ApiException(message: '发送验证码失败: $e');
+    }
+  }
+
+  /// 短信验证码登录 / 注册。
+  /// 契约（POST /auth/sms/signin）：请求体 {phone_country_code, phone, code(4–6)}，
+  /// 可选设备头；成功 data 为 SigninResponse（结构同 google / apple 登录），
+  /// 已注册用户直接登录、新用户自动注册。复用 LoginResponse.fromJson + _saveTokens。
+  Future<LoginResponse> signInWithSms({
+    required String phoneCountryCode,
+    required String phone,
+    required String code,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        'auth/sms/signin',
+        body: {
+          'phone_country_code': phoneCountryCode,
+          'phone': phone,
+          'code': code,
+        },
+      );
+
+      final data = response['data'];
+
+      await _saveTokens(
+        accessToken: data['access_token'],
+        refreshToken: data['refresh_token'],
+        userId: (data['user_id'] ?? data['id'])?.toString(),
+      );
+
+      return LoginResponse.fromJson(data);
+    } on ApiException catch (e) {
+      _logDevApiError('signInWithSms', e);
+      rethrow;
+    } catch (e) {
+      debugPrint('[signInWithSms] 非 ApiException: ${e.runtimeType} → $e');
+      throw ApiException(message: '短信登录失败: $e');
     }
   }
 
@@ -333,6 +402,25 @@ class AuthService {
     } on ApiException {
       rethrow;
     }
+  }
+
+  /// dev 环境：把 ApiException 的类型 / statusCode(或业务码) / message / 服务端
+  /// 原始响应体完整打印出来，便于联调时定位「后端到底返回了什么」。prod 不打印。
+  /// rethrow 后错误照常向上抛（SnackBar 等行为不变）。
+  void _logDevApiError(String tag, ApiException e) {
+    if (ApiConfig.environment != 'dev') return;
+    String dataStr;
+    try {
+      dataStr = e.data == null ? 'null' : const JsonEncoder.withIndent('  ').convert(e.data);
+    } catch (_) {
+      dataStr = '${e.data}';
+    }
+    debugPrint('═══════════ [$tag] ❌ 请求失败 ═══════════');
+    debugPrint('  异常类型           : ${e.runtimeType}');
+    debugPrint('  statusCode/业务码 : ${e.statusCode}');
+    debugPrint('  message           : ${e.message}');
+    debugPrint('  服务端原始响应     : $dataStr');
+    debugPrint('═══════════════════════════════════════════════════');
   }
 
   Future<void> _saveTokens({

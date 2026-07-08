@@ -684,5 +684,28 @@
   "usernameSetupWarning": "Your username cannot be changed once it is set. Please choose carefully.",
   "usernameSetupEmptyError": "Please enter a username",
   "usernameSetupTooShortError": "Username must be at least 2 characters",
-  "usernameSetupFailed": "Failed to set username, please try again"
+  "usernameSetupFailed": "Failed to set username, please try again",
+  "loginWithPhone": "Log in with phone number",
+  "phoneLoginTitle": "Phone login",
+  "phoneLoginSubtitle": "Enter your phone number to get a verification code",
+  "selectCountryCode": "Select country code",
+  "searchCountryCode": "Search country or code",
+  "customCountryCode": "Custom code",
+  "customCodeDialogTitle": "Custom country code",
+  "customCodeHint": "e.g. +852",
+  "countryCodeInvalid": "Country code must start with + and be 2–10 characters",
+  "phoneNumberHint": "Phone number",
+  "verificationCodeHint": "Verification code",
+  "sendCode": "Send code",
+  "resendCountdown": "Resend in {seconds}s",
+  "@resendCountdown": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "smsCodeSent": "Verification code sent",
+  "pleaseEnterPhoneNumber": "Please enter your phone number",
+  "pleaseEnterVerificationCode": "Please enter the verification code",
+  "smsLoginFailed": "Login failed",
+  "googleAuthFailedRetry": "Google authorization failed, please try again"
 }

@@ -1622,4 +1622,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get usernameSetupFailed => 'Failed to set username, please try again';
+
+  @override
+  String get loginWithPhone => 'Log in with phone number';
+
+  @override
+  String get phoneLoginTitle => 'Phone login';
+
+  @override
+  String get phoneLoginSubtitle =>
+      'Enter your phone number to get a verification code';
+
+  @override
+  String get selectCountryCode => 'Select country code';
+
+  @override
+  String get searchCountryCode => 'Search country or code';
+
+  @override
+  String get customCountryCode => 'Custom code';
+
+  @override
+  String get customCodeDialogTitle => 'Custom country code';
+
+  @override
+  String get customCodeHint => 'e.g. +852';
+
+  @override
+  String get countryCodeInvalid =>
+      'Country code must start with + and be 2–10 characters';
+
+  @override
+  String get phoneNumberHint => 'Phone number';
+
+  @override
+  String get verificationCodeHint => 'Verification code';
+
+  @override
+  String get sendCode => 'Send code';
+
+  @override
+  String resendCountdown(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get smsCodeSent => 'Verification code sent';
+
+  @override
+  String get pleaseEnterPhoneNumber => 'Please enter your phone number';
+
+  @override
+  String get pleaseEnterVerificationCode =>
+      'Please enter the verification code';
+
+  @override
+  String get smsLoginFailed => 'Login failed';
+
+  @override
+  String get googleAuthFailedRetry =>
+      'Google authorization failed, please try again';
 }
