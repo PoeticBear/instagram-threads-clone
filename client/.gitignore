@@ -54,5 +54,8 @@ app.*.map.json
 # Fastlane 缓存目录
 /.fastlane/
 
+# Fastlane 生成的 report.xml（运行 precheck 时产生）
+/fastlane/report.xml
+
 # 截图生成脚本的临时文件（如未来需要）
 /fastlane/screenshots/*.tmp
