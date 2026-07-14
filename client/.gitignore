@@ -45,3 +45,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Fastlane — App Store release automation
+# 敏感文件：API Key 配置 + .p8 凭据，绝不入 git
+/fastlane/api_key.json
+/fastlane/auth/
+
+# Fastlane 缓存目录
+/.fastlane/
+
+# 截图生成脚本的临时文件（如未来需要）
+/fastlane/screenshots/*.tmp

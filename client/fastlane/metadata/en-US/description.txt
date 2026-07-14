@@ -1,0 +1,20 @@
+Tweet is a fast, focused social app for sharing text and photos with the people who matter most to you. Inspired by the conversation-first web, Tweet puts your thoughts at the center — no algorithms deciding what you see, just the people you chose to follow.
+
+KEY FEATURES
+
+• Compose posts with text, photos, and locations
+• Follow other users and see updates in chronological order
+• Real-time notifications for likes, replies, mentions, and follows
+• Camera integration with filters and editing tools
+• Find people and topics through a lightweight search
+• Privacy-first design — your contacts stay on your device
+
+WHY TWEET
+
+The best conversations on the internet happen in public, in the open. Tweet keeps it that way: text-first, image-friendly, and built for the moment. Whether you want to share a quick thought, start a thread, or follow breaking news in real time, Tweet keeps you in the conversation.
+
+BUILT FOR IOS
+
+Tweet is built natively for iPhone with a clean, fast Flutter UI. Sign in with Apple, Google, your phone number, or a username — whichever feels right.
+
+[AI-generated placeholder copy — please review and refine before App Store submission]

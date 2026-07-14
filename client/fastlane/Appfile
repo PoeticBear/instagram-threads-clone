@@ -1,0 +1,5 @@
+app_identifier "com.yt.threads"
+apple_id "116212507@qq.com"
+team_id "B3885SFCQJ"
+# 上述 apple_id 必须是 App Store Connect 后台登录用的 Apple ID 邮箱
+# 首次配置：把 REPLACE_WITH_YOUR_APPLE_ID@example.com 改成真实邮箱

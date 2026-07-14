@@ -1,0 +1,124 @@
+default_platform(:ios)
+
+# ============================================================================
+# Fastfile — Instagram Threads Clone（iOS）
+# ----------------------------------------------------------------------------
+# 封装 App Store Connect 操作：上传 metadata / 截图 / 提交审核。
+#
+# 前置条件：
+#   1. 已安装 fastlane（gem install fastlane）
+#   2. 已配置 App Store Connect API Key：
+#      - client/fastlane/api_key.json（含 key_id / issuer_id / key_filepath）
+#      - client/fastlane/auth/AuthKey_<KEY_ID>.p8（从 App Store Connect 后台下载）
+#   3. Appfile 的 apple_id 字段已填真实邮箱
+#
+# 常用命令（在 client/ 目录下执行）：
+#   bundle exec fastlane ios upload_listing       # 上传 metadata + 截图
+#   bundle exec fastlane ios submit_for_review    # 提交审核
+#   bundle exec fastlane ios appstore_full_release # 完整：upload_listing + submit_for_review
+#
+# 或由 ./client/scripts/appstore-release.sh 统一调用
+# ============================================================================
+
+FASTLANE_DIR = File.expand_path(__dir__)
+
+# 读取 API Key 配置（每次 lane 启动时调用，确保环境变量最新）
+def load_api_key
+  api_key_path = File.join(FASTLANE_DIR, "api_key.json")
+  unless File.exist?(api_key_path)
+    UI.user_error!("❌ 未找到 #{api_key_path}。请先配置 App Store Connect API Key（参考 fastlane/README.md）")
+  end
+
+  config = JSON.parse(File.read(api_key_path))
+  key_id = config["key_id"]
+  issuer_id = config["issuer_id"]
+  key_filepath = File.expand_path(config["key_filepath"], FASTLANE_DIR)
+
+  unless File.exist?(key_filepath)
+    UI.user_error!("❌ API Key 文件不存在：#{key_filepath}。请把 .p8 文件放到 client/fastlane/auth/ 目录")
+  end
+
+  app_store_connect_api_key(
+    key_id: key_id,
+    issuer_id: issuer_id,
+    key_filepath: key_filepath,
+    duration: config["duration"] || 1200,
+    in_house: config["in_house"] || false,
+  )
+end
+
+platform :ios do
+  before_all do
+    # 验证 fastlane 与 API Key 配置
+    api_key = load_api_key
+    UI.message("✅ App Store Connect API Key 已加载")
+  end
+
+  # --------------------------------------------------------------------------
+  # upload_listing — 把 metadata + 截图推到 App Store Connect
+  # --------------------------------------------------------------------------
+  desc "Push metadata + screenshots to App Store Connect (no binary, no submit)"
+  lane :upload_listing do
+    deliver(
+      api_key: load_api_key,
+      app_version: "1.0.0",                 # 目标 App Store 版本号（不带 build 号）
+      skip_binary_upload: true,
+      skip_metadata: false,
+      skip_screenshots: false,
+      skip_app_version_update: false,       # 让 deliver 自动创建版本（如果不存在）
+      force: true,                          # 跳过 HTML 预览确认
+      precheck_include_in_app_purchases: false,
+      automatic_release: true,              # 审核通过后自动上架
+      submit_for_review: false,             # 本 lane 不提交
+      # screenshot 处理：自动按目录结构识别 iPhone 6.5"
+    )
+    UI.success("✅ metadata + 截图已上传到 App Store Connect")
+  end
+
+  # --------------------------------------------------------------------------
+  # submit_for_review — 提交当前版本审核
+  # --------------------------------------------------------------------------
+  desc "Submit current build for App Store review"
+  lane :submit_for_review do
+    deliver(
+      api_key: load_api_key,
+      skip_binary_upload: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: true,
+      automatic_release: true,
+      precheck_include_in_app_purchases: false,
+      # export_compliance_platform: 'ios',  # 如需加密合规声明可解开
+      # export_compliance_compliance_required: false,
+      # export_compliance_encryption_updated: false,
+      # export_compliance_app_type: nil,
+      # export_compliance_encryption_export_compliance: false,
+      # export_compliance_encryption_is_exempt: true,
+    )
+    UI.success("✅ 已提交审核，预计 24-48 小时出结果")
+  end
+
+  # --------------------------------------------------------------------------
+  # appstore_full_release — 完整发布（不含 IPA 上传，由 shell 脚本负责）
+  # --------------------------------------------------------------------------
+  desc "Full App Store release: upload_listing + submit_for_review (assumes IPA already uploaded)"
+  lane :appstore_full_release do
+    upload_listing
+    submit_for_review
+  end
+
+  # --------------------------------------------------------------------------
+  # precheck — 提交前的本地校验（不动 App Store Connect）
+  # --------------------------------------------------------------------------
+  desc "Local precheck: verify metadata completeness and screenshot sizes"
+  lane :precheck do
+    # 用 fastlane 自带的 precheck action（不依赖 deliver / IPA）
+    precheck(
+      api_key: load_api_key,
+      app_identifier: "com.yt.threads",
+      app_version: lane_context[SharedValues::VERSION_NUMBER] || "1.0.0",
+      default_rule_level: :warn,
+    )
+    UI.success("✅ precheck 通过")
+  end
+end

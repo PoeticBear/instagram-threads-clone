@@ -1,0 +1,7 @@
+{
+  "key_id": "REPLACE_WITH_YOUR_KEY_ID",
+  "issuer_id": "REPLACE_WITH_YOUR_ISSUER_ID",
+  "key_filepath": "auth/AuthKey_REPLACE_WITH_YOUR_KEY_ID.p8",
+  "duration": 1200,
+  "in_house": false
+}

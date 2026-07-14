@@ -318,6 +318,88 @@ xcodebuild -exportArchive \
 - ❌ 不提交 `.claude/settings.json`、`*.ips`
 - ✅ build bump 的 commit 信息必须显式标注版本号
 
+## 一键发布到 App Store 正式环境（「发布 App Store」/「分发」指令）
+
+与「发布 TestFlight」平级。本流水线把 IPA 推到 **App Store 正式分发**（公开上架），首次需要完成 App Store Connect 端的若干一次性配置；后续发版一键搞定。
+
+### 与 TestFlight 的关系
+
+| 用途 | 脚本 | 推到哪里 |
+|---|---|---|
+| 内测 / TestFlight 测试 | `./client/scripts/release.sh` | TestFlight（仅测试员可见） |
+| **正式分发 / 上架** | `./client/scripts/appstore-release.sh` | App Store 公开（审核后全网可见） |
+
+两脚本**平级并存、互不依赖**，可以单独使用任一。
+
+### 前置条件（首次需一次性配置）
+
+1. **已安装 fastlane**：`gem install fastlane`（建议 Homebrew Ruby，避免污染系统 Ruby 2.6）
+2. **App Store Connect API Key**：
+   - 后台生成：`用户和访问` → `集成` → `App Store Connect API` → 生成（角色：App Manager）
+   - 填入 `client/fastlane/api_key.json`（模板：`api_key.json.template`，已 gitignore）
+   - `.p8` 放 `client/fastlane/auth/AuthKey_<KEY_ID>.p8`（目录已 gitignore）
+3. **`Appfile` 的 `apple_id`** 替换为真实 Apple ID 邮箱
+4. **App Store Connect 上 App 记录已存在**（bundle ID = `com.yt.threads`）
+5. **ATB（协议 / 税务 / 银行）已生效**——首次开发者账号一次性完成，5–10 分钟
+6. **元数据**：`client/fastlane/metadata/{en-US,zh-Hans}/*.txt`（已含 AI 占位文案，待替换）
+7. **截图**：`client/fastlane/screenshots/{en-US,zh-Hans}/iPhone6.5/*.png`（当前为占位图，提交前必须替换为真实 App 截图）
+
+### 触发指令
+
+- `发布到 App Store`
+- `分发到 App Store`
+- `上架`
+
+### 流水线步骤（脚本底层逻辑）
+
+`appstore-release.sh` 按顺序执行 9 个 Step：
+
+1. **API 环境检查**：读 `client/lib/network/api_config.dart`，确认 `_prodBaseUrl` 与 `defaultValue: 'prod'`
+2. **API Key 检查**：校验 `api_key.json` + `.p8` 文件 + `Appfile` 已配置
+3. **工作区检查**：排除 `.claude/`、`.ips`、fastlane 敏感文件，未提交改动提示
+4. **bump 构建号**：解析 `pubspec.yaml` 的 `version: X.Y.Z+N`，独立 commit
+5. **git push**：推送到 origin main
+6. **flutter build ipa --release**（禁止带 `--dart-define=APP_ENV=dev`）
+7. **上传 IPA**：复用 `release.sh` 的 xcodebuild exportArchive + 卡顿检测 + 自动重试
+8. **上传 metadata + 截图**：`fastlane ios upload_listing`（跳过人机交互 `force: true`）
+9. **提交审核**：`fastlane ios submit_for_review`（`automatic_release: true` 审核通过自动上架）
+
+### 常用命令
+
+```bash
+# 完整发布
+./client/scripts/appstore-release.sh
+
+# 跳过 bump（上传失败重试）
+./client/scripts/appstore-release.sh --no-bump
+
+# 只重新上传 + 提交（IPA 已存在）
+./client/scripts/appstore-release.sh --only-upload
+
+# 准备但暂不提交审核
+./client/scripts/appstore-release.sh --no-submit
+
+# 推荐 alias
+echo "alias release-appstore='$PWD/client/scripts/appstore-release.sh'" >> ~/.zshrc && source ~/.zshrc
+```
+
+### 失败处理
+
+- **API Key 错误（401）**：检查 `api_key.json` 的 `key_id` / `issuer_id` / `.p8` 路径
+- **Metadata 缺字段**：跑 `cd client && fastlane ios precheck` 看具体缺啥
+- **截图尺寸不合规**：`fastlane ios precheck` 会列出不合规文件
+- **审核被拒**：常见是「隐私政策 URL 不可访问」或「截图与实际功能不符」
+
+详细排错见 `docs/appstore-release-guide.md`。
+
+### 安全红线
+
+- ❌ `api_key.json` 与 `auth/*.p8` **绝不**入 git（已在 `.gitignore`）
+- ❌ App Store 包**绝不**带 `--dart-define=APP_ENV=dev`
+- ❌ 不写 Android 适配（本项目仅维护 iOS）
+- ✅ build bump 的 commit 信息必须显式标注版本号
+- ✅ 提交前确认截图是真实 App 截图（非 AI 占位图）
+
 ## 变更日志（changelog）约定
 
 每次完成「**发布 TestFlight**」流水线后，Claude **必须**在 `docs/changelog/` 下记录本次发版。变更日志面向**人**（团队成员、TestFlight 测试员、未来的自己），与 `git log` 互为补充——commit 记录「改了哪些文件」，changelog 记录「用户能感知到什么」。
