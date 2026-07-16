@@ -44,6 +44,10 @@ class ComposePost extends StatefulWidget {
 
   /// 编辑模式：原帖的敏感内容警告
   final String? initialContentWarning;
+
+  /// 「写文字」页面交接（`change-text-note-handoff`）：预填媒体草稿。
+  /// 仅在 `editingPostId == null` 时生效；编辑模式继续走原帖 media 恢复链路。
+  final List<MediaDraftItem>? initialMediaDrafts;
   const ComposePost({
     Key? key,
     this.onPostSuccess,
@@ -52,6 +56,7 @@ class ComposePost extends StatefulWidget {
     this.initialContent,
     this.initialIsSensitive,
     this.initialContentWarning,
+    this.initialMediaDrafts,
   }) : super(key: key);
 
   @override
@@ -120,6 +125,13 @@ class ComposePostState extends State<ComposePost> {
         TextEditingController(text: widget.initialContentWarning ?? '');
     _isSensitive = widget.initialIsSensitive ?? false;
     _initPollControllers();
+    // 「写文字」页面交接：非编辑模式下预填媒体草稿（卡片 PNG）。
+    // 编辑模式由 `_onDraftSelected` 自行恢复原帖 media,守卫隔离避免互盖。
+    if (widget.editingPostId == null &&
+        widget.initialMediaDrafts != null &&
+        widget.initialMediaDrafts!.isNotEmpty) {
+      _mediaDrafts = [...widget.initialMediaDrafts!];
+    }
     _textEditingController.addListener(_onTextChanged);
   }
 

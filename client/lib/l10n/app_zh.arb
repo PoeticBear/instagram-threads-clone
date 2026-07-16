@@ -707,5 +707,13 @@
   "pleaseEnterPhoneNumber": "请输入手机号",
   "pleaseEnterVerificationCode": "请输入验证码",
   "smsLoginFailed": "登录失败",
-  "googleAuthFailedRetry": "Google 授权失败，请重试"
+  "googleAuthFailedRetry": "Google 授权失败，请重试",
+  "writeText": "写文字",
+  "normalPost": "普通图文",
+  "textCardHint": "说点什么...",
+  "textCardConfirm": "确认",
+  "textCardConfirmFailed": "发布失败，请重试",
+  "textCardDiscardTitle": "放弃这条写文字吗？",
+  "textCardDiscardMessage": "当前内容尚未发布，返回后不会保留。",
+  "textCardDiscardConfirm": "放弃"
 }

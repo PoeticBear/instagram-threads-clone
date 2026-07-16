@@ -707,5 +707,13 @@
   "pleaseEnterPhoneNumber": "Please enter your phone number",
   "pleaseEnterVerificationCode": "Please enter the verification code",
   "smsLoginFailed": "Login failed",
-  "googleAuthFailedRetry": "Google authorization failed, please try again"
+  "googleAuthFailedRetry": "Google authorization failed, please try again",
+  "writeText": "Write text",
+  "normalPost": "Normal post",
+  "textCardHint": "Say something...",
+  "textCardConfirm": "Confirm",
+  "textCardConfirmFailed": "Failed to post, please try again",
+  "textCardDiscardTitle": "Discard this text?",
+  "textCardDiscardMessage": "Your draft will not be saved if you leave now.",
+  "textCardDiscardConfirm": "Discard"
 }

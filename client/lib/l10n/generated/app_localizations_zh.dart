@@ -1649,4 +1649,28 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get googleAuthFailedRetry => 'Google 授权失败，请重试';
+
+  @override
+  String get writeText => '写文字';
+
+  @override
+  String get normalPost => '普通图文';
+
+  @override
+  String get textCardHint => '说点什么...';
+
+  @override
+  String get textCardConfirm => '确认';
+
+  @override
+  String get textCardConfirmFailed => '发布失败，请重试';
+
+  @override
+  String get textCardDiscardTitle => '放弃这条写文字吗？';
+
+  @override
+  String get textCardDiscardMessage => '当前内容尚未发布，返回后不会保留。';
+
+  @override
+  String get textCardDiscardConfirm => '放弃';
 }

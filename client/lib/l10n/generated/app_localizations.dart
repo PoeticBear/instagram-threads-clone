@@ -3241,6 +3241,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Google authorization failed, please try again'**
   String get googleAuthFailedRetry;
+
+  /// No description provided for @writeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Write text'**
+  String get writeText;
+
+  /// No description provided for @normalPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal post'**
+  String get normalPost;
+
+  /// No description provided for @textCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Say something...'**
+  String get textCardHint;
+
+  /// No description provided for @textCardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get textCardConfirm;
+
+  /// No description provided for @textCardConfirmFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to post, please try again'**
+  String get textCardConfirmFailed;
+
+  /// No description provided for @textCardDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this text?'**
+  String get textCardDiscardTitle;
+
+  /// No description provided for @textCardDiscardMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your draft will not be saved if you leave now.'**
+  String get textCardDiscardMessage;
+
+  /// No description provided for @textCardDiscardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get textCardDiscardConfirm;
 }
 
 class _AppLocalizationsDelegate

@@ -1682,4 +1682,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get googleAuthFailedRetry =>
       'Google authorization failed, please try again';
+
+  @override
+  String get writeText => 'Write text';
+
+  @override
+  String get normalPost => 'Normal post';
+
+  @override
+  String get textCardHint => 'Say something...';
+
+  @override
+  String get textCardConfirm => 'Confirm';
+
+  @override
+  String get textCardConfirmFailed => 'Failed to post, please try again';
+
+  @override
+  String get textCardDiscardTitle => 'Discard this text?';
+
+  @override
+  String get textCardDiscardMessage =>
+      'Your draft will not be saved if you leave now.';
+
+  @override
+  String get textCardDiscardConfirm => 'Discard';
 }

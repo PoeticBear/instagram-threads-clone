@@ -82,6 +82,17 @@
 - **路径**：`client/lib/widget/feedpost.dart`
 - **关键行**：`Navigator.push(... builder: (_) => ComposePost(editingPostId: ..., initialContent: ...))`（`feedpost.dart:1164-1175`）
 
+### 2.4 写文字 Popup 入口（v1.0.0+23 新增；`change-text-note-handoff` 后调整）
+
+底部 Tab 中间「+」按钮点击后，改为弹出 Popup 菜单（`TextNoteMenuSheet`），由用户选择「写文字」或「普通图文」。
+
+- **Popup 菜单**：`client/lib/pages/textNote/text_note_menu_sheet.dart` — 列出「写文字」「普通图文」两个入口，返回 `TextNoteMenuMode` 枚举
+- **写文字页面（change-text-note-handoff 调整后）**：`client/lib/pages/textNote/text_note_page.dart` — 选「写文字」时 push 进入；右上「确认」触发截图后用 `Navigator.pushReplacement` 把 `TextNotePage` 替换为 `ComposePost(initialContent: text, initialMediaDrafts: [draft])`；ComposePost 接管后续编辑与发布（卡片 PNG 作为 image media，正文作为正文）
+- **入口改造**：`client/lib/pages/home.dart` — `_switchTab(targetTab == 2)` 改为先弹 Popup 菜单，根据返回值决定 push `TextNotePage` 或切换 `tab = 2` 进入 `ComposePost`（home.dart 自身**不**改动；TextNotePage 内部完成到 ComposePost 的跳转）
+- **代码定位文档**：[`docs/code-locations/write-text.md`](write-text.md)
+
+> FAB / 编辑入口仍直进 `ComposePost`（保持兼容，不弹菜单）。
+
 ---
 
 ## 3. 状态层（Provider）
