@@ -32,13 +32,37 @@ class _NamePageState extends State<NamePage> {
     super.dispose();
   }
 
+  /// 页面级加载遮罩：`loading=true` 时在 child 之上叠加半透明黑底 + 居中 spinner，
+  /// 同时用 IgnorePointer 屏蔽整个 child 的点击和输入，避免用户在请求途中改动表单或重复触发。
+  /// 与按钮内的 spinner 三元配合使用：按钮的 `onPressed/_isLoading ? null` 仍是双保险的第一道闸。
+  Widget _loadingOverlay({required bool loading, required Widget child}) {
+    return Stack(
+      children: [
+        child,
+        if (loading)
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: ColoredBox(
+                color: Color(0xCC000000),
+                child: Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   void _handleLogin() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
 
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseEnterUsernameAndPassword)),
+        SnackBar(
+            content: Text(
+                AppLocalizations.of(context)!.pleaseEnterUsernameAndPassword)),
       );
       return;
     }
@@ -74,7 +98,8 @@ class _NamePageState extends State<NamePage> {
     } else {
       // signIn 内部已通过 NetworkErrorNotifier 弹过具体错误 SnackBar。
       // 此处仅作为兜底，避免重复弹框。
-      debugPrint('[SignIn] authState.signIn 返回 null（具体原因见 NetworkErrorNotifier 日志）');
+      debugPrint(
+          '[SignIn] authState.signIn 返回 null（具体原因见 NetworkErrorNotifier 日志）');
     }
   }
 
@@ -234,7 +259,8 @@ class _NamePageState extends State<NamePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${AppLocalizations.of(context)!.googleSignInFailed}: $e'),
+          content:
+              Text('${AppLocalizations.of(context)!.googleSignInFailed}: $e'),
         ),
       );
     } finally {
@@ -263,247 +289,242 @@ class _NamePageState extends State<NamePage> {
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    return Scaffold(
-      backgroundColor: appColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 40),
-              Text(
-                'Tweet',
-                style: TextStyle(
-                  color: appColors.textPrimary,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              Text(
-                AppLocalizations.of(context)!.loginTitle,
-                style: TextStyle(
-                  color: appColors.textPrimary,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _usernameController,
-                style: TextStyle(color: appColors.textPrimary),
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.usernameHint,
-                  hintStyle: TextStyle(color: appColors.textHint),
-                  filled: true,
-                  fillColor: appColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+    return PopScope(
+      canPop: !_isLoading,
+      child: Scaffold(
+        backgroundColor: appColors.background,
+        body: _loadingOverlay(
+          loading: _isLoading,
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
+                  Text(
+                    'Tweet',
+                    style: TextStyle(
+                      color: appColors.textPrimary,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 16),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                style: TextStyle(color: appColors.textPrimary),
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.passwordHint,
-                  hintStyle: TextStyle(color: appColors.textHint),
-                  filled: true,
-                  fillColor: appColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                  const SizedBox(height: 48),
+                  Text(
+                    AppLocalizations.of(context)!.loginTitle,
+                    style: TextStyle(
+                      color: appColors.textPrimary,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 16),
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: appColors.textPrimary,
-                    foregroundColor: appColors.background,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
+                  const SizedBox(height: 32),
+                  TextField(
+                    controller: _usernameController,
+                    style: TextStyle(color: appColors.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.usernameHint,
+                      hintStyle: TextStyle(color: appColors.textHint),
+                      filled: true,
+                      fillColor: appColors.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                     ),
                   ),
-                  child: _isLoading
-                      ? CircularProgressIndicator(color: appColors.background)
-                      : Text(
-                          AppLocalizations.of(context)!.loginButton,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    style: TextStyle(color: appColors.textPrimary),
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.passwordHint,
+                      hintStyle: TextStyle(color: appColors.textHint),
+                      filled: true,
+                      fillColor: appColors.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _handleLogin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: appColors.textPrimary,
+                        foregroundColor: appColors.background,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
                         ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // 使用手机号登录（置于登录按钮下方，与账号密码登录同组）
-              GestureDetector(
-                onTap: _isLoading
-                    ? null
-                    : () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const PhoneLoginPage()),
-                        ),
-                behavior: HitTestBehavior.opaque,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Text(
-                      AppLocalizations.of(context)!.loginWithPhone,
-                      style: TextStyle(
-                        color: appColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                      ),
+                      child: Text(
+                        AppLocalizations.of(context)!.loginButton,
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(child: Divider(color: appColors.divider)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      AppLocalizations.of(context)!.or,
-                      style: TextStyle(color: appColors.textSecondary),
+                  const SizedBox(height: 16),
+                  // 使用手机号登录（置于登录按钮下方，与账号密码登录同组）
+                  GestureDetector(
+                    onTap: _isLoading
+                        ? null
+                        : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const PhoneLoginPage()),
+                            ),
+                    behavior: HitTestBehavior.opaque,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          AppLocalizations.of(context)!.loginWithPhone,
+                          style: TextStyle(
+                            color: appColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  Expanded(child: Divider(color: appColors.divider)),
-                ],
-              ),
-              const SizedBox(height: 32),
-              GestureDetector(
-                onTap: _isLoading ? null : _handleAppleSignIn,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(25),
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: appColors.divider)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          AppLocalizations.of(context)!.or,
+                          style: TextStyle(color: appColors.textSecondary),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: appColors.divider)),
+                    ],
                   ),
-                  child: _isLoading
-                      ? const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
+                  const SizedBox(height: 32),
+                  GestureDetector(
+                    onTap: _isLoading ? null : _handleAppleSignIn,
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.apple,
+                              color: Colors.white, size: 28),
+                          const SizedBox(width: 12),
+                          Text(
+                            AppLocalizations.of(context)!.loginWithApple,
+                            style: const TextStyle(
                               color: Colors.white,
-                              strokeWidth: 2,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.apple, color: Colors.white, size: 28),
-                            const SizedBox(width: 12),
-                            Text(
-                              AppLocalizations.of(context)!.loginWithApple,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: _isLoading ? null : _handleGoogleSignIn,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(color: const Color(0xFF747775), width: 0.5),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      RichText(
-                        text: const TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'G',
-                              style: TextStyle(
-                                color: Color(0xFF4285F4),
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        AppLocalizations.of(context)!.loginWithGoogle,
-                        style: const TextStyle(
-                          color: Color(0xFF1F1F1F),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const RegisterPage()),
-                  );
-                },
-                child: Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: appColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: appColors.border,
-                      width: 0.5,
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.person_add_outlined,
-                          color: appColors.textSecondary, size: 24),
-                      const SizedBox(width: 12),
-                      Text(
-                        AppLocalizations.of(context)!.createNewAccount,
-                        style: TextStyle(
-                          color: appColors.textSecondary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: _isLoading ? null : _handleGoogleSignIn,
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                            color: const Color(0xFF747775), width: 0.5),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          RichText(
+                            text: const TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'G',
+                                  style: TextStyle(
+                                    color: Color(0xFF4285F4),
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            AppLocalizations.of(context)!.loginWithGoogle,
+                            style: const TextStyle(
+                              color: Color(0xFF1F1F1F),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const RegisterPage()),
+                      );
+                    },
+                    child: Container(
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: appColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: appColors.border,
+                          width: 0.5,
                         ),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.person_add_outlined,
+                              color: appColors.textSecondary, size: 24),
+                          const SizedBox(width: 12),
+                          Text(
+                            AppLocalizations.of(context)!.createNewAccount,
+                            style: TextStyle(
+                              color: appColors.textSecondary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
