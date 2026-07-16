@@ -23,6 +23,22 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Push metadata + screenshots to App Store Connect (no binary, no submit)
 
+### ios fill_review_detail
+
+```sh
+[bundle exec] fastlane ios fill_review_detail
+```
+
+Fill 25+ app review questions for current version (call before submit_for_review)
+
+### ios clean_screenshots
+
+```sh
+[bundle exec] fastlane ios clean_screenshots
+```
+
+Delete all screenshot sets for version 1.0.0 (use when stuck in AWAITING_UPLOAD)
+
 ### ios submit_for_review
 
 ```sh
@@ -37,15 +53,15 @@ Submit current build for App Store review
 [bundle exec] fastlane ios appstore_full_release
 ```
 
-Full App Store release: upload_listing + submit_for_review (assumes IPA already uploaded)
+Full App Store release: upload_listing + fill_review_detail + submit_for_review
 
-### ios precheck
+### ios debug_screenshots
 
 ```sh
-[bundle exec] fastlane ios precheck
+[bundle exec] fastlane ios debug_screenshots
 ```
 
-Local precheck: verify metadata completeness and screenshot sizes
+Debug: list all screenshots and their states
 
 ----
 
