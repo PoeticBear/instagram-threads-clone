@@ -651,6 +651,16 @@ class _PostDetailPageState extends State<PostDetailPage> {
         builder: (_) => MediaViewerPage(
           mediaItems: items,
           initialIndex: initialIndex,
+          // 优先用最新加载的 _post；回退到 widget.postModel；
+          // 两者都为 null 时构造一个只有 id 的最小 PostModel（统计字段全为 null，
+          // 显示为 0；订阅 PostState 后会自动同步成最新值）。
+          postModel: _post ??
+              widget.postModel ??
+              PostModel(
+                key: widget.postId,
+                postId: widget.postId,
+                createdAt: DateTime.now().toIso8601String(),
+              ),
         ),
       ),
     );

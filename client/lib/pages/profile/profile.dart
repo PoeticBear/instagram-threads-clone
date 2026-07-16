@@ -636,12 +636,26 @@ class _ProfilePageState extends State<ProfilePage>
 
           return GestureDetector(
             onTap: () {
+              // 反查当前 item 所属的 PostModel（allMedia 是 _userPosts 的派生视图，
+              // 用 mediaList 第一个 url 或 imagePath 匹配），找不到则构造最小 PostModel。
+              final PostModel? matched = _userPosts.where((p) {
+                if (p.mediaList != null && p.mediaList!.isNotEmpty) {
+                  return p.mediaList!.any((m) => m.url == item.url);
+                }
+                return p.imagePath != null && p.imagePath == item.url;
+              }).cast<PostModel?>().firstWhere((_) => true, orElse: () => null);
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => MediaViewerPage(
                     mediaItems: allMedia,
                     initialIndex: index,
+                    postModel: matched ??
+                        PostModel(
+                          key: item.url,
+                          postId: item.url,
+                          createdAt: DateTime.now().toIso8601String(),
+                        ),
                   ),
                 ),
               );

@@ -933,6 +933,7 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
         builder: (_) => MediaViewerPage(
           mediaItems: items,
           initialIndex: safeIndex,
+          postModel: widget.postModel,
         ),
       ),
     );
