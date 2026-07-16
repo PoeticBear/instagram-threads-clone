@@ -1246,14 +1246,18 @@ class _FeedPostWidgetState extends State<FeedPostWidget> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ComposePost(
+                        builder: (routeContext) => ComposePost(
                           editingPostId: widget.postModel.id,
                           initialContent: widget.postModel.bio,
                           initialIsSensitive: widget.postModel.isSensitive,
                           initialContentWarning: widget.postModel.contentWarning,
-                          // 不需要 onPostSuccess 触发刷新：
-                          // PostState.updatePost 已通过 _updatePostInList
-                          // 完成本地列表的局部更新（决策点 A3）
+                          // 修复:`onPostSuccess` 缺省会让 ComposePost 在 edit 保存后卡住(同
+                          // TextNotePage → pushReplacement 那条 bug):见 `change-text-note-handoff`
+                          // 决策 1。`PostState.updatePost` 已通过 `_updatePostInList` 完成本地
+                          // 列表的局部更新（决策点 A3),不需要在回调里再触发刷新,只需 pop 回
+                          // 列表;`onCancel` 同样。
+                          onPostSuccess: () => Navigator.of(routeContext).pop(),
+                          onCancel: () => Navigator.of(routeContext).pop(),
                         ),
                       ),
                     );
