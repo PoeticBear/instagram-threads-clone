@@ -8,6 +8,8 @@ import 'package:threads/pages/composePost/post.dart';
 import 'package:threads/pages/message/message_page.dart';
 import 'package:threads/pages/notification/notification.dart';
 import 'package:threads/pages/search/search.dart';
+import 'package:threads/pages/textNote/text_note_menu_sheet.dart';
+import 'package:threads/pages/textNote/text_note_page.dart';
 import 'package:threads/state/auth.state.dart';
 import 'package:threads/state/post.state.dart';
 import 'package:threads/state/notification.state.dart';
@@ -72,6 +74,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _switchTab(int targetTab) {
     if (tab == targetTab) return;
+    // ── 中间 "+" Tab：弹 Popup 菜单，由用户选择「写文字」或「普通图文」 ──
+    if (targetTab == 2) {
+      _showComposeMenu();
+      return;
+    }
     if (tab == 2) {
       _composePostKey.currentState?.handleTabSwitch(
         onSave: () => setState(() => tab = targetTab),
@@ -80,6 +87,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       return;
     }
     setState(() => tab = targetTab);
+  }
+
+  /// 弹出「写文字 / 普通图文」选择菜单。
+  ///
+  /// - 选「写文字」→ push 新的 TextNotePage
+  /// - 选「普通图文」→ 切换 tab=2 进入 ComposePost（保留草稿拦截逻辑）
+  Future<void> _showComposeMenu() async {
+    final mode = await showModalBottomSheet<TextNoteMenuMode>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const TextNoteMenuSheet(),
+    );
+    if (!mounted || mode == null) return;
+    switch (mode) {
+      case TextNoteMenuMode.textNote:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const TextNotePage()),
+        );
+        break;
+      case TextNoteMenuMode.normalPost:
+        setState(() => tab = 2);
+        break;
+    }
   }
 
   bool isSelected = false;
@@ -139,13 +169,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   isActive: tab == 3,
                   badge: state.unreadCount > 0
                       ? Positioned(
-                          right: 0,
-                          top: 8,
+                          right: 22,
+                          top: 14,
                           child: Container(
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: appColors.accent,
+                              color: appColors.destructive,
                               shape: BoxShape.circle,
                             ),
                           ),

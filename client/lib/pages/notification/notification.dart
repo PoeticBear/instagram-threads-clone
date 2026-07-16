@@ -425,7 +425,7 @@ class _NotificationTile extends StatelessWidget {
                   height: 8,
                   margin: const EdgeInsets.only(top: 4),
                   decoration: BoxDecoration(
-                    color: appColors.accent,
+                    color: appColors.destructive,
                     shape: BoxShape.circle,
                   ),
                 ),
