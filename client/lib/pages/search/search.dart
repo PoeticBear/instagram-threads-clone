@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/l10n/generated/app_localizations.dart';
-import 'package:threads/services/search_service.dart';
 import 'package:threads/state/search.state.dart';
 import 'package:threads/theme/app_colors.dart';
 import 'package:threads/widget/list.dart';
@@ -416,8 +415,8 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   // ── Empty State (no query) ──
 
   Widget _buildEmptyState(SearchState state) {
+    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     if (state.isLoadingEmptyState) {
-      final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
       return Center(
         child: CircularProgressIndicator(color: appColors.textPrimary),
       );
@@ -431,7 +430,19 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
             actionText: AppLocalizations.of(context)!.clearAll,
             onAction: () => state.clearSearchHistory(),
           ),
-          ...state.searchHistory.map((item) => _buildHistoryItem(item, state)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 4, 15, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: state.searchHistory
+                  .map((item) => _historyChip(item.query, () {
+                        _textController.text = item.query;
+                        state.onSearchChanged(item.query);
+                      }, appColors))
+                  .toList(),
+            ),
+          ),
         ],
         if (state.hotTopics.isNotEmpty) ...[
           _buildEmptySectionHeader(AppLocalizations.of(context)!.trendingTopics),
@@ -482,84 +493,21 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     );
   }
 
-  IconData _historyTypeIcon(int searchType) {
-    switch (searchType) {
-      case 2: return Iconsax.user;
-      case 3: return Iconsax.hashtag;
-      case 4: return Iconsax.document_text;
-      default: return Iconsax.clock;
-    }
-  }
-
-  String _formatTime(DateTime time) {
-    final l10n = AppLocalizations.of(context)!;
-    final diff = DateTime.now().difference(time);
-    if (diff.inMinutes < 1) return l10n.justNow;
-    if (diff.inHours < 1) return l10n.minutesAgo(diff.inMinutes);
-    if (diff.inDays < 1) return l10n.hoursAgo(diff.inHours);
-    if (diff.inDays < 30) return l10n.daysAgo(diff.inDays);
-    return '${time.month}/${time.day}';
-  }
-
-  Widget _buildHistoryItem(SearchHistoryItem item, SearchState state) {
-    final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
-    return Dismissible(
-      key: Key(item.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: appColors.destructive,
-        child: Icon(Icons.delete_outline, color: appColors.background),
-      ),
-      onDismissed: (_) => state.deleteHistoryItem(item.id),
-      child: GestureDetector(
-        onTap: () {
-          _textController.text = item.query;
-          state.onSearchChanged(item.query);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
-          child: Row(
-            children: [
-              Icon(_historyTypeIcon(item.searchType), size: 20, color: appColors.textSecondary),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.query,
-                      style: TextStyle(
-                        color: appColors.textPrimary,
-                        fontSize: 17,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatTime(item.searchedAt),
-                      style: TextStyle(
-                        color: appColors.textMuted,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (item.resultCount > 0)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Text(
-                    '${item.resultCount}',
-                    style: TextStyle(color: appColors.textMuted, fontSize: 14),
-                  ),
-                ),
-              GestureDetector(
-                onTap: () => state.deleteHistoryItem(item.id),
-                child: Icon(Icons.close, size: 18, color: appColors.textSecondary),
-              ),
-            ],
+  Widget _historyChip(String query, VoidCallback onTap, AppColors appColors) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: appColors.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          query,
+          style: TextStyle(
+            color: appColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ),
