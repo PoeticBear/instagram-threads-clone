@@ -20,6 +20,7 @@
 | 版本 | 发布日期 | 涵盖构建 | 摘要 |
 | --- | --- | --- | --- |
 | [v1.0.0+23](./v1.0.0+23.md) | 2026-07-16 | +23 | 「写文字」AppBar「发布」→「确认」+ `pushReplacement` 接管 `ComposePost(initialContent, initialMediaDrafts)`；放行空文字；feedpost 编辑后 `onPostSuccess`/`onCancel` 路由 pop 回调修复（同 bug 类顺手补） |
+| [v1.0.0+22](./v1.0.0+22.md) | 2026-06-22 | +22 | App Store 正式发布流水线首次接入：fastlane 配置 + `client/scripts/appstore-release.sh` 一键脚本；`.gitignore` 排除 fastlane report.xml；CLAUDE.md 增「一键发布到 App Store」工作流 |
 | [v1.0.0+21](./v1.0.0+21.md) | 2026-07-08 | +21 | 登录方式扩展：新增手机号验证码登录（区号选择 / 60s 倒计时）、Google 登录完整链路（google_sign_in 7.x 方式 B）+ Google 登录请求体对齐后端验签流 |
 | [v1.0.0+20](./v1.0.0+20.md) | 2026-06-26 | +20 | 紧急修正：prod WebSocket 路径由 `/ws` 改为 `/websocket/ws`（与 dev / 服务端一致），修复 +19 包线上实时通知连不上的问题 |
 | [v1.0.0+19](./v1.0.0+19.md) | 2026-06-26 | +19 | @提及完整上线（身份绑定 + 正文可点击 + 回复场景覆盖）、WebSocket 实时通知全量接入、登录后强制补填用户名、视频查看页方向分流、修复引用帖视频/图片渲染与回复点赞乐观更新 |
