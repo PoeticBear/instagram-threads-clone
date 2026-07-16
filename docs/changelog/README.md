@@ -13,12 +13,13 @@
 
 ## 当前版本
 
-- 🟢 [v1.0.0+23](./v1.0.0+23.md) — 「写文字」流程两步交接：截图卡片 + 接管普通发文 + feedpost 编辑卡住修复（2026-07-16）
+- 🟢 [v1.0.0+24](./v1.0.0+24.md) — 登录页加载动画统一为页面级遮罩 + 底部导航红点视觉收紧 + App Store 上架就绪（2026-07-16）
 
 ## 全部版本
 
 | 版本 | 发布日期 | 涵盖构建 | 摘要 |
 | --- | --- | --- | --- |
+| [v1.0.0+24](./v1.0.0+24.md) | 2026-07-16 | +24 | 登录页加载动画统一为页面级遮罩 + PopScope；底部导航「+」Tab 改 Popup 菜单分流「写文字」/「普通图文」；红点位置紧贴心形 + 色系统一为红色；定时发布字段读取修正；搜索历史改 chip；App Store 上架就绪（fastlane + 真实截图 + privacy URL） |
 | [v1.0.0+23](./v1.0.0+23.md) | 2026-07-16 | +23 | 「写文字」AppBar「发布」→「确认」+ `pushReplacement` 接管 `ComposePost(initialContent, initialMediaDrafts)`；放行空文字；feedpost 编辑后 `onPostSuccess`/`onCancel` 路由 pop 回调修复（同 bug 类顺手补） |
 | [v1.0.0+22](./v1.0.0+22.md) | 2026-06-22 | +22 | App Store 正式发布流水线首次接入：fastlane 配置 + `client/scripts/appstore-release.sh` 一键脚本；`.gitignore` 排除 fastlane report.xml；CLAUDE.md 增「一键发布到 App Store」工作流 |
 | [v1.0.0+21](./v1.0.0+21.md) | 2026-07-08 | +21 | 登录方式扩展：新增手机号验证码登录（区号选择 / 60s 倒计时）、Google 登录完整链路（google_sign_in 7.x 方式 B）+ Google 登录请求体对齐后端验签流 |
