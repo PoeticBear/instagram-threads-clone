@@ -1,0 +1,41 @@
+【Bug】定时发布：服务端 scheduler 未按约定时间释放 status=4 帖子
+
+【环境】
+- 客户端：iOS v1.0.0+22
+- API：https://api.tweetcaht.com/
+- 测试时间：2026-07-15
+- 时区：Asia/Shanghai (UTC+8)
+
+【涉及接口】
+- POST /post/create（创建定时帖）
+- GET /post/scheduled（查看定时帖列表）
+- GET /post/feed（首页 Feed）
+- GET /post/user/{user_id}/posts（个人帖子列表）
+- DELETE /post/{post_id}/schedule（取消定时）
+
+【重现步骤】
+1. 在客户端发布页选 14:01 (Asia/Shanghai) 定时发布一条纯文本帖子
+2. 客户端正确发送请求体：
+   {"content":"123","scheduled_publish_time":"2026-07-15T06:01:00.000Z"}
+3. POST /post/create 返回 code=0, id=2000465
+   响应 data 中：scheduled_publish_time=null, status 字段缺失
+4. 时间到达 14:01 后：
+   - GET /post/scheduled 仍然返回 id=2000465（应该已不返回）
+   - GET /post/feed 仍然不返回 id=2000465
+   - GET /post/user/{user_id}/posts 仍然不返回 id=2000465
+
+【预期行为】
+到约定时间（06:01 UTC）后，服务端 scheduler 应自动：
+1. 把 id=2000465 的 status 从 4 → 1
+2. 该帖子出现在 /post/feed 和 /post/user/{user_id}/posts
+3. 该帖子从 /post/scheduled 列表中消失
+
+【实际行为】
+服务端 scheduler 没把 status=4 → status=1，帖子卡在"定时待发布"状态。
+无论客户端如何下拉刷新都看不到。
+
+【请后端核查】
+1. POST /post/create 是否真的写入了 scheduled_publish_time 字段？
+2. 响应 schema 是否正确返回 scheduled_publish_time 和 status 字段？
+3. 后台定时发布调度任务是否在运行？
+4. /post/feed 和 /post/user/{user_id}/posts 是否过滤了 status=4？
