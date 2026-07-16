@@ -980,6 +980,14 @@ class ComposePostState extends State<ComposePost> {
     // ── 新建模式 ──
     PostModel postModel = await _createPostModel();
     final pollOptions = _getValidPollOptions();
+    final scheduledTimeStr = _scheduledTime?.toUtc().toIso8601String();
+    developer.log(
+      '🕐 [SCHEDULE-DEBUG] _submit 准备提交: '
+      '_scheduledTime(local)=$_scheduledTime '
+      '→ 序列化后=$scheduledTimeStr '
+      '(本机当前=${DateTime.now()} 本机当前UTC=${DateTime.now().toUtc()})',
+      name: 'ComposePost',
+    );
     final result = await state.createPost(
       postModel,
       mediaDrafts: _mediaDrafts.isNotEmpty ? _mediaDrafts : null,
@@ -988,7 +996,7 @@ class ComposePostState extends State<ComposePost> {
       location: _location,
       latitude: _latitude,
       longitude: _longitude,
-      scheduledTime: _scheduledTime?.toUtc().toIso8601String(),
+      scheduledTime: scheduledTimeStr,
     );
 
     if (!mounted) return;
@@ -1067,12 +1075,26 @@ class ComposePostState extends State<ComposePost> {
 
   // ─── Schedule ───────────────────────────────────────────
 
+  /// 把时间归整到下一个整点（秒 / 毫秒 / 微秒清零）。
+  ///
+  /// CupertinoDatePicker 在 `dateAndTime` 模式下没有「秒」轮，但会把
+  /// `initialDateTime` 的秒 / 微秒继承下去。如果初始时间带 :33.212372
+  /// 这种精度,用户怎么拖 picker 都去不掉,最终提交出去的时间会带
+  /// 莫名其妙的尾巴(例如选了 15:00 实际发出 `15:00:33.212372`)。
+  /// 把默认值归整到整点可以保证 picker 继承的秒 / 微秒本身就是 0,
+  /// 用户选什么具体时间,提交出去就是什么具体时间(仅时区偏移)。
+  DateTime _roundUpToNextHour(DateTime dt) {
+    return DateTime(dt.year, dt.month, dt.day, dt.hour + 1);
+  }
+
   void _showSchedulePicker() {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
     final l10n = AppLocalizations.of(context)!;
 
+    // 默认值归整到下一个整点(不带秒 / 微秒),见 _roundUpToNextHour。
+    // _scheduledTime 已存在时(用户之前选过)原样使用,保留用户意图。
     DateTime initialTime =
-        _scheduledTime ?? DateTime.now().add(const Duration(hours: 1));
+        _scheduledTime ?? _roundUpToNextHour(DateTime.now());
     final minimumTime = DateTime.now().add(const Duration(minutes: 5));
     if (initialTime.isBefore(minimumTime)) {
       initialTime = minimumTime;
