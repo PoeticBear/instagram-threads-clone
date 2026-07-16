@@ -264,6 +264,14 @@ class PostState extends AppStates {
       name: 'PostState',
     );
 
+    // 🕐 [SCHEDULE-DEBUG] 打印原始 scheduledTime 字符串，方便核对时区/格式。
+    developer.log(
+      '🕐 [SCHEDULE-DEBUG] PostState.createPost 入参: '
+      'scheduledTime=$scheduledTime '
+      '(length=${scheduledTime?.length ?? 0}, isUtc=${scheduledTime?.endsWith("Z") ?? false})',
+      name: 'PostState',
+    );
+
     try {
       // 1) 处理媒体草稿：上传本地文件 → 收集 (mediaUrls, mediaTypes)
       List<String>? mediaUrls;
@@ -359,6 +367,15 @@ class PostState extends AppStates {
       // 否则会漏掉 quoteRepostId / quotePost 等字段，导致引用帖发布后被引用
       // 区域不显示（必须刷新 Feed 才能看到）。
       final newPost = _apiPostToModel(post);
+
+      // 🕐 [SCHEDULE-DEBUG] 核对服务端是否真的把定时时间存下来、并原样回传。
+      developer.log(
+        '🕐 [SCHEDULE-DEBUG] createPost 服务端响应: '
+        'postId=${post.id} '
+        'response.scheduled_time=${post.scheduledTime} '
+        '(期望发送=$scheduledTime, 一致=${post.scheduledTime == scheduledTime})',
+        name: 'PostState',
+      );
 
       if (scheduledTime == null) {
         _feedlist ??= [];
@@ -457,6 +474,20 @@ class PostState extends AppStates {
         return _apiPostToModel(apiPost);
       }).toList();
 
+      // 📰 [FEED-DEBUG] 检查 Feed 中是否混入了仍带 scheduledTime 的"定时未发布"帖子
+      final leakedScheduled =
+          _feedlist!.where((p) => p.scheduledTime != null).toList();
+      developer.log(
+        '📰 [FEED-DEBUG] getDataFromDatabase 加载 ${_feedlist!.length} 条，'
+        '其中 scheduledTime 非空的异常条目 ${leakedScheduled.length} 条',
+        name: 'PostState',
+      );
+      for (final p in leakedScheduled) {
+        developer.log('  - id=${p.id} scheduledTime=${p.scheduledTime}',
+            name: 'PostState');
+      }
+      // ============================================================
+
       // Sort by createdAt descending
       _feedlist!.sort((x, y) =>
           DateTime.parse(y.createdAt).compareTo(DateTime.parse(x.createdAt)));
@@ -483,6 +514,20 @@ class PostState extends AppStates {
       _feedlist = posts.map((apiPost) {
         return _apiPostToModel(apiPost);
       }).toList();
+
+      // 📰 [FEED-DEBUG] refresh 同样检查是否有 scheduledTime 异常的条目
+      final leakedScheduled =
+          _feedlist!.where((p) => p.scheduledTime != null).toList();
+      developer.log(
+        '📰 [FEED-DEBUG] refresh 加载 ${_feedlist!.length} 条，'
+        '其中 scheduledTime 非空的异常条目 ${leakedScheduled.length} 条',
+        name: 'PostState',
+      );
+      for (final p in leakedScheduled) {
+        developer.log('  - id=${p.id} scheduledTime=${p.scheduledTime}',
+            name: 'PostState');
+      }
+      // ============================================================
 
       _feedlist!.sort((x, y) =>
           DateTime.parse(y.createdAt).compareTo(DateTime.parse(x.createdAt)));
@@ -619,6 +664,20 @@ class PostState extends AppStates {
     try {
       final posts = await getUserPosts(userId);
       _userPosts = posts;
+
+      // 📰 [USER-POSTS-DEBUG] 检查个人帖子列表里是否混入仍带 scheduledTime 的异常条目
+      final leakedScheduled =
+          _userPosts!.where((p) => p.scheduledTime != null).toList();
+      developer.log(
+        '📰 [USER-POSTS-DEBUG] loadUserPosts 加载 ${_userPosts!.length} 条，'
+        '其中 scheduledTime 非空的异常条目 ${leakedScheduled.length} 条',
+        name: 'PostState',
+      );
+      for (final p in leakedScheduled) {
+        developer.log('  - id=${p.id} scheduledTime=${p.scheduledTime}',
+            name: 'PostState');
+      }
+      // ================================================================
     } catch (error) {
       _userPosts = [];
     }
@@ -1050,6 +1109,23 @@ class PostState extends AppStates {
       final posts = await postService.getScheduledPosts(page: page, size: size);
       _scheduledPosts =
           posts.map((apiPost) => _apiPostToModel(apiPost)).toList();
+
+      // 🕐 [SCHEDULE-DEBUG] 打印解析后的定时列表（id + 定时时间 + 摘要）
+      developer.log(
+        '🕐 [SCHEDULE-DEBUG] loadScheduledPosts 完成，共 ${_scheduledPosts.length} 条',
+        name: 'PostState',
+      );
+      for (var i = 0; i < _scheduledPosts.length && i < 20; i++) {
+        final p = _scheduledPosts[i];
+        final preview = (p.bio ?? '').length > 30
+            ? '${(p.bio ?? '').substring(0, 30)}...'
+            : (p.bio ?? '');
+        developer.log(
+          '  [$i] id=${p.id} scheduledTime=${p.scheduledTime} content="$preview"',
+          name: 'PostState',
+        );
+      }
+      // ================================================================
     } catch (_) {
       _scheduledPosts = [];
     }

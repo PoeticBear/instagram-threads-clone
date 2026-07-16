@@ -100,6 +100,19 @@ class PostService {
       debugPrint('🚨🚨🚨 [MENTION-DEBUG] ═══ 请求结束 ═══');
       // ==================================================================
 
+      // ===== 调试日志：打印 scheduled_publish_time 入参与 body 实际值 =====
+      if (scheduledTime != null) {
+        debugPrint('🕐 [SCHEDULE-DEBUG] ═══ createPost 携带定时 ═══');
+        debugPrint('🕐 [SCHEDULE-DEBUG] 入参 scheduledTime = $scheduledTime');
+        debugPrint(
+            '🕐 [SCHEDULE-DEBUG] body[scheduled_publish_time] = ${body['scheduled_publish_time']}');
+        debugPrint(
+            '🕐 [SCHEDULE-DEBUG] body 是否含 scheduled_publish_time = ${body.containsKey('scheduled_publish_time')}');
+      } else {
+        debugPrint('🕐 [SCHEDULE-DEBUG] createPost scheduledTime=null，帖子将立即发布');
+      }
+      // ===================================================================
+
       final response = await _apiClient.post('post/create', body: body);
 
       // ===== 调试日志：打印服务端响应，便于排查是否回带 mention 字段 =====
@@ -109,6 +122,13 @@ class PostService {
       debugPrint('✅ [MENTION-DEBUG] 响应体:\n$respJson');
       debugPrint('✅✅✅ [MENTION-DEBUG] ═══ 响应结束 ═══');
       // ==================================================================
+
+      // 🕐 [SCHEDULE-DEBUG] 打印服务端响应里 scheduled_publish_time / status 的原值
+      debugPrint(
+          '🕐 [SCHEDULE-DEBUG] 服务端响应 data.scheduled_publish_time = ${response['data']?['scheduled_publish_time']}');
+      debugPrint(
+          '🕐 [SCHEDULE-DEBUG] 服务端响应 data.status = ${response['data']?['status']}');
+      // =================================================================
       return Post.fromJson(response['data']);
     } on ApiException catch (e) {
       developer.log(
@@ -602,6 +622,19 @@ class PostService {
       } else {
         items = [];
       }
+
+      // 🕐 [SCHEDULE-DEBUG] 打印定时列表接口返回的原始字段
+      debugPrint('🕐 [SCHEDULE-DEBUG] GET /post/scheduled 返回 ${items.length} 条');
+      for (var i = 0; i < items.length && i < 20; i++) {
+        final item = items[i];
+        if (item is Map) {
+          debugPrint(
+              '  [$i] id=${item['id']} scheduled_time=${item['scheduled_time']} '
+              'created_at=${item['created_at']} status=${item['status']}');
+        }
+      }
+      // ===========================================================
+
       return items
           .map((e) => Post.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -1122,7 +1155,11 @@ class Post {
           json['quote_post_id'] ??
           json['quotePostId'],
       isPinned: json['is_pinned'] ?? json['isPinned'] ?? false,
-      scheduledTime: json['scheduled_time'] ?? json['scheduledTime'],
+      // scheduled_publish_time 是服务端 openapi 契约的真实字段名；
+      // scheduled_time / scheduledTime 是历史/兼容字段，排在后面兜底。
+      scheduledTime: json['scheduled_publish_time'] ??
+          json['scheduled_time'] ??
+          json['scheduledTime'],
       isAi: json['is_ai'] ?? json['isAi'] ?? false,
       // Quote / Repost / Thread fields
       quoteContent: json['quote_content'] ?? json['quoteContent'],

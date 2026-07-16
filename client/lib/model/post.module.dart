@@ -324,7 +324,11 @@ class PostModel {
           map['quote_post_id'] ??
           map['quotePostId'],
       isPinned: _parseBool(map['is_pinned'] ?? map['isPinned']),
-      scheduledTime: map['scheduled_time'] ?? map['scheduledTime'],
+      // scheduled_publish_time 是服务端 openapi 契约的真实字段名；
+      // scheduled_time / scheduledTime 是历史/兼容字段，排在后面兜底。
+      scheduledTime: map['scheduled_publish_time'] ??
+          map['scheduled_time'] ??
+          map['scheduledTime'],
       isAi: _parseBool(map['is_ai'] ?? map['isAi']),
       quoteContent: map['quote_content'] ?? map['quoteContent'],
       quotePost: quotePost,
