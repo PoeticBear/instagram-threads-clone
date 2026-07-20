@@ -13,12 +13,13 @@
 
 ## 当前版本
 
-- 🟢 [v1.0.0+24](./v1.0.0+24.md) — 登录页加载动画统一为页面级遮罩 + 底部导航红点视觉收紧 + App Store 上架就绪（2026-07-16）
+- 🟢 [v1.0.0+25](./v1.0.0+25.md) — 截屏 Bug 反馈闭环（截屏 → 表单 → GitHub 工单）+ TestFlight 隔离（App Store 包剔除）（2026-07-20）
 
 ## 全部版本
 
 | 版本 | 发布日期 | 涵盖构建 | 摘要 |
 | --- | --- | --- | --- |
+| [v1.0.0+25](./v1.0.0+25.md) | 2026-07-20 | +25 | 截屏 Bug 反馈闭环（截屏 → 表单 → GitHub 工单，自动带截图 / 描述 / 设备信息）；TestFlight 隔离双保险（FEEDBACK_ENABLED dart-define + sandboxReceipt，App Store 包物理剔除）；新增 photo_manager / device_info_plus / package_info_plus 依赖 |
 | [v1.0.0+24](./v1.0.0+24.md) | 2026-07-16 | +24 | 登录页加载动画统一为页面级遮罩 + PopScope；底部导航「+」Tab 改 Popup 菜单分流「写文字」/「普通图文」；红点位置紧贴心形 + 色系统一为红色；定时发布字段读取修正；搜索历史改 chip；App Store 上架就绪（fastlane + 真实截图 + privacy URL） |
 | [v1.0.0+23](./v1.0.0+23.md) | 2026-07-16 | +23 | 「写文字」AppBar「发布」→「确认」+ `pushReplacement` 接管 `ComposePost(initialContent, initialMediaDrafts)`；放行空文字；feedpost 编辑后 `onPostSuccess`/`onCancel` 路由 pop 回调修复（同 bug 类顺手补） |
 | [v1.0.0+22](./v1.0.0+22.md) | 2026-06-22 | +22 | App Store 正式发布流水线首次接入：fastlane 配置 + `client/scripts/appstore-release.sh` 一键脚本；`.gitignore` 排除 fastlane report.xml；CLAUDE.md 增「一键发布到 App Store」工作流 |
