@@ -164,15 +164,24 @@ BugFeedbackSheet
 
 ---
 
-## 7. 云端接入点（待实现）
+## 7. 云端接入（GitHub private repo）✅
 
-> 下一步工作。当前为 stub，云端方案（飞书 / 企微机器人 / GitHub Issue / 自建）定下后实施。
+已接入专用 GitHub private repo `PoeticBear/app-bug-reports`（private）。
 
-**唯一改动点**：`BugReportService._writeStub()`（`client/lib/services/bug_report_service.dart:86`）
+**投递路径**：`BugReportService.submit` → `_deliver`
+- token 已配置（`GitHubBugClient.isConfigured`）→ `_deliverToGitHub`：
+  ① `GitHubBugClient.uploadScreenshot` —— Contents API 推 base64 → 返回 raw URL
+  ② `GitHubBugClient.createIssue` —— 建 Issue，body 用 markdown 引用 raw URL，label `from-app`
+- 未配置 / 投递失败 → `_writeStub`（本地沙盒 + log）兜底
 
-- 把「写本地沙盒 + log」换成「上传云端」；
-- **调用方（`BugFeedbackSheet._submit`）与数据契约（`BugReport`）零改动** —— `submit()` 签名、返回 `Future<bool>` 保持不变；
-- 上传失败仍返回 `false`，表单会提示「提交失败，请重试」（文案 key `bugReportSubmitFailed`）。
+| 文件 | 职责 |
+| --- | --- |
+| `client/lib/services/github_bug_client.dart` | GitHub API 封装（推图 + 建 Issue），token / repo 走 dart-define |
+| `client/lib/services/bug_report_service.dart` | `_deliver` 分流（GitHub 主 / stub 兜底） |
+
+**token 注入**：fine-grained PAT（仅本 repo 的 Contents + Issues 读写），`--dart-define=BUG_GITHUB_TOKEN` 从环境变量读（**不进 git**），由 `release.sh` 在 TestFlight 发版时注入；App Store 包不注入（`FEEDBACK_ENABLED=false`，模块被 tree-shake）。
+
+**调用方零改动**：`BugFeedbackSheet._submit` 与 `BugReport` 契约不变，`submit()` 返回 `Future<bool>`。
 
 ---
 
