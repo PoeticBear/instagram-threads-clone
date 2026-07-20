@@ -164,9 +164,11 @@ BugFeedbackSheet
 
 ---
 
-## 7. 云端接入（GitHub private repo）✅
+## 7. 云端接入（GitHub repo，public）✅
 
-已接入专用 GitHub private repo `PoeticBear/app-bug-reports`（private）。
+已接入专用 GitHub repo `PoeticBear/app-bug-reports`（**public**）。
+
+> **为何 public**：private repo 的 `raw.githubusercontent.com` URL 对匿名请求返回 404，而 issue 页面渲染 `![](raw-url)` 时浏览器是匿名取图 → 截图裂。改 public 后 raw URL 匿名可访问，issue 内联显示正常。token 仍为 fine-grained PAT（仅该 repo 的 Contents + Issues 读写），泄露爆炸半径不变。
 
 **投递路径**：`BugReportService.submit` → `_deliver`
 - token 已配置（`GitHubBugClient.isConfigured`）→ `_deliverToGitHub`：
