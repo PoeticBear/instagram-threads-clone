@@ -116,6 +116,72 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @bugReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a Bug'**
+  String get bugReportTitle;
+
+  /// No description provided for @bugReportScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot'**
+  String get bugReportScreenshot;
+
+  /// No description provided for @bugReportScreenshotLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Grabbing your screenshot…'**
+  String get bugReportScreenshotLoading;
+
+  /// No description provided for @bugReportScreenshotFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t grab the screenshot. You can still submit your description.'**
+  String get bugReportScreenshotFailed;
+
+  /// No description provided for @bugReportDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what happened…'**
+  String get bugReportDescriptionHint;
+
+  /// No description provided for @bugReportDescriptionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the issue first'**
+  String get bugReportDescriptionRequired;
+
+  /// No description provided for @bugReportSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get bugReportSubmit;
+
+  /// No description provided for @bugReportSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting…'**
+  String get bugReportSubmitting;
+
+  /// No description provided for @bugReportSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted. Thanks!'**
+  String get bugReportSubmitted;
+
+  /// No description provided for @bugReportSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit failed, please retry'**
+  String get bugReportSubmitFailed;
+
+  /// No description provided for @bugReportDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get bugReportDismiss;
+
   /// No description provided for @post.
   ///
   /// In en, this message translates to:

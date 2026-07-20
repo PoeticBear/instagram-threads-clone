@@ -18,6 +18,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get bugReportTitle => 'Report a Bug';
+
+  @override
+  String get bugReportScreenshot => 'Screenshot';
+
+  @override
+  String get bugReportScreenshotLoading => 'Grabbing your screenshot…';
+
+  @override
+  String get bugReportScreenshotFailed =>
+      'Couldn\'t grab the screenshot. You can still submit your description.';
+
+  @override
+  String get bugReportDescriptionHint => 'Describe what happened…';
+
+  @override
+  String get bugReportDescriptionRequired => 'Please describe the issue first';
+
+  @override
+  String get bugReportSubmit => 'Submit';
+
+  @override
+  String get bugReportSubmitting => 'Submitting…';
+
+  @override
+  String get bugReportSubmitted => 'Report submitted. Thanks!';
+
+  @override
+  String get bugReportSubmitFailed => 'Submit failed, please retry';
+
+  @override
+  String get bugReportDismiss => 'Dismiss';
+
+  @override
   String get post => 'Post';
 
   @override

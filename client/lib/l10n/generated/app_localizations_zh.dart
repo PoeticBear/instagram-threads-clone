@@ -18,6 +18,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cancel => '取消';
 
   @override
+  String get bugReportTitle => '上报 Bug';
+
+  @override
+  String get bugReportScreenshot => '截图';
+
+  @override
+  String get bugReportScreenshotLoading => '正在获取截图…';
+
+  @override
+  String get bugReportScreenshotFailed => '截图获取失败，仍可提交文字描述';
+
+  @override
+  String get bugReportDescriptionHint => '描述你遇到的问题…';
+
+  @override
+  String get bugReportDescriptionRequired => '请先描述问题';
+
+  @override
+  String get bugReportSubmit => '提交';
+
+  @override
+  String get bugReportSubmitting => '提交中…';
+
+  @override
+  String get bugReportSubmitted => '已上报，感谢反馈！';
+
+  @override
+  String get bugReportSubmitFailed => '提交失败，请重试';
+
+  @override
+  String get bugReportDismiss => '关闭';
+
+  @override
   String get post => '发布';
 
   @override

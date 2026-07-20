@@ -85,6 +85,51 @@ import CoreTelephony
       }
     }
 
+    // ── ScreenshotChannel ──
+    // 监听 iOS 系统级截屏通知（用户按 电源+音量上 键），事件以
+    // native → flutter 方向通过 invokeMethod 推给 Dart 端。
+    // 仅用于内部测试构建的 Bug 反馈闭环；Android 端不注册（本项目仅维护 iOS）。
+    // 注意：该通知只告知「用户截屏了」，不附带图片数据 —— 截图需在 Dart 端
+    // 通过 photo_manager 从相册取最新一张（截屏写入相册有 ~0.5s 延迟，
+    // 故在用户提交表单时再取，而非事件触发瞬间）。
+    if let registrar = self.registrar(forPlugin: "ScreenshotChannel") {
+      let channel = FlutterMethodChannel(
+        name: "com.yt.threads/screenshot",
+        binaryMessenger: registrar.messenger()
+      )
+      NotificationCenter.default.addObserver(
+        forName: UIApplication.userDidTakeScreenshotNotification,
+        object: nil,
+        queue: .main
+      ) { _ in
+        channel.invokeMethod("onScreenshotTaken", arguments: nil)
+      }
+    }
+
+    // ── BuildConfigChannel ──
+    // 暴露构建渠道信息给 Flutter，用于内部测试功能的运行时隔离。
+    // TestFlight 包的 appStoreReceiptURL 末段为 "sandboxReceipt"，
+    // App Store 正式包为 "receipt" —— 据此区分两种 release 构建，
+    // 作为 FEEDBACK_ENABLED dart-define 之外的第二道保险。
+    if let registrar = self.registrar(forPlugin: "BuildConfigChannel") {
+      let channel = FlutterMethodChannel(
+        name: "com.yt.threads/build_config",
+        binaryMessenger: registrar.messenger()
+      )
+      channel.setMethodCallHandler { (call, result) in
+        switch call.method {
+        case "isTestFlightBuild":
+          if let url = Bundle.main.appStoreReceiptURL {
+            result(url.lastPathComponent == "sandboxReceipt")
+          } else {
+            result(false)
+          }
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+    }
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }

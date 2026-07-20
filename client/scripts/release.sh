@@ -212,7 +212,9 @@ if [ "$ONLY_UPLOAD" = "1" ]; then
 else
   header "Step 5/6  flutter build ipa --release"
   cd "$CLIENT_DIR"
-  flutter build ipa --release
+  # TestFlight 包启用内部测试「截屏 → Bug 反馈」闭环（FEEDBACK_ENABLED）。
+  # 注意：仍不带 APP_ENV=dev（release 一律走 prod）。
+  flutter build ipa --release --dart-define=FEEDBACK_ENABLED=true
   cd "$PROJECT_DIR"
   ok "构建完成"
 fi

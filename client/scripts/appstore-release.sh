@@ -252,6 +252,8 @@ if [ "$ONLY_UPLOAD" = "1" ]; then
 else
   header "Step 6/9  flutter build ipa --release"
   cd "$CLIENT_DIR"
+  # App Store 正式包：不带 FEEDBACK_ENABLED（默认 false）→ Bug 反馈模块
+  # 被 tree-shake 物理剔除，不出现在产物中。
   flutter build ipa --release
   cd "$PROJECT_DIR"
   ok "构建完成"

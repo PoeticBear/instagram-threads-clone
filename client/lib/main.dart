@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -38,6 +39,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:threads/state/media_preferences.state.dart';
 import 'package:threads/state/media_layout_preferences.state.dart';
 import 'package:threads/state/app_icon_state.dart';
+import 'package:threads/services/screenshot_detector_service.dart';
+import 'package:threads/services/feedback_gate.dart';
+import 'package:threads/pages/bug_feedback/bug_feedback_sheet.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -106,6 +110,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _wireupApiClientCallbacks();
       _wireupWebSocket();
     });
+
+    // 内部测试：Debug 或 TestFlight 构建开启「截屏 → Bug 反馈表单」闭环。
+    // 双保险：编译期 feedbackCompileEnabled（FEEDBACK_ENABLED dart-define，
+    // App Store 包为 false → 整块 tree-shake 物理剔除）+ 运行时 sandboxReceipt。
+    if (kDebugMode || feedbackCompileEnabled) {
+      _wireupBugFeedback(); // 内部异步判定 receipt，不阻塞 UI
+    }
   }
 
   /// App 生命周期:paused → 断开 WS(省电 + 避免弱网重连风暴);
@@ -210,6 +221,27 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (_) => false,
       );
     };
+  }
+
+  /// 内部测试：把 iOS 截屏事件接到 Bug 反馈表单。
+  /// 双保险判定（编译期 flag + 运行时 sandboxReceipt）通过后才挂 detector；
+  /// App Store 正式包（isReady=false）不挂载，等于功能不存在。
+  Future<void> _wireupBugFeedback() async {
+    if (!await FeedbackGate.instance.isReady()) return;
+    final detector = ScreenshotDetectorService.instance;
+    detector.onScreenshot = _showBugFeedbackSheet;
+    detector.start();
+  }
+
+  void _showBugFeedbackSheet() {
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null) return;
+    final detector = ScreenshotDetectorService.instance;
+    detector.markSheetShowing(true);
+    BugFeedbackSheet.show(ctx, triggerTime: detector.lastTriggeredAt)
+        .whenComplete(() {
+      detector.markSheetShowing(false);
+    });
   }
 
   @override
