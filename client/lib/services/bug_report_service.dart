@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:threads/model/bug_report.dart';
+import 'package:threads/services/github_bug_client.dart';
 
 /// Bug 反馈工单上报服务。
 ///
@@ -45,11 +46,40 @@ class BugReportService {
         deviceModel: meta.deviceModel,
         osVersion: meta.osVersion,
       );
-      return await _writeStub(report);
+      return await _deliver(report);
     } catch (e, st) {
       debugPrint('[BugReport] submit failed: $e\n$st');
       return false;
     }
+  }
+
+  /// 上报主路径：GitHub 已配置 → 投递 Issue；未配置 / 失败 → 本地 stub。
+  /// 调用方（BugFeedbackSheet）与数据契约（BugReport）零改动。
+  Future<bool> _deliver(BugReport report) async {
+    if (GitHubBugClient.isConfigured) {
+      if (await _deliverToGitHub(report)) return true;
+      debugPrint('[BugReport] GitHub deliver failed → fallback to local stub');
+    }
+    return _writeStub(report);
+  }
+
+  /// 推截图 + 建 Issue。任一步失败返回 false（由 [_deliver] 兜底）。
+  Future<bool> _deliverToGitHub(BugReport report) async {
+    String? rawUrl;
+    if (report.screenshotPath != null) {
+      final file = File(report.screenshotPath!);
+      if (await file.exists()) {
+        rawUrl = await GitHubBugClient.uploadScreenshot(file);
+      }
+    }
+    final issueNo = await GitHubBugClient.createIssue(
+      description: report.description,
+      screenshotRawUrl: rawUrl,
+      meta: report,
+    );
+    if (issueNo == null) return false;
+    debugPrint('[BugReport] GitHub issue #$issueNo created');
+    return true;
   }
 
   /// 采集 app 版本 / 机型 / 系统版本等静态元信息。

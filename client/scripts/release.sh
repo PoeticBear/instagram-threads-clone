@@ -212,9 +212,17 @@ if [ "$ONLY_UPLOAD" = "1" ]; then
 else
   header "Step 5/6  flutter build ipa --release"
   cd "$CLIENT_DIR"
-  # TestFlight 包启用内部测试「截屏 → Bug 反馈」闭环（FEEDBACK_ENABLED）。
+  # TestFlight 包启用内部测试「截屏 → Bug 反馈」闭环：
+  # - FEEDBACK_ENABLED：开启反馈模块
+  # - BUG_GITHUB_REPO / BUG_GITHUB_TOKEN：投递到专用 private repo
+  #   token 从环境变量读（**不进 git**）；未设置则报错退出，避免发出去的
+  #   包静默 fallback 到本地 stub（测试同学提交无人知晓）。
   # 注意：仍不带 APP_ENV=dev（release 一律走 prod）。
-  flutter build ipa --release --dart-define=FEEDBACK_ENABLED=true
+  : "${BUG_GITHUB_TOKEN:?发版前请先 export BUG_GITHUB_TOKEN=<fine-grained PAT>}"
+  flutter build ipa --release \
+    --dart-define=FEEDBACK_ENABLED=true \
+    --dart-define=BUG_GITHUB_REPO="PoeticBear/app-bug-reports" \
+    --dart-define=BUG_GITHUB_TOKEN="$BUG_GITHUB_TOKEN"
   cd "$PROJECT_DIR"
   ok "构建完成"
 fi
