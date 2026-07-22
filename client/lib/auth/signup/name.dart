@@ -289,6 +289,7 @@ class _NamePageState extends State<NamePage> {
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorsExtension>()!.colors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return PopScope(
       canPop: !_isLoading,
       child: Scaffold(
@@ -416,39 +417,30 @@ class _NamePageState extends State<NamePage> {
                     ],
                   ),
                   const SizedBox(height: 32),
-                  GestureDetector(
-                    onTap: _isLoading ? null : _handleAppleSignIn,
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.apple,
-                              color: Colors.white, size: 28),
-                          const SizedBox(width: 12),
-                          Text(
-                            AppLocalizations.of(context)!.loginWithApple,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  // 官方 SignInWithAppleButton：强制满足 HIG（官方 Apple Logo 字形、本地化标题、
+                  // 点击反馈、无障碍语义）。加载期间由页面级 _loadingOverlay（IgnorePointer）
+                  // 与 _handleAppleSignIn 开头的 _isLoading 判空共同拦截重复点击。
+                  // 深色主题下纯黑按钮会融入背景难以辨识，改用白底黑字（HIG 深色环境推荐）。
+                  // text 默认是写死的英文 "Sign in with Apple"，包本身不做本地化；
+                  // 这里显式传入跟随 App 语言的 loginWithApple（zh「通过 Apple 登录」/ en「Continue with Apple」）。
+                  // 官方组件字号 = height × 0.43（无独立 fontSize 参数），50→45 使字号约 -2（21.5→19.4）。
+                  SignInWithAppleButton(
+                    onPressed: _handleAppleSignIn,
+                    text: AppLocalizations.of(context)!.loginWithApple,
+                    style: isDark
+                        ? SignInWithAppleButtonStyle.white
+                        : SignInWithAppleButtonStyle.black,
+                    borderRadius: BorderRadius.circular(25),
+                    height: 45,
                   ),
                   const SizedBox(height: 12),
+                  // 高度 45 + 文字 19 与上方 Apple 官方按钮对齐（Apple 字号=height×0.43≈19.4），
+                  // 让两个社交登录按钮的高度与文字大小保持一致。
                   GestureDetector(
                     onTap: _isLoading ? null : _handleGoogleSignIn,
                     behavior: HitTestBehavior.opaque,
                     child: Container(
-                      height: 50,
+                      height: 45,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(25),
@@ -477,7 +469,7 @@ class _NamePageState extends State<NamePage> {
                             AppLocalizations.of(context)!.loginWithGoogle,
                             style: const TextStyle(
                               color: Color(0xFF1F1F1F),
-                              fontSize: 15,
+                              fontSize: 19,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

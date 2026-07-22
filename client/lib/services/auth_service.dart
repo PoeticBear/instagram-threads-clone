@@ -303,6 +303,20 @@ class AuthService {
     }
   }
 
+  /// 删除（注销）当前用户账号——彻底删除，非退出登录 / 停用（满足 App Store Review
+  /// Guideline 5.1.1(v)）。调用 DELETE /user/me（后端契约 TBD）。
+  /// 成功：直接返回，本地登录态清理由 AuthState 负责（避免与 logout 行为耦合）。
+  /// 失败：抛 ApiException，上层据以提示「删除失败」并保留登录态可重试。
+  Future<void> deleteAccount() async {
+    try {
+      await _apiClient.delete('user/me');
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException(message: '删除账号失败: $e');
+    }
+  }
+
   Future<UserInfo> getCurrentUser() async {
     try {
       final response = await _apiClient.get('user/me');

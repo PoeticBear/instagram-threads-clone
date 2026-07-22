@@ -15,6 +15,7 @@ import 'package:threads/common/settings/relation_control_page.dart';
 import 'package:threads/common/settings/collections_page.dart';
 import 'package:threads/common/settings/hidden_words_page.dart';
 import 'package:threads/common/settings/links_page.dart';
+import 'package:threads/common/settings/account_cancellation_page.dart';
 import 'package:threads/pages/community/community_list_page.dart';
 import 'package:threads/pages/post/saved_posts_page.dart';
 import 'package:threads/pages/post/scheduled_posts_page.dart';
@@ -359,6 +360,20 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: () {
                 // Placeholder
               },
+            ),
+            const SizedBox(height: 20),
+
+            // 注销账号（菜单项样式；点击进入独立注销页。满足 App Store 5.1.1(v)）
+            _buildMenuRow(
+              icon: CupertinoIcons.delete,
+              title: l10n.deleteAccount,
+              showArrow: true,
+              onTap: () => Navigator.push(
+                context,
+                CupertinoPageRoute(
+                  builder: (_) => const AccountCancellationPage(),
+                ),
+              ),
             ),
 
             const SizedBox(height: 20),

@@ -1,5 +1,7 @@
 .DS_Store
 error-info.md
+# 已完成的提审修复任务清单（工作已归档进 openspec/changes/archive，本地留存备查）
+iOS_AppStore_Rejection_Fix_Tasks.md
 pubspec-origin.lock
 client/ios/Runner.xcworkspace/xcshareddata/swiftpm/
 client/ios/build/

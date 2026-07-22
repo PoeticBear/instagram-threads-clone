@@ -530,6 +530,90 @@ abstract class AppLocalizations {
   /// **'Log out'**
   String get logOut;
 
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete your account and all associated data. This action cannot be undone.'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete account. Please try again later.'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @accountCancellationNoticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before You Cancel'**
+  String get accountCancellationNoticeTitle;
+
+  /// No description provided for @cancellationNotice1.
+  ///
+  /// In en, this message translates to:
+  /// **'After cancellation, all personal data (avatar, username, bio, etc.) will be permanently deleted and cannot be recovered.'**
+  String get cancellationNotice1;
+
+  /// No description provided for @cancellationNotice2.
+  ///
+  /// In en, this message translates to:
+  /// **'All your posts, replies, likes and reposts will be removed.'**
+  String get cancellationNotice2;
+
+  /// No description provided for @cancellationNotice3.
+  ///
+  /// In en, this message translates to:
+  /// **'Your following, followers, saved items and community memberships will be cleared.'**
+  String get cancellationNotice3;
+
+  /// No description provided for @cancellationNotice4.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked third-party logins (Apple / Google) will be unlinked.'**
+  String get cancellationNotice4;
+
+  /// No description provided for @cancellationNotice5.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone. Please proceed with caution.'**
+  String get cancellationNotice5;
+
+  /// No description provided for @cancellationAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and agree to the above terms'**
+  String get cancellationAgree;
+
+  /// No description provided for @cancellationConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Cancellation'**
+  String get cancellationConfirm;
+
+  /// No description provided for @cancellationConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You will return to the login page after cancellation.'**
+  String get cancellationConfirmMessage;
+
+  /// No description provided for @cancellationLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing cancellation…'**
+  String get cancellationLoading;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:
@@ -3355,6 +3439,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard'**
   String get textCardDiscardConfirm;
+
+  /// No description provided for @chatEulaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'End User License Agreement'**
+  String get chatEulaTitle;
+
+  /// No description provided for @chatEulaLastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated: July 22, 2026'**
+  String get chatEulaLastUpdated;
+
+  /// No description provided for @chatEulaIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Tweet (the \"App\"). This Agreement is a legal agreement between you and the developer of the App (\"we\") regarding your use of the App\'s services.'**
+  String get chatEulaIntro;
+
+  /// No description provided for @chatEulaSection1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Acceptance of Terms'**
+  String get chatEulaSection1Title;
+
+  /// No description provided for @chatEulaSection1Body.
+  ///
+  /// In en, this message translates to:
+  /// **'By downloading, installing, or using this App, you agree to be bound by the terms of this Agreement. If you do not agree to any of these terms, do not download, install, or use this App.'**
+  String get chatEulaSection1Body;
+
+  /// No description provided for @chatEulaSection2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'2. User-Generated Content'**
+  String get chatEulaSection2Title;
+
+  /// No description provided for @chatEulaSection2Body.
+  ///
+  /// In en, this message translates to:
+  /// **'The App allows users to post text and images, and to interact in group chats and direct messages. We maintain a \"Zero Tolerance\" policy toward objectionable content.\n\nYou agree not to post any content that includes:\n• Pornographic or obscene content: including but not limited to nudity, sexual suggestiveness, or depictions of sexual acts.\n• Hate speech or discrimination: attacks based on race, religion, gender, sexual orientation, disability, etc.\n• Violence and threats: content that incites violence, self-harm, or threatens the safety of others.\n• Harassment and abuse: persistent attacks, intimidation, or bullying directed at specific individuals.\n• Illegal content: any information that violates applicable local laws.'**
+  String get chatEulaSection2Body;
+
+  /// No description provided for @chatEulaSection3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'3. Content Moderation and Enforcement'**
+  String get chatEulaSection3Title;
+
+  /// No description provided for @chatEulaSection3Body.
+  ///
+  /// In en, this message translates to:
+  /// **'To maintain community safety, we provide the following mechanisms:\n• Flagging: Users may report any content that violates this Agreement at any time.\n• Blocking: Users may block any abusive user at any time. Once blocked, all content posted by that user will immediately disappear from your view.\n• 24-hour response commitment: We will review reported content within 24 hours of receiving a report.\n• Penalties: Once a violation is confirmed, we reserve the right to, without prior notice, immediately remove the offending content, and to warn, restrict features, or permanently ban the account of the violating user.'**
+  String get chatEulaSection3Body;
+
+  /// No description provided for @chatEulaSection4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'4. Privacy'**
+  String get chatEulaSection4Title;
+
+  /// No description provided for @chatEulaSection4Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Your privacy is very important to us. For information about how we collect and use your personal information, please refer to our Privacy Policy.'**
+  String get chatEulaSection4Body;
+
+  /// No description provided for @chatEulaSection5Title.
+  ///
+  /// In en, this message translates to:
+  /// **'5. Limitation of Liability'**
+  String get chatEulaSection5Title;
+
+  /// No description provided for @chatEulaSection5Body.
+  ///
+  /// In en, this message translates to:
+  /// **'This App is provided solely as a technology platform. Statements posted by users in chats represent their own personal views only, and the App bears no legal responsibility for the truthfulness, accuracy, or legality of user-generated content. However, we will strictly fulfill our moderation obligations and cooperate with relevant authorities in investigations.'**
+  String get chatEulaSection5Body;
+
+  /// No description provided for @chatEulaSection6Title.
+  ///
+  /// In en, this message translates to:
+  /// **'6. Changes to This Agreement'**
+  String get chatEulaSection6Title;
+
+  /// No description provided for @chatEulaSection6Body.
+  ///
+  /// In en, this message translates to:
+  /// **'We reserve the right to modify this Agreement at any time. Once published, the revised Agreement supersedes the previous version.'**
+  String get chatEulaSection6Body;
+
+  /// No description provided for @chatEulaAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree & Continue'**
+  String get chatEulaAgree;
+
+  /// No description provided for @chatEulaDisagree.
+  ///
+  /// In en, this message translates to:
+  /// **'Disagree'**
+  String get chatEulaDisagree;
 }
 
 class _AppLocalizationsDelegate

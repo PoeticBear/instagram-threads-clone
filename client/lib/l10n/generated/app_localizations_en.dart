@@ -247,6 +247,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logOut => 'Log out';
 
   @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountWarning =>
+      'This will permanently delete your account and all associated data. This action cannot be undone.';
+
+  @override
+  String get deleteAccountConfirm => 'Delete';
+
+  @override
+  String get deleteAccountFailed =>
+      'Failed to delete account. Please try again later.';
+
+  @override
+  String get accountCancellationNoticeTitle => 'Before You Cancel';
+
+  @override
+  String get cancellationNotice1 =>
+      'After cancellation, all personal data (avatar, username, bio, etc.) will be permanently deleted and cannot be recovered.';
+
+  @override
+  String get cancellationNotice2 =>
+      'All your posts, replies, likes and reposts will be removed.';
+
+  @override
+  String get cancellationNotice3 =>
+      'Your following, followers, saved items and community memberships will be cleared.';
+
+  @override
+  String get cancellationNotice4 =>
+      'Linked third-party logins (Apple / Google) will be unlinked.';
+
+  @override
+  String get cancellationNotice5 =>
+      'This action cannot be undone. Please proceed with caution.';
+
+  @override
+  String get cancellationAgree => 'I have read and agree to the above terms';
+
+  @override
+  String get cancellationConfirm => 'Confirm Cancellation';
+
+  @override
+  String get cancellationConfirmMessage =>
+      'You will return to the login page after cancellation.';
+
+  @override
+  String get cancellationLoading => 'Processing cancellation…';
+
+  @override
   String get language => 'Language';
 
   @override
@@ -1741,4 +1791,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get textCardDiscardConfirm => 'Discard';
+
+  @override
+  String get chatEulaTitle => 'End User License Agreement';
+
+  @override
+  String get chatEulaLastUpdated => 'Last updated: July 22, 2026';
+
+  @override
+  String get chatEulaIntro =>
+      'Welcome to Tweet (the \"App\"). This Agreement is a legal agreement between you and the developer of the App (\"we\") regarding your use of the App\'s services.';
+
+  @override
+  String get chatEulaSection1Title => '1. Acceptance of Terms';
+
+  @override
+  String get chatEulaSection1Body =>
+      'By downloading, installing, or using this App, you agree to be bound by the terms of this Agreement. If you do not agree to any of these terms, do not download, install, or use this App.';
+
+  @override
+  String get chatEulaSection2Title => '2. User-Generated Content';
+
+  @override
+  String get chatEulaSection2Body =>
+      'The App allows users to post text and images, and to interact in group chats and direct messages. We maintain a \"Zero Tolerance\" policy toward objectionable content.\n\nYou agree not to post any content that includes:\n• Pornographic or obscene content: including but not limited to nudity, sexual suggestiveness, or depictions of sexual acts.\n• Hate speech or discrimination: attacks based on race, religion, gender, sexual orientation, disability, etc.\n• Violence and threats: content that incites violence, self-harm, or threatens the safety of others.\n• Harassment and abuse: persistent attacks, intimidation, or bullying directed at specific individuals.\n• Illegal content: any information that violates applicable local laws.';
+
+  @override
+  String get chatEulaSection3Title => '3. Content Moderation and Enforcement';
+
+  @override
+  String get chatEulaSection3Body =>
+      'To maintain community safety, we provide the following mechanisms:\n• Flagging: Users may report any content that violates this Agreement at any time.\n• Blocking: Users may block any abusive user at any time. Once blocked, all content posted by that user will immediately disappear from your view.\n• 24-hour response commitment: We will review reported content within 24 hours of receiving a report.\n• Penalties: Once a violation is confirmed, we reserve the right to, without prior notice, immediately remove the offending content, and to warn, restrict features, or permanently ban the account of the violating user.';
+
+  @override
+  String get chatEulaSection4Title => '4. Privacy';
+
+  @override
+  String get chatEulaSection4Body =>
+      'Your privacy is very important to us. For information about how we collect and use your personal information, please refer to our Privacy Policy.';
+
+  @override
+  String get chatEulaSection5Title => '5. Limitation of Liability';
+
+  @override
+  String get chatEulaSection5Body =>
+      'This App is provided solely as a technology platform. Statements posted by users in chats represent their own personal views only, and the App bears no legal responsibility for the truthfulness, accuracy, or legality of user-generated content. However, we will strictly fulfill our moderation obligations and cooperate with relevant authorities in investigations.';
+
+  @override
+  String get chatEulaSection6Title => '6. Changes to This Agreement';
+
+  @override
+  String get chatEulaSection6Body =>
+      'We reserve the right to modify this Agreement at any time. Once published, the revised Agreement supersedes the previous version.';
+
+  @override
+  String get chatEulaAgree => 'Agree & Continue';
+
+  @override
+  String get chatEulaDisagree => 'Disagree';
 }

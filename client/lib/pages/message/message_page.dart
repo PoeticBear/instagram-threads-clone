@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:threads/model/message.module.dart';
 import 'package:threads/pages/message/chat_detail_page.dart';
+import 'package:threads/pages/message/chat_eula_dialog.dart';
 import 'package:threads/pages/message/message_list_tile.dart';
 import 'package:threads/pages/message/message_search_page.dart';
 import 'package:threads/pages/message/message_settings_page.dart';
@@ -30,9 +31,32 @@ class _MessagePageState extends State<MessagePage>
     _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = Provider.of<MessageState>(context, listen: false);
-      state.loadConversations();
+      _maybeShowEulaThenLoad();
     });
+  }
+
+  /// 聊天使用协议闸门：未同意则弹出底部协议 sheet，同意后才加载会话列表；
+  /// 不同意 / 关闭则退回 Feed 且不落库（下次仍弹）。sheet 禁用下拉与点遮罩关闭，
+  /// 用户只能点「同意并继续」或「不同意」。
+  Future<void> _maybeShowEulaThenLoad() async {
+    if (ChatEulaConsent.needsAgreement) {
+      final agreed = await showModalBottomSheet<bool>(
+            context: context,
+            isScrollControlled: true,
+            isDismissible: false,
+            enableDrag: false,
+            builder: (_) => const ChatEulaDialog(),
+          ) ??
+          false;
+      if (!agreed) {
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+      ChatEulaConsent.markAgreed();
+    }
+    if (!mounted) return;
+    final state = Provider.of<MessageState>(context, listen: false);
+    state.loadConversations();
   }
 
   @override

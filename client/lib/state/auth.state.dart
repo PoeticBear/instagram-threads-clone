@@ -90,6 +90,29 @@ class AuthState extends AppStates {
   }
 
   void logoutCallback() async {
+    // 仍走 /auth/logout（与 deleteAccount 的 /user/me 区分）。logout 内部吞错 + 清 token，
+    // 完成后做本地登录态清理。
+    await authService.logout();
+    await _clearLocalSessionAndExit();
+  }
+
+  /// 删除（注销）当前账号：调用 DELETE /user/me（后端契约 TBD）。
+  /// 成功 → 清本地登录态（等价登出，根路由自动切回登录页）。
+  /// 失败 → 抛出，不清登录态，上层提示并可重试（避免账号其实没删却把人踢到登录页）。
+  Future<void> deleteAccount() async {
+    // ⚠️ 临时模拟注销：服务端 DELETE /user/me 尚未实现（openapi 无此端点，详见
+    // docs/code-locations/account-cancellation.md 第 9 节）。当前跳过服务端调用，
+    // 仅做本地登录态清理（等价登出 → 根路由自动切回登录页，页面随之销毁）。
+    // TODO(后端就绪): 取消下行注释，对接真实账号删除，并恢复「失败抛错不清登录态」语义。
+    // await authService.deleteAccount();
+    await _clearLocalSessionAndExit();
+  }
+
+  /// 本地登录态清理（登出 / 删除账号 成功后共用，避免逻辑漂移）：
+  /// 禁 WS + 清内存态 + 清本地凭证 + 清 prefs + notify。不发任何服务端请求
+  /// ——调用方先发完 logout / deleteAccount 请求再调用本方法。
+  /// 注：forceSessionExpired（被动登出）有额外的 isBusy 复位与幂等判断，保持独立未合并。
+  Future<void> _clearLocalSessionAndExit() async {
     // WS 兜底:失效 token 不应被重连机制拿去反复握手。
     // 正常路径下 _MyAppState 的 onAuthChanged 监听已会 disconnect,这是防御性双保险。
     if (getIt.isRegistered<WebSocketService>()) {
@@ -99,7 +122,7 @@ class AuthState extends AppStates {
     userId = '';
     _userModel = null;
     needsUsernameSetup = false;
-    await authService.logout();
+    await authService.clearLocalSession();
     notifyListeners();
     await getIt<SharedPreferenceHelper>().clearPreferenceValues();
   }
