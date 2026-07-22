@@ -96,16 +96,12 @@ class AuthState extends AppStates {
     await _clearLocalSessionAndExit();
   }
 
-  /// 删除（注销）当前账号：调用 DELETE /user/me（后端契约 TBD）。
+  /// 注销当前账号：调用 POST /user/deactivate。
   /// 成功 → 清本地登录态（等价登出，根路由自动切回登录页）。
-  /// 失败 → 抛出，不清登录态，上层提示并可重试（避免账号其实没删却把人踢到登录页）。
+  /// 失败 → 抛出，不清登录态，上层提示并可重试（避免账号其实没注销却把人踢到登录页）。
   Future<void> deleteAccount() async {
-    // ⚠️ 临时模拟注销：服务端 DELETE /user/me 尚未实现（openapi 无此端点，详见
-    // docs/code-locations/account-cancellation.md 第 9 节）。当前跳过服务端调用，
-    // 仅做本地登录态清理（等价登出 → 根路由自动切回登录页，页面随之销毁）。
-    // TODO(后端就绪): 取消下行注释，对接真实账号删除，并恢复「失败抛错不清登录态」语义。
-    // await authService.deleteAccount();
-    await _clearLocalSessionAndExit();
+    await authService.deleteAccount(); // POST /user/deactivate，失败抛 ApiException → 不清登录态
+    await _clearLocalSessionAndExit(); // 成功才清本地登录态（根路由自动切回登录页）
   }
 
   /// 本地登录态清理（登出 / 删除账号 成功后共用，避免逻辑漂移）：

@@ -22,7 +22,7 @@ class _AccountCancellationPageState extends State<AccountCancellationPage> {
   bool _isAgreed = false;
   bool _isCancelling = false;
 
-  /// 最终确认后的执行：调 AuthState.deleteAccount（DELETE /user/me，后端契约 TBD）。
+  /// 最终确认后的执行：调 AuthState.deleteAccount（POST /user/deactivate）。
   /// 成功 → AuthState flip 为 NOT_LOGGED_IN，根路由自动切回登录页，本页随之销毁。
   /// 失败 → 关闭 loading、提示 deleteAccountFailed，保留登录态可重试。
   Future<void> _performCancellation() async {
