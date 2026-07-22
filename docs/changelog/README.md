@@ -13,12 +13,13 @@
 
 ## 当前版本
 
-- 🟢 [v1.0.0+25](./v1.0.0+25.md) — 截屏 Bug 反馈闭环（截屏 → 表单 → GitHub 工单）+ TestFlight 隔离（App Store 包剔除）（2026-07-20）
+- 🟢 [v1.0.0+26](./v1.0.0+26.md) — 提审合规：聊天/私信「使用协议」拦截 + 注销账号入口 + Apple 官方登录按钮（2026-07-22）
 
 ## 全部版本
 
 | 版本 | 发布日期 | 涵盖构建 | 摘要 |
 | --- | --- | --- | --- |
+| [v1.0.0+26](./v1.0.0+26.md) | 2026-07-22 | +26 | 提审合规三件套：聊天/私信进入前弹「使用协议」底部 sheet（版本化同意、不同意回退不落库、不可手势绕过）；个人中心新增「删除账号」入口与注销页（后端 DELETE /user/me 待就绪，当前本地清登录态兜底）；登录页 Apple 按钮改用官方 SignInWithAppleButton（HIG 合规、深色主题白底）；归档 5 个 OpenSpec 变更并同步 7 个能力 spec |
 | [v1.0.0+25](./v1.0.0+25.md) | 2026-07-20 | +25 | 截屏 Bug 反馈闭环（截屏 → 表单 → GitHub 工单，自动带截图 / 描述 / 设备信息）；TestFlight 隔离双保险（FEEDBACK_ENABLED dart-define + sandboxReceipt，App Store 包物理剔除）；新增 photo_manager / device_info_plus / package_info_plus 依赖 |
 | [v1.0.0+24](./v1.0.0+24.md) | 2026-07-16 | +24 | 登录页加载动画统一为页面级遮罩 + PopScope；底部导航「+」Tab 改 Popup 菜单分流「写文字」/「普通图文」；红点位置紧贴心形 + 色系统一为红色；定时发布字段读取修正；搜索历史改 chip；App Store 上架就绪（fastlane + 真实截图 + privacy URL） |
 | [v1.0.0+23](./v1.0.0+23.md) | 2026-07-16 | +23 | 「写文字」AppBar「发布」→「确认」+ `pushReplacement` 接管 `ComposePost(initialContent, initialMediaDrafts)`；放行空文字；feedpost 编辑后 `onPostSuccess`/`onCancel` 路由 pop 回调修复（同 bug 类顺手补） |
