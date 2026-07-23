@@ -71,6 +71,12 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   // 双指缩放：onScaleStart 保存基准 zoom，避免累乘误差
   double _zoomBase = 1.0;
 
+  // 模式 pill 水平平移量（preview 纵向滑动手势驱动；切模式后回弹）
+  double _modePillDx = 0.0;
+  // 动画 generation counter：每次 _onVerticalDragUpdate / _onVerticalDragEnd 自增，
+  // 旧的回弹 Task 检测到 generation 变化后立即退出，避免动画串台
+  int _pillAnimGen = 0;
+
   // 点击对焦 / 曝光点
   Offset? _focusPoint; // 归一化坐标 (0..1)，相对预览可视区域
   DateTime? _focusShownAt;
@@ -101,6 +107,12 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   static const Duration _recordingTickInterval = Duration(milliseconds: 200);
   // 对焦框 2 秒后自动消失
   static const Duration _focusOverlayDuration = Duration(milliseconds: 2000);
+  // 预览区纵向滑动切模式的位移阈值（logical px）
+  static const double _kSwitchModeDragThreshold = 50.0;
+  // mode pill 跟随平移的最大绝对偏移（视觉上限，避免跟手过分）
+  static const double _kModePillMaxAbsDx = 80.0;
+  // mode pill 回弹动画总时长
+  static const Duration _kModePillAnimDuration = Duration(milliseconds: 240);
   // SharedPreferences key
   static const String _kQualityPrefKey = 'compose_camera_quality';
   static const String _kGridPrefKey = 'compose_camera_grid';
@@ -558,6 +570,56 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     setState(() => _currentZoom = newZoom);
   }
 
+  // ─── Vertical drag to switch photo / video mode ───────────
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    // 任何新的拖拽会 invalidate 当前回弹动画
+    _pillAnimGen++;
+    final delta = details.primaryDelta ?? 0;
+    setState(() {
+      _modePillDx = (_modePillDx + delta).clamp(
+        -_kModePillMaxAbsDx,
+        _kModePillMaxAbsDx,
+      );
+    });
+  }
+
+  Future<void> _onVerticalDragEnd(DragEndDetails details) async {
+    final dx = _modePillDx;
+    final myGen = ++_pillAnimGen; // 自增并锁定本次动画的 generation
+    Future<void> snapBack(double from, double to) async {
+      const steps = 12;
+      final stepMs =
+          (_kModePillAnimDuration.inMilliseconds / steps).round().clamp(8, 32);
+      for (int i = 1; i <= steps; i++) {
+        if (myGen != _pillAnimGen) return;
+        await Future.delayed(Duration(milliseconds: stepMs));
+        if (myGen != _pillAnimGen) return;
+        if (!mounted) return;
+        final t = i / steps;
+        final eased = Curves.easeOut.transform(t);
+        setState(() {
+          _modePillDx = from + (to - from) * eased;
+        });
+      }
+    }
+
+    if (dx.abs() < _kSwitchModeDragThreshold) {
+      await snapBack(dx, 0);
+      if (mounted) setState(() => _modePillDx = 0);
+      return;
+    }
+
+    if (_mode == CameraMode.photo && dx <= -_kSwitchModeDragThreshold) {
+      await _switchMode(CameraMode.video);
+    } else if (_mode == CameraMode.video &&
+        dx >= _kSwitchModeDragThreshold) {
+      await _switchMode(CameraMode.photo);
+    }
+    await snapBack(dx, 0);
+    if (mounted) setState(() => _modePillDx = 0);
+  }
+
   // ─── Tap to focus / exposure ─────────────────────────────
 
   Offset? _previewTapToNorm(Offset localPosition, Size previewSize) {
@@ -744,11 +806,19 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
               ? Container(color: Colors.black)
               : CameraPreview(_controller!),
         );
+        // 纵向滑动切换拍照/视频模式的可用性判定：
+        // 录制中、倒计时进行中、模式重建中、初始化失败时全部禁用
+        final verticalDragEnabled = !_isRecording &&
+            _countdownValue == 0 &&
+            !_isSwitchingMode &&
+            !_hasError;
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapUp: (d) => _onPreviewTap(d, constraints.biggest),
           onScaleStart: _onScaleStart,
           onScaleUpdate: _onScaleUpdate,
+          onVerticalDragUpdate: verticalDragEnabled ? _onVerticalDragUpdate : null,
+          onVerticalDragEnd: verticalDragEnabled ? _onVerticalDragEnd : null,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -837,12 +907,15 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                   child: const Icon(Icons.close, color: Colors.white, size: 24),
                 ),
               ),
-              // 中：模式 pill（录制中隐藏）
+              // 中：模式 pill（录制中隐藏；预览区纵向滑动时跟随水平平移）
               Expanded(
                 child: Center(
                   child: _isRecording
                       ? const SizedBox.shrink()
-                      : _buildModePill(l10n),
+                      : Transform.translate(
+                          offset: Offset(_modePillDx, 0),
+                          child: _buildModePill(l10n),
+                        ),
                 ),
               ),
               // 右：闪光灯 / 录制指示器
@@ -852,12 +925,6 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildHeaderIcon(
-                      icon: Iconsax.grid_15,
-                      active: _showGrid,
-                      onTap: _toggleGrid,
-                    ),
-                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: isBackCamera && _mode == CameraMode.photo
                           ? _toggleFlash
@@ -885,27 +952,6 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderIcon({
-    required IconData icon,
-    required bool active,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: active
-              ? Colors.white.withValues(alpha: 0.25)
-              : Colors.black.withValues(alpha: 0.4),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: Colors.white, size: 22),
       ),
     );
   }
@@ -1040,7 +1086,7 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                 ],
               ),
               const SizedBox(height: 18),
-              // 下排：快门 + EV 滑杆 + 翻转
+              // 下排：快门 + EV 滑杆 + 翻转 + 九宫格
               SizedBox(
                 height: 96,
                 child: Stack(
@@ -1059,6 +1105,13 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                       top: 18,
                       child: _buildFlipButton(),
                     ),
+                    // 九宫格：紧贴翻转按钮左侧；录制中隐藏
+                    if (!_isRecording)
+                      Positioned(
+                        right: 68,
+                        top: 18,
+                        child: _buildGridToggleButton(),
+                      ),
                   ],
                 ),
               ),
@@ -1269,20 +1322,71 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
 
   Widget _buildExposureSlider() {
     if (_minExposure >= _maxExposure) return const SizedBox.shrink();
-    // 垂直滑杆：底部 = minExposure（暗），顶部 = maxExposure（亮）
+    // 0 EV 在滑杆量程内的相对位置（0..1），超出范围时不绘制锚线
+    final zeroFraction = ((0 - _minExposure) / (_maxExposure - _minExposure))
+        .clamp(0.0, 1.0);
     return SizedBox(
       width: 36,
       child: RotatedBox(
         quarterTurns: 3,
-        child: Slider(
-          value: _currentExposure.clamp(_minExposure, _maxExposure),
-          min: _minExposure,
-          max: _maxExposure,
-          divisions: _exposureStep > 0
-              ? ((_maxExposure - _minExposure) / _exposureStep).round().clamp(1, 20)
-              : null,
-          onChanged: _isRecording || _controller == null ? null : _setExposure,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // LayoutBuilder 位于 RotatedBox 内，看到的是旋转前的坐标系：
+            // - constraints.maxWidth 是 Slider 横向的视觉可用宽度（旋转后变成纵向高度）
+            // - 在未旋转坐标系下绘制一道"竖线"位于 zeroFraction 处，
+            //   旋转后会呈现在纵向滑杆上的"水平横线"，代表 0 EV 位置
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: Slider(
+                    value: _currentExposure.clamp(_minExposure, _maxExposure),
+                    min: _minExposure,
+                    max: _maxExposure,
+                    // 强制 7 档；不再跟随底层 getExposureOffsetStepSize
+                    divisions: 7,
+                    onChanged:
+                        _isRecording || _controller == null ? null : _setExposure,
+                  ),
+                ),
+                if (zeroFraction > 0 && zeroFraction < 1)
+                  Positioned(
+                    left: constraints.maxWidth * zeroFraction - 1,
+                    top: 4,
+                    bottom: 4,
+                    child: IgnorePointer(
+                      child: Container(
+                        width: 2,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
+      ),
+    );
+  }
+
+  /// 九宫格开关按钮（60×60 圆形 + Iconsax.grid_15；激活态变浅底）
+  /// 与翻转按钮同高同尺寸，紧贴其左侧；由调用方在录制中隐藏。
+  Widget _buildGridToggleButton() {
+    return GestureDetector(
+      onTap: _toggleGrid,
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: _showGrid
+              ? Colors.white.withValues(alpha: 0.25)
+              : Colors.black.withValues(alpha: 0.4),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(Iconsax.grid_15, color: Colors.white, size: 28),
       ),
     );
   }
