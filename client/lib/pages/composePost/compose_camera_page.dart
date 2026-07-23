@@ -804,8 +804,9 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
               FittedBox(fit: BoxFit.cover, child: previewWidget),
               // 九宫格 overlay
               if (_showGrid) const _GridOverlay(),
-              // 对焦框 overlay
-              if (_focusPoint != null) _buildFocusRing(),
+              // 对焦框 overlay（直接 Positioned，必需作为 Stack 直接子节点）
+              if (_focusPoint != null)
+                _buildFocusRing(constraints.biggest),
               // 倒计时 overlay
               if (_countdownValue > 0) _buildCountdownOverlay(),
             ],
@@ -815,28 +816,25 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     );
   }
 
-  Widget _buildFocusRing() {
+  /// 直接返回 Positioned，作为 Stack 的子节点；不要把 Positioned 包在
+  /// LayoutBuilder 里 —— 之前那种写法每次重建都抛
+  /// 'BoxParentData' is not a subtype of 'StackParentData'。
+  Widget _buildFocusRing(Size parentSize) {
     final fp = _focusPoint;
     if (fp == null) return const SizedBox.shrink();
-    return LayoutBuilder(
-      builder: (context, c) {
-        final left = fp.dx * c.maxWidth - 32;
-        final top = fp.dy * c.maxHeight - 32;
-        return Positioned(
-          left: left,
-          top: top,
-          width: 64,
-          height: 64,
-          child: IgnorePointer(
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.yellowAccent, width: 2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
+    return Positioned(
+      left: fp.dx * parentSize.width - 32,
+      top: fp.dy * parentSize.height - 32,
+      width: 64,
+      height: 64,
+      child: IgnorePointer(
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.yellowAccent, width: 2),
+            borderRadius: BorderRadius.circular(4),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
