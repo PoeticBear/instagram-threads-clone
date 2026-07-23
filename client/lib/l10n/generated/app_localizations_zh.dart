@@ -1594,11 +1594,41 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String videoTooLong(String duration) {
-    return '视频时长 ${duration}s 超过 60s 上限';
+    return '视频时长 ${duration}s 超过 5 分钟上限';
   }
 
   @override
   String get videoMetaReadFailed => '读取视频信息失败';
+
+  @override
+  String get cameraDone => '完成';
+
+  @override
+  String get cameraCountdownOff => '倒计时关';
+
+  @override
+  String get cameraConfirmTitle => '照片确认';
+
+  @override
+  String get cameraRetake => '重拍';
+
+  @override
+  String get cameraUse => '使用';
+
+  @override
+  String get cameraFilterOriginal => '原图';
+
+  @override
+  String get cameraFilterGrayscale => '黑白';
+
+  @override
+  String get cameraFilterWarm => '暖色';
+
+  @override
+  String get cameraFilterCool => '冷色';
+
+  @override
+  String get cameraFilterHighContrast => '高对比';
 
   @override
   String get tapToPlayVideo => '点击播放视频';

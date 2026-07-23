@@ -680,13 +680,23 @@
       "size": { "type": "String" }
     }
   },
-  "videoTooLong": "Video is {duration}s, exceeds 60s limit",
+  "videoTooLong": "Video is {duration}s, exceeds 5 minute limit",
   "@videoTooLong": {
     "placeholders": {
       "duration": { "type": "String" }
     }
   },
   "videoMetaReadFailed": "Failed to read video info",
+  "cameraDone": "Done",
+  "cameraCountdownOff": "Timer off",
+  "cameraConfirmTitle": "Confirm photo",
+  "cameraRetake": "Retake",
+  "cameraUse": "Use",
+  "cameraFilterOriginal": "Original",
+  "cameraFilterGrayscale": "B&W",
+  "cameraFilterWarm": "Warm",
+  "cameraFilterCool": "Cool",
+  "cameraFilterHighContrast": "Hi-Contrast",
   "tapToPlayVideo": "Tap to play video",
   "mediaSettings": "Media",
   "feedVideoAutoPlay": "Auto-play videos in feed",

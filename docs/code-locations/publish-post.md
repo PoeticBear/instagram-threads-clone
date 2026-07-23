@@ -41,23 +41,55 @@
 ### 1.2 相机页 `ComposeCameraPage`
 
 - **路径**：`client/lib/pages/composePost/compose_camera_page.dart`
-- **行数**：669
+- **行数**：~1400（增强后）
 - **核心组件**：
-  - `class ComposeCameraPage`（`compose_camera_page.dart:15`）— 拍照 + 录视频
-  - `enum CameraMode { photo, video }`（`compose_camera_page.dart:25`）
-  - `class _ComposeCameraPageState`（`compose_camera_page.dart:27`）
+  - `class ComposeCameraPage` — 拍照 + 录视频 + 多张照片会话 + 拍摄辅助
+  - `enum CameraMode { photo, video }`
+  - `class _ComposeCameraPageState`
 - **关键能力模块**：
   | 模块 | 方法 / 字段 | 行号 |
   | --- | --- | --- |
-  | 状态字段 | `_controller` / `_cameraIndex` / `_isSwitchingCamera` / `_isTakingPicture` / `_flashMode` / `_currentZoom` / `_minZoom` / `_maxZoom` / `_hasError` / `_mode` / `_isRecording` / `_recordingStartAt` / `_isSwitchingMode` | `compose_camera_page.dart:29-46` |
-  | 视频时长限制 | `_maxVideoDurationSec` = 60s / `_recordingTickInterval` = 200ms | `compose_camera_page.dart:49-51` |
-  | 生命周期 | `initState` / `dispose` / `didChangeAppLifecycleState` | `compose_camera_page.dart:53-79` |
-  | 相机初始化 | `_initCamera` / `_startCamera` | `compose_camera_page.dart:83-129` |
-  | 模式切换 | `_switchMode` | `compose_camera_page.dart:133-152` |
-  | 拍照 | `_takePicture` | `compose_camera_page.dart:156-172` |
-  | 视频录制 | `_toggleRecording` / `_startRecording` / `_stopRecording` / `_scheduleAutoStop` | `compose_camera_page.dart:176-263` |
-  | 公共操作 | `_switchCamera` / `_toggleFlash` / `_handleZoom` | `compose_camera_page.dart:267-304` |
-  | Build | `build` + `_buildPreview` / `_buildHeader` / `_buildModePill` / `_buildRecordingIndicator` / `_buildModeChip` / `_buildBottomControls` / `_buildFlipButton` / `_buildShutter` / `_buildError` | `compose_camera_page.dart:308-668` |
+  | 状态字段 | `_controller` / `_cameraIndex` / `_isSwitchingCamera` / `_isTakingPicture` / `_flashMode` / `_currentZoom` / `_zoomBase` / `_minZoom` / `_maxZoom` / `_hasError` / `_mode` / `_isRecording` / `_recordingStartAt` / `_isSwitchingMode` / `_pendingGeneration` / `_myGeneration` / `_focusPoint` / `_focusShownAt` / `_minExposure` / `_maxExposure` / `_exposureStep` / `_currentExposure` / `_showGrid` / `_countdownSeconds` / `_countdownTimer` / `_countdownValue` / `_captures` / `_quality` | 文件内按区块分布 |
+  | 视频时长限制 | `_maxVideoDurationSec` = 300 / `_recordingTickInterval` = 200ms | 文件中段 |
+  | 生命周期 | `initState` / `dispose` / `didChangeAppLifecycleState`（inactive 先 `stopRecording`、resumed 清 `_hasError`） | |
+  | 相机初始化 | `_initCamera` / `_startCamera` / `_pickPreferredBackIndex`（含控制器串行化、曝光范围读取、缩放与闪光灯应用） | |
+  | 模式切换 | `_switchMode` | |
+  | 拍照 | `_takePicture` / `_openConfirmPage` / `_safeDelete` | |
+  | 视频录制 | `_toggleRecording` / `_startRecording` / `_stopRecording`（优先用 `getMediaInfo` 实际时长） / `_scheduleAutoStop` | |
+  | 镜头选择 | `_selectLens` / `CameraLensHelper`（`camera_lens_helper.dart`） | |
+  | 画质切换 | `_toggleQuality` / `CameraQualityPreset`（`camera_quality_preset.dart`） | |
+  | 点击对焦 | `_onPreviewTap` / `_previewTapToNorm`（前置 x 镜像） / `_buildFocusRing` | |
+  | 曝光补偿 | `_setExposure` / `_buildExposureSlider`（垂直滑杆） | |
+  | 九宫格 | `_toggleGrid` / `_GridOverlay` / `_GridPainter` | |
+  | 倒计时 | `_runCountdown` / `_cancelCountdown` / `_cycleCountdown` / `_buildCountdownOverlay` | |
+  | 缩放 | `_onScaleStart`（保存 `_zoomBase`） / `_onScaleUpdate` | |
+  | 闪光灯 | `_toggleFlash` | |
+  | 会话管理 | `_onClosePressed`（清理 `_captures` 临时文件） / `_onCompletePressed`（批量返回） / `_onDeleteCapture` | |
+  | 偏好持久化 | `_loadPrefs`（quality / grid / countdown） | |
+  | Build | `build` + `_buildPreview`（含 grid + focus + countdown overlay） + `_buildHeader`（增加 grid 按钮） + `_buildCaptureStrip` + `_buildCountdownToggle` + `_buildLensPills` + `_buildQualityToggle` + `_buildExposureSlider` + `_buildFlipButton` + `_buildShutter` + `_buildError` | |
+
+### 1.3 拍后确认页 `ComposeCameraConfirmPage`
+
+- **路径**：`client/lib/pages/composePost/compose_camera_confirm_page.dart`
+- **职责**：拍照完成后弹出，5 个静态滤镜（原图 / 黑白 / 暖色 / 冷色 / 高对比度），底部"重拍 / 使用"。
+- **pop 值**：
+  - `CameraCaptureResult.photo(_currentPath)` — 用户点"使用"
+  - `null` — 用户点"重拍"
+- **超时**：滤镜处理超过 2 秒即视为失败，提示错误并允许继续使用原图或重拍。
+- **依赖**：使用 `image: ^4.1.3`（已声明）做静态处理；产物写入系统临时目录。
+
+### 1.4 镜头工具 `CameraLensHelper`
+
+- **路径**：`client/lib/pages/composePost/camera_lens_helper.dart`
+- **职责**：把 `List<CameraDescription>` 按 `lensDirection` 与 `lensType` 排序，得到带 UI 标签的镜头列表。
+- **关键方法**：`backLenses`（按 ultraWide → wide → telephoto 排序） / `frontLenses`。
+
+### 1.5 画质档位 `CameraQualityPreset`
+
+- **路径**：`client/lib/pages/composePost/camera_quality_preset.dart`
+- **取值**：`sd720p30` / `hd1080p30`（默认）
+- **关键字段**：`shortLabel` / `resolutionPreset` / `fps = 30`
+- **持久化**：保存到 `SharedPreferences['compose_camera_quality']`。
 
 ---
 

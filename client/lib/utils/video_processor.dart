@@ -10,7 +10,8 @@ import 'package:video_compress/video_compress.dart';
 /// - compress：压缩视频（中质量 / 720p / 30fps / 保留音轨）
 class VideoProcessor {
   /// 视频时长上限（毫秒），超过则拒绝
-  static const int defaultMaxDurationMs = 60 * 1000;
+  /// 与发布帖相机 / 上传链路保持一致：300 秒（5 分钟）。
+  static const int defaultMaxDurationMs = 300 * 1000;
 
   /// 探测视频元信息（不压缩，不写文件）
   /// 失败时抛 [VideoProcessException]。

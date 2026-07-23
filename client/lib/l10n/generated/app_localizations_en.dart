@@ -1625,11 +1625,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String videoTooLong(String duration) {
-    return 'Video is ${duration}s, exceeds 60s limit';
+    return 'Video is ${duration}s, exceeds 5 minute limit';
   }
 
   @override
   String get videoMetaReadFailed => 'Failed to read video info';
+
+  @override
+  String get cameraDone => 'Done';
+
+  @override
+  String get cameraCountdownOff => 'Timer off';
+
+  @override
+  String get cameraConfirmTitle => 'Confirm photo';
+
+  @override
+  String get cameraRetake => 'Retake';
+
+  @override
+  String get cameraUse => 'Use';
+
+  @override
+  String get cameraFilterOriginal => 'Original';
+
+  @override
+  String get cameraFilterGrayscale => 'B&W';
+
+  @override
+  String get cameraFilterWarm => 'Warm';
+
+  @override
+  String get cameraFilterCool => 'Cool';
+
+  @override
+  String get cameraFilterHighContrast => 'Hi-Contrast';
 
   @override
   String get tapToPlayVideo => 'Tap to play video';

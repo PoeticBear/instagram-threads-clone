@@ -93,7 +93,7 @@ class ComposePostState extends State<ComposePost> {
   static const int _minPollOptions = 2;
   static const int _maxContentLength = 500;
 
-  // 视频 / 媒体相关限制 — 严格对齐服务端 openapi_docs/_misc.json
+  // 视频 / 媒体相关限制 — 视频上限统一为 300 秒（5 分钟）；服务端不强制时长上限。
   static const int _maxVideoDurationMs = 300 * 1000; // ≤ 300 秒（5 分钟）
   static const int _maxVideoSizeBytes = 100 * 1024 * 1024; // 100MB
   static const int _maxGifSizeBytes = 10 * 1024 * 1024; // 10MB
@@ -601,9 +601,9 @@ class ComposePostState extends State<ComposePost> {
 
   /// 内部辅助：把单个 XFile 解析为 MediaDraftItem
   /// 返回 (item?, errorMessage?)
-  /// - 图片：只校验大小 ≤ 20MB
-  /// - 视频：校验大小 ≤ 100MB、时长 ≤ 60s（探测失败也允许通过，时长 UI 不显示即可）
-  /// - GIF：扩展名 .gif 且 ≤ 20MB
+  /// - 图片：只校验大小 ≤ 10MB
+  /// - 视频：校验大小 ≤ 100MB、时长 ≤ 300 秒（5 分钟，探测失败也允许通过，时长 UI 不显示即可）
+  /// - GIF：扩展名 .gif 且 ≤ 10MB
   Future<({MediaDraftItem? item, String? error})> _buildMediaDraftFromXFile(
     XFile xfile,
   ) async {
@@ -710,14 +710,31 @@ class ComposePostState extends State<ComposePost> {
       _showSnack('已达媒体数量上限 ($_maxMediaCount)');
       return;
     }
-    final result = await Navigator.push<CameraCaptureResult>(
+    final remaining = _maxMediaCount - _mediaDrafts.length;
+    // 相机页 pop 的结果可能是：
+    // - CameraCaptureResult（视频录制完成）
+    // - List<CameraCaptureResult>（照片模式批量返回）
+    final dynamic result = await Navigator.push<dynamic>(
       context,
-      CupertinoPageRoute(builder: (_) => const ComposeCameraPage()),
+      CupertinoPageRoute(
+        builder: (_) => ComposeCameraPage(remainingCapacity: remaining),
+      ),
     );
     if (result == null) return;
 
+    if (result is CameraCaptureResult) {
+      _addOneCapture(result);
+    } else if (result is List<CameraCaptureResult>) {
+      // 照片模式批量返回
+      for (final c in result) {
+        _addOneCapture(c);
+        if (!_canAddMoreMedia) break;
+      }
+    }
+  }
+
+  void _addOneCapture(CameraCaptureResult result) {
     if (result.isVideo) {
-      // 视频：从 thumbnail 提取首帧图路径
       _addMedia(
         MediaDraftItem.fromLocalVideo(
           File(result.path),

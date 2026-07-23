@@ -680,13 +680,23 @@
       "size": { "type": "String" }
     }
   },
-  "videoTooLong": "视频时长 {duration}s 超过 60s 上限",
+  "videoTooLong": "视频时长 {duration}s 超过 5 分钟上限",
   "@videoTooLong": {
     "placeholders": {
       "duration": { "type": "String" }
     }
   },
   "videoMetaReadFailed": "读取视频信息失败",
+  "cameraDone": "完成",
+  "cameraCountdownOff": "倒计时关",
+  "cameraConfirmTitle": "照片确认",
+  "cameraRetake": "重拍",
+  "cameraUse": "使用",
+  "cameraFilterOriginal": "原图",
+  "cameraFilterGrayscale": "黑白",
+  "cameraFilterWarm": "暖色",
+  "cameraFilterCool": "冷色",
+  "cameraFilterHighContrast": "高对比",
   "tapToPlayVideo": "点击播放视频",
   "mediaSettings": "媒体播放",
   "feedVideoAutoPlay": "信息流自动播放视频",

@@ -2,7 +2,7 @@ import 'dart:io';
 
 /// 相机拍摄结果（统一照片和视频）
 /// - 照片：[durationMs] = 0，[thumbnail] = null
-/// - 视频：[durationMs] > 0，[thumbnail] 为首帧 jpg
+/// - 视频：[durationMs] > 0，[thumbnail] 为首帧 jpg（生成失败时为 null，UI 兜底占位）
 class CameraCaptureResult {
   /// 本地文件路径（jpg / mp4）
   final String path;
@@ -10,7 +10,7 @@ class CameraCaptureResult {
   /// 时长（毫秒）。照片 = 0
   final int durationMs;
 
-  /// 视频首帧缩略图（jpg）。照片 = null
+  /// 视频首帧缩略图（jpg）。照片 = null；视频生成失败时也 = null
   final File? thumbnail;
 
   const CameraCaptureResult({
@@ -30,7 +30,7 @@ class CameraCaptureResult {
   factory CameraCaptureResult.video({
     required String path,
     required int durationMs,
-    required File thumbnail,
+    File? thumbnail,
   }) =>
       CameraCaptureResult(
         path: path,

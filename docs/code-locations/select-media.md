@@ -9,18 +9,22 @@
 
 | 类别 | 路径 | 行数 | 职责 |
 | --- | --- | --- | --- |
-| 发布页 | `client/lib/pages/composePost/post.dart` | 1667 | 相册 / 相机入口、底部 sheet、本地草稿管理 |
-| 相机页 | `client/lib/pages/composePost/compose_camera_page.dart` | 669 | 拍照、录视频、首帧缩略图 |
+| 发布页 | `client/lib/pages/composePost/post.dart` | ~1700 | 相册 / 相机入口、底部 sheet、本地草稿管理、批量接收相机页结果 |
+| 相机页 | `client/lib/pages/composePost/compose_camera_page.dart` | ~1400 | 拍照、录视频、首帧缩略图、对焦 / 曝光 / 九宫格 / 倒计时、物理镜头、受控画质、多张照片会话 |
+| 拍后确认页 | `client/lib/pages/composePost/compose_camera_confirm_page.dart` | — | 拍后静态图片滤镜（原图 / 黑白 / 暖色 / 冷色 / 高对比度） |
+| 镜头工具 | `client/lib/pages/composePost/camera_lens_helper.dart` | — | 按 `lensType` 排序并产出 0.5×/1×/长焦入口 |
+| 画质档位 | `client/lib/pages/composePost/camera_quality_preset.dart` | — | 720p/30fps / 1080p/30fps |
+| 结果校验器 | `client/lib/utils/camera_result_validator.dart` | — | 图片 10MB / 视频 100MB / GIF 10MB / 视频 ≤ 300 秒 |
 | 数据模型 | `client/lib/model/media_draft_item.dart` | 232 | 草稿态媒体条目（含工厂方法、时长格式化） |
-| 数据模型 | `client/lib/model/camera_capture_result.dart` | — | 相机页 → 发布页的返回值 |
+| 数据模型 | `client/lib/model/camera_capture_result.dart` | — | 相机页 → 发布页的返回值（单张 / 列表） |
 | 数据模型 | `client/lib/model/post.module.dart` | — | 服务端 `MediaType` 常量（1=image / 2=video / 3=gif） |
-| 工具 | `client/lib/utils/video_processor.dart` | 163 | 视频元信息探测 / 首帧缩略图 / 压缩 |
+| 工具 | `client/lib/utils/video_processor.dart` | 163 | 视频元信息探测 / 首帧缩略图 / 压缩（默认上限 300 秒） |
 | 服务层 | `client/lib/services/upload_service.dart` | 233 | 预签名 URL + 流式 PUT 上传到 COS |
 | 状态层 | `client/lib/state/post.state.dart` | — | `createPost` 入口（内部走 `UploadService`） |
 | 状态层 | `client/lib/state/draft.state.dart` | — | 草稿保存时同样调用 `UploadService` |
 | 头像（旁系） | `client/lib/pages/profile/edit.dart` | — | 编辑资料时 `getImage(...)` |
 | 头像（旁系） | `client/lib/auth/signup/signup.dart` | — | 注册时 `getImage(...)` |
-| 依赖包 | `client/pubspec.yaml` | — | `image_picker ^0.8.7` / `camera ^0.10.6` / `video_compress ^3.1.3` / `video_player ^2.9.2` / `cached_network_image ^3.2.3` / `image_cropper ^10.0.0+1` |
+| 依赖包 | `client/pubspec.yaml` | — | `image_picker ^0.8.7` / `camera ^0.10.6` / `camera_platform_interface ^2.5.0` / `video_compress ^3.1.3` / `video_player ^2.9.2` / `cached_network_image ^3.2.3` / `image_cropper ^10.0.0+1` / `image ^4.1.3` |
 
 ---
 
@@ -247,4 +251,62 @@
 
 ---
 
-_最后更新：2026-06-16 — 由 Claude 自动化梳理（基于代码静态分析 + 关键模块阅读），并对齐服务端 `openapi_docs/_misc.json` 文件上传规范（图片 10MB / 视频 100MB / GIF 10MB / 视频时长 300s / 帖子媒体数 ≤ 10）。_
+_最后更新：2026-07-23 — 由 Claude 自动化梳理（基于代码静态分析 + 关键模块阅读），并对齐服务端 `openapi_docs/_misc.json` 文件上传规范（图片 10MB / 视频 100MB / GIF 10MB / 视频时长 300s / 帖子媒体数 ≤ 10）。_
+
+## 4. 增强相机能力总览（OpenSpec `enhance-compose-camera`）
+
+本节为 `enhance-compose-camera` 变更的代码定位补充，对应发布帖子相机的稳定化与受控增强。新增 / 修改涉及：
+
+- 拍后确认与滤镜：`compose_camera_confirm_page.dart`
+- 镜头与画质工具：`camera_lens_helper.dart`、`camera_quality_preset.dart`
+- 结果校验器：`camera_result_validator.dart`
+- `compose_camera_page.dart`：
+  - 控制器重建串行化（`_pendingGeneration` / `_myGeneration`）
+  - 关闭按钮在录制中先 `stopRecording`；`inactive` 时同样先停止录制
+  - 点击对焦 / 点击曝光点 + 2 秒对焦框 overlay
+  - 曝光补偿垂直滑杆（按设备 `getMin/MaxExposureOffset` 自动 clamp）
+  - 九宫格辅助线（开关持久化）
+  - 3 秒倒计时（视频 / 拍照均支持；`inactive` 期间自动取消）
+  - 物理镜头切换（按 `lensType` 列出 0.5× / 1× / 长焦）
+  - 受控画质档位（720p/30fps / 1080p/30fps，持久化）
+  - 多张照片会话（`_captures` 列表 + 完成按钮批量返回 `List<CameraCaptureResult>`）
+  - 视频缩略图失败时不再把视频文件当图片写入；UI 使用占位兜底
+
+### 4.1 调用链（拍照会话）
+
+```text
+ComposePost._openCamera(remainingCapacity)
+   ↓ Navigator.push
+ComposeCameraPage
+   ↓ 用户点击快门
+_takePicture() → _openConfirmPage()
+   ↓ Navigator.push
+ComposeCameraConfirmPage
+   ├─ 5 滤镜 + 重拍 / 使用
+   └─ 返回 CameraCaptureResult.photo(_currentPath)
+   ↓
+回到 ComposeCameraPage：校验 → 加入 _captures
+   ↓ 用户点"完成"
+Navigator.pop(List<CameraCaptureResult>)
+   ↓
+ComposePost 逐项转 MediaDraftItem → _addMedia
+```
+
+### 4.2 调用链（视频录制）
+
+```text
+ComposePost._openCamera(remainingCapacity)
+   ↓ Navigator.push
+ComposeCameraPage（视频 Tab）
+   ↓ 用户点击录制
+_startRecording() → 倒计时（可选） → startVideoRecording
+   ↓ 用户点击停止 或 5:00 自动停止
+_stopRecording()
+   ├─ 优先用 getMediaInfo 实际时长
+   ├─ 缩略图失败时 thumbnail = null（不再 fallback 到视频路径）
+   └─ 统一校验
+   ↓
+Navigator.pop(CameraCaptureResult.video(...))
+   ↓
+ComposePost 直接转 MediaDraftItem.fromLocalVideo
+```

@@ -3137,7 +3137,7 @@ abstract class AppLocalizations {
   /// No description provided for @videoTooLong.
   ///
   /// In en, this message translates to:
-  /// **'Video is {duration}s, exceeds 60s limit'**
+  /// **'Video is {duration}s, exceeds 5 minute limit'**
   String videoTooLong(String duration);
 
   /// No description provided for @videoMetaReadFailed.
@@ -3145,6 +3145,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to read video info'**
   String get videoMetaReadFailed;
+
+  /// No description provided for @cameraDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get cameraDone;
+
+  /// No description provided for @cameraCountdownOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer off'**
+  String get cameraCountdownOff;
+
+  /// No description provided for @cameraConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm photo'**
+  String get cameraConfirmTitle;
+
+  /// No description provided for @cameraRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake'**
+  String get cameraRetake;
+
+  /// No description provided for @cameraUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use'**
+  String get cameraUse;
+
+  /// No description provided for @cameraFilterOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get cameraFilterOriginal;
+
+  /// No description provided for @cameraFilterGrayscale.
+  ///
+  /// In en, this message translates to:
+  /// **'B&W'**
+  String get cameraFilterGrayscale;
+
+  /// No description provided for @cameraFilterWarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm'**
+  String get cameraFilterWarm;
+
+  /// No description provided for @cameraFilterCool.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool'**
+  String get cameraFilterCool;
+
+  /// No description provided for @cameraFilterHighContrast.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi-Contrast'**
+  String get cameraFilterHighContrast;
 
   /// No description provided for @tapToPlayVideo.
   ///
