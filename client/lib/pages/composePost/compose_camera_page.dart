@@ -108,6 +108,9 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   static const Duration _focusOverlayDuration = Duration(milliseconds: 2000);
   // 预览区横向滑动切模式的位移阈值（logical px）
   static const double _kSwitchModeDragThreshold = 50.0;
+  // 曝光补偿滑杆轨道宽度（逻辑 px；旋转后这部分成为视觉上的纵向高度）。
+  // 用显式尺寸替代 LayoutBuilder，因为 Positioned 不能放在 LayoutBuilder 里。
+  static const double _kExposureTrackWidth = 240.0;
   // SharedPreferences key
   static const String _kQualityPrefKey = 'compose_camera_quality';
   static const String _kGridPrefKey = 'compose_camera_grid';
@@ -1312,48 +1315,48 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     // 0 EV 在滑杆量程内的相对位置（0..1），超出范围时不绘制锚线
     final zeroFraction = ((0 - _minExposure) / (_maxExposure - _minExposure))
         .clamp(0.0, 1.0);
+    // 显式给定滑杆轨道宽度，让 Stack+Positioned 可以计算锚线位置；
+    // 不要用 LayoutBuilder 包这一层 —— Positioned 必须是 Stack 直接子节点，
+    // 此前我用 LayoutBuilder 导致 Positioned.applyParentData 抛
+    // 'BoxParentData' is not a subtype of 'StackParentData'，
+    // 任何 setState 都会让 widget 树重建并触发灰一下再恢复。
     return SizedBox(
       width: 36,
       child: RotatedBox(
         quarterTurns: 3,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // LayoutBuilder 位于 RotatedBox 内，看到的是旋转前的坐标系：
-            // - constraints.maxWidth 是 Slider 横向的视觉可用宽度（旋转后变成纵向高度）
-            // - 在未旋转坐标系下绘制一道"竖线"位于 zeroFraction 处，
-            //   旋转后会呈现在纵向滑杆上的"水平横线"，代表 0 EV 位置
-            return Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  child: Slider(
-                    value: _currentExposure.clamp(_minExposure, _maxExposure),
-                    min: _minExposure,
-                    max: _maxExposure,
-                    // 强制 7 档；不再跟随底层 getExposureOffsetStepSize
-                    divisions: 7,
-                    onChanged:
-                        _isRecording || _controller == null ? null : _setExposure,
-                  ),
+        child: SizedBox(
+          width: _kExposureTrackWidth,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: Slider(
+                  value: _currentExposure.clamp(_minExposure, _maxExposure),
+                  min: _minExposure,
+                  max: _maxExposure,
+                  // 强制 7 档；不再跟随底层 getExposureOffsetStepSize
+                  divisions: 7,
+                  onChanged:
+                      _isRecording || _controller == null ? null : _setExposure,
                 ),
-                if (zeroFraction > 0 && zeroFraction < 1)
-                  Positioned(
-                    left: constraints.maxWidth * zeroFraction - 1,
-                    top: 4,
-                    bottom: 4,
-                    child: IgnorePointer(
-                      child: Container(
-                        width: 2,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(1),
-                        ),
+              ),
+              if (zeroFraction > 0 && zeroFraction < 1)
+                Positioned(
+                  left: _kExposureTrackWidth * zeroFraction - 1,
+                  top: 4,
+                  bottom: 4,
+                  child: IgnorePointer(
+                    child: Container(
+                      width: 2,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(1),
                       ),
                     ),
                   ),
-              ],
-            );
-          },
+                ),
+            ],
+          ),
         ),
       ),
     );
