@@ -71,11 +71,8 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   // 双指缩放：onScaleStart 保存基准 zoom，避免累乘误差
   double _zoomBase = 1.0;
 
-  // 模式 pill 水平平移量（preview 纵向滑动手势驱动；切模式后回弹）
-  double _modePillDx = 0.0;
-  // 动画 generation counter：每次 _onVerticalDragUpdate / _onVerticalDragEnd 自增，
-  // 旧的回弹 Task 检测到 generation 变化后立即退出，避免动画串台
-  int _pillAnimGen = 0;
+  // 横向滑动切模式：本次手势的位移累积（不驱动 UI，纯阈值计算用）
+  double _dragAccumulator = 0.0;
 
   // 点击对焦 / 曝光点
   Offset? _focusPoint; // 归一化坐标 (0..1)，相对预览可视区域
@@ -107,12 +104,8 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   static const Duration _recordingTickInterval = Duration(milliseconds: 200);
   // 对焦框 2 秒后自动消失
   static const Duration _focusOverlayDuration = Duration(milliseconds: 2000);
-  // 预览区纵向滑动切模式的位移阈值（logical px）
+  // 预览区横向滑动切模式的位移阈值（logical px）
   static const double _kSwitchModeDragThreshold = 50.0;
-  // mode pill 跟随平移的最大绝对偏移（视觉上限，避免跟手过分）
-  static const double _kModePillMaxAbsDx = 80.0;
-  // mode pill 回弹动画总时长
-  static const Duration _kModePillAnimDuration = Duration(milliseconds: 240);
   // SharedPreferences key
   static const String _kQualityPrefKey = 'compose_camera_quality';
   static const String _kGridPrefKey = 'compose_camera_grid';
@@ -571,57 +564,29 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   }
 
   // ─── Horizontal drag to switch photo / video mode ─────────
+  // 注意：本手势不驱动任何 UI 位移；只是累积位移，松手时按阈值决定是否切模式。
+  // 顶部 mode pill 在整个手势过程中保持静止。
 
   void _onHorizontalDragUpdate(DragUpdateDetails details) {
-    // 任何新的拖拽会 invalidate 当前回弹动画
-    _pillAnimGen++;
-    final delta = details.primaryDelta ?? 0;
-    setState(() {
-      _modePillDx = (_modePillDx + delta).clamp(
-        -_kModePillMaxAbsDx,
-        _kModePillMaxAbsDx,
-      );
-    });
+    _dragAccumulator += details.primaryDelta ?? 0;
   }
 
   Future<void> _onHorizontalDragEnd(DragEndDetails details) async {
-    final dx = _modePillDx;
-    final myGen = ++_pillAnimGen; // 自增并锁定本次动画的 generation
-    Future<void> snapBack(double from, double to) async {
-      const steps = 12;
-      final stepMs =
-          (_kModePillAnimDuration.inMilliseconds / steps).round().clamp(8, 32);
-      for (int i = 1; i <= steps; i++) {
-        if (myGen != _pillAnimGen) return;
-        await Future.delayed(Duration(milliseconds: stepMs));
-        if (myGen != _pillAnimGen) return;
-        if (!mounted) return;
-        final t = i / steps;
-        final eased = Curves.easeOut.transform(t);
-        setState(() {
-          _modePillDx = from + (to - from) * eased;
-        });
-      }
-    }
+    final dx = _dragAccumulator;
+    _dragAccumulator = 0.0;
 
-    if (dx.abs() < _kSwitchModeDragThreshold) {
-      await snapBack(dx, 0);
-      if (mounted) setState(() => _modePillDx = 0);
-      return;
-    }
+    if (dx.abs() < _kSwitchModeDragThreshold) return;
 
-    // 横向滑动方向语义（左滑 = 前进）：
+    // 方向语义（左滑 = 前进）：
     //   photo 模式左滑 → video
     //   video 模式右滑 → photo
-    //   反方向拖拽不响应，松手回弹
+    //   反方向拖拽阈值可达也不响应
     if (_mode == CameraMode.photo && dx <= -_kSwitchModeDragThreshold) {
       await _switchMode(CameraMode.video);
     } else if (_mode == CameraMode.video &&
         dx >= _kSwitchModeDragThreshold) {
       await _switchMode(CameraMode.photo);
     }
-    await snapBack(dx, 0);
-    if (mounted) setState(() => _modePillDx = 0);
   }
 
   // ─── Tap to focus / exposure ─────────────────────────────
@@ -913,15 +878,12 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                   child: const Icon(Icons.close, color: Colors.white, size: 24),
                 ),
               ),
-              // 中：模式 pill（录制中隐藏；预览区纵向滑动时跟随水平平移）
+              // 中：模式 pill（录制中隐藏；横向滑动切模式时不带任何 pill 位移）
               Expanded(
                 child: Center(
                   child: _isRecording
                       ? const SizedBox.shrink()
-                      : Transform.translate(
-                          offset: Offset(_modePillDx, 0),
-                          child: _buildModePill(l10n),
-                        ),
+                      : _buildModePill(l10n),
                 ),
               ),
               // 右：闪光灯 / 录制指示器
