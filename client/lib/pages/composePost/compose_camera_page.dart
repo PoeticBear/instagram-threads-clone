@@ -570,9 +570,9 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     setState(() => _currentZoom = newZoom);
   }
 
-  // ─── Vertical drag to switch photo / video mode ───────────
+  // ─── Horizontal drag to switch photo / video mode ─────────
 
-  void _onVerticalDragUpdate(DragUpdateDetails details) {
+  void _onHorizontalDragUpdate(DragUpdateDetails details) {
     // 任何新的拖拽会 invalidate 当前回弹动画
     _pillAnimGen++;
     final delta = details.primaryDelta ?? 0;
@@ -584,7 +584,7 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     });
   }
 
-  Future<void> _onVerticalDragEnd(DragEndDetails details) async {
+  Future<void> _onHorizontalDragEnd(DragEndDetails details) async {
     final dx = _modePillDx;
     final myGen = ++_pillAnimGen; // 自增并锁定本次动画的 generation
     Future<void> snapBack(double from, double to) async {
@@ -610,6 +610,10 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
       return;
     }
 
+    // 横向滑动方向语义（左滑 = 前进）：
+    //   photo 模式左滑 → video
+    //   video 模式右滑 → photo
+    //   反方向拖拽不响应，松手回弹
     if (_mode == CameraMode.photo && dx <= -_kSwitchModeDragThreshold) {
       await _switchMode(CameraMode.video);
     } else if (_mode == CameraMode.video &&
@@ -806,9 +810,9 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
               ? Container(color: Colors.black)
               : CameraPreview(_controller!),
         );
-        // 纵向滑动切换拍照/视频模式的可用性判定：
+        // 横向滑动切换拍照/视频模式的可用性判定：
         // 录制中、倒计时进行中、模式重建中、初始化失败时全部禁用
-        final verticalDragEnabled = !_isRecording &&
+        final horizontalDragEnabled = !_isRecording &&
             _countdownValue == 0 &&
             !_isSwitchingMode &&
             !_hasError;
@@ -817,8 +821,10 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
           onTapUp: (d) => _onPreviewTap(d, constraints.biggest),
           onScaleStart: _onScaleStart,
           onScaleUpdate: _onScaleUpdate,
-          onVerticalDragUpdate: verticalDragEnabled ? _onVerticalDragUpdate : null,
-          onVerticalDragEnd: verticalDragEnabled ? _onVerticalDragEnd : null,
+          onHorizontalDragUpdate:
+              horizontalDragEnabled ? _onHorizontalDragUpdate : null,
+          onHorizontalDragEnd:
+              horizontalDragEnabled ? _onHorizontalDragEnd : null,
           child: Stack(
             fit: StackFit.expand,
             children: [
