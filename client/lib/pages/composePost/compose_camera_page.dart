@@ -77,6 +77,8 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   // 点击对焦 / 曝光点
   Offset? _focusPoint; // 归一化坐标 (0..1)，相对预览可视区域
   DateTime? _focusShownAt;
+  // 2 秒后自动隐藏对焦框的 Timer；保存以便下一次点击取消旧的清理任务。
+  Timer? _focusHideTimer;
 
   // 曝光补偿
   double _minExposure = 0.0;
@@ -143,6 +145,8 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
     WidgetsBinding.instance.removeObserver(this);
     _countdownTimer?.cancel();
     _countdownTimer = null;
+    _focusHideTimer?.cancel();
+    _focusHideTimer = null;
     _controller?.dispose();
     super.dispose();
   }
@@ -617,19 +621,18 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
       _focusShownAt = DateTime.now();
     });
 
-    try {
-      if (c.value.focusPointSupported) {
-        await c.setFocusPoint(norm);
-      }
-    } catch (_) {/* 静默 */}
-    try {
-      if (c.value.exposurePointSupported) {
-        await c.setExposurePoint(norm);
-      }
-    } catch (_) {/* 静默 */}
+    // 注意：原先调用 c.setFocusPoint / setExposurePoint 会触发 iOS AVCaptureSession
+    // 自动对焦扫描（AF lock），期间 CameraPreview 会渲染为灰色/黑色占位，
+    // 表现为"点一下，整个画面变灰 1-2 秒后恢复"。
+    // 改为纯视觉提示：
+    //   - 黄色对焦框出现 2 秒（视觉反馈）
+    //   - 实际对焦依赖 iOS 的 continuousAutoFocus（默认持续开启）
+    // 既保留了"点哪里对哪里"的提示，又避免触发 1-2 秒灰色窗口。
 
-    // 2 秒后自动隐藏对焦框
-    Future.delayed(_focusOverlayDuration, () {
+    // 用 Timer 替代 Future.delayed，下一次点击能取消旧的清理任务。
+    _focusHideTimer?.cancel();
+    _focusHideTimer = Timer(_focusOverlayDuration, () {
+      _focusHideTimer = null;
       if (!mounted) return;
       final shown = _focusShownAt;
       if (shown == null) return;
@@ -640,6 +643,8 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
   }
 
   void _hideFocus() {
+    _focusHideTimer?.cancel();
+    _focusHideTimer = null;
     if (_focusPoint != null) {
       setState(() => _focusPoint = null);
     }
