@@ -1054,32 +1054,46 @@ class _ComposeCameraPageState extends State<ComposeCameraPage>
                 ],
               ),
               const SizedBox(height: 18),
-              // 下排：快门 + EV 滑杆 + 翻转 + 九宫格
+              // 下排：EV 滑杆（最左）｜ 快门（居中）｜ 九宫格 + 翻转（最右）
+              // 用 Row + 显式宽度替代原 Stack + Positioned，避免 Stack 子组件
+              // 在某些约束下被 alignment.center 拉到中间全部重叠的回归问题。
               SizedBox(
                 height: 96,
-                child: Stack(
-                  alignment: Alignment.center,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildShutter(),
-                    if (_minExposure < _maxExposure)
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        child: _buildExposureSlider(),
-                      ),
-                    Positioned(
-                      right: 0,
-                      top: 18,
-                      child: _buildFlipButton(),
+                    // 左：曝光补偿滑杆（设备支持时才渲染）
+                    SizedBox(
+                      width: 36,
+                      height: 96,
+                      child: _minExposure < _maxExposure
+                          ? _buildExposureSlider()
+                          : const SizedBox.shrink(),
                     ),
-                    // 九宫格：紧贴翻转按钮左侧；录制中隐藏
-                    if (!_isRecording)
-                      Positioned(
-                        right: 68,
-                        top: 18,
-                        child: _buildGridToggleButton(),
+                    // 中：快门，居中
+                    SizedBox(
+                      width: 76,
+                      height: 96,
+                      child: Center(child: _buildShutter()),
+                    ),
+                    // 右：九宫格（录制中隐藏）+ 翻转
+                    SizedBox(
+                      width: 128,
+                      height: 96,
+                      child: Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!_isRecording) ...[
+                              _buildGridToggleButton(),
+                              const SizedBox(width: 8),
+                            ],
+                            _buildFlipButton(),
+                          ],
+                        ),
                       ),
+                    ),
                   ],
                 ),
               ),
